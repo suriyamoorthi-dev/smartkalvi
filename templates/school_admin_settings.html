@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Settings</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans py-10 px-4">
+  <div class="max-w-md mx-auto bg-white rounded-xl shadow-md p-6">
+    <h2 class="text-2xl font-bold text-blue-700 mb-4">🔐 Admin Settings</h2>
+
+    {% if message %}
+      <div class="mb-4 text-green-600 font-medium">{{ message }}</div>
+    {% endif %}
+
+    <form method="POST">
+      <label class="block mb-2 text-sm font-semibold text-gray-700">New Password</label>
+      <input type="password" name="new_password" required class="w-full mb-4 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg w-full">
+        🔄 Update Password
+      </button>
+    </form>
+
+    <div class="mt-4 text-center text-sm">
+      <a href="/school-admin/performance" class="text-blue-600 hover:underline">⬅️ Back to Dashboard</a>
+    </div>
+  </div>
+</body>
+</html>

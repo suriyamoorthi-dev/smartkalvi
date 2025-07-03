@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Tuition Bookings - Teacher</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-50 font-sans">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">📖 Your Tuition Bookings</h1>
+            <p class="text-gray-500 mt-2">A centralized view of all your scheduled sessions.</p>
+        </header>
+
+        {% if bookings %}
+            <div class="shadow-lg rounded-xl overflow-hidden bg-white">
+                <div class="hidden md:block">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking ID</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Slot Details</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booked At</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for booking in bookings %}
+                            <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ booking.id }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                    <div class="font-semibold">{{ booking.student_name }}</div>
+                                    <div class="text-gray-500">{{ booking.student_email }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                    <div class="font-semibold">{{ booking.slot_date }}</div>
+                                    <div class="text-gray-500">{{ booking.slot_time }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ booking.booked_at }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="md:hidden">
+                    <div class="px-4 py-2 bg-gray-100 font-bold text-gray-600">All Bookings</div>
+                    <ul class="divide-y divide-gray-200">
+                        {% for booking in bookings %}
+                        <li class="p-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold text-lg text-gray-800">#{{ booking.id }}</span>
+                                <span class="text-sm text-gray-500">{{ booking.booked_at }}</span>
+                            </div>
+                            <div class="mb-2">
+                                <p class="font-semibold text-gray-700">{{ booking.student_name }}</p>
+                                <p class="text-sm text-gray-500">{{ booking.student_email }}</p>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-700">{{ booking.slot_date }}</p>
+                                <p class="text-sm text-gray-500">{{ booking.slot_time }}</p>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-12 px-4 bg-white shadow-lg rounded-xl">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 class="mt-2 text-xl font-semibold text-gray-800">No bookings found.</h3>
+                <p class="mt-1 text-gray-500">When a student books a session, it will appear here.</p>
+            </div>
+        {% endif %}
+
+        <div class="mt-8 text-center">
+            <a href="{{ url_for('teacher_dashboard') }}" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                ← Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>

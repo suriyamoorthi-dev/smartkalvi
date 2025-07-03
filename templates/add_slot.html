@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Slot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-r from-blue-50 to-purple-100 flex items-center justify-center p-4 sm:p-6">
+
+<div class="bg-white p-6 sm:p-8 rounded-xl shadow-xl w-full max-w-md space-y-6">
+    <h1 class="text-xl sm:text-2xl font-bold text-blue-700 text-center">🕒 Add New Slot</h1>
+
+    <form method="POST" class="space-y-4">
+        <input type="hidden" name="teacher_id" value="{{ teacher_id }}">
+
+        <div>
+            <label class="block mb-1 font-medium text-gray-700">Date</label>
+            <input type="date" name="date" class="w-full border p-2 sm:p-3 rounded-lg" required>
+        </div>
+
+        <div>
+            <label class="block mb-1 font-medium text-gray-700">Start Time</label>
+            <input type="time" name="start_time" class="w-full border p-2 sm:p-3 rounded-lg" required>
+        </div>
+
+        <div>
+            <label class="block mb-1 font-medium text-gray-700">End Time</label>
+            <input type="time" name="end_time" class="w-full border p-2 sm:p-3 rounded-lg" required>
+        </div>
+
+        <button type="submit" class="w-full bg-green-600 text-white py-2 sm:py-3 rounded-lg hover:bg-green-700">Add Slot</button>
+    </form>
+
+    <a href="{{ url_for('teacher_dashboard') }}" class="block text-center text-blue-700 hover:underline mt-4">⬅ Back to Dashboard</a>
+</div>
+
+</body>
+</html>

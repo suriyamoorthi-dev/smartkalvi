@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>AI Doubt Solver</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Dynamic, subtle dark gradient for depth and modern feel */
+            background: linear-gradient(135deg, #1f2937 0%, #0f172a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem 1rem; /* Added padding for smaller screens */
+            box-sizing: border-box;
+        }
+        h1, h2 {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Main card container with frosted glass effect */
+        .glass-card {
+            background-color: rgba(255, 255, 255, 0.1); /* Slightly transparent white */
+            backdrop-filter: blur(20px) saturate(180%); /* Stronger blur for true glassmorphism */
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.2); /* Subtle white border */
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4); /* Deeper shadow for floating effect */
+            transition: all 0.3s ease-in-out;
+            max-width: 900px; /* Increased max-width for a more expansive feel */
+        }
+        .glass-card:hover {
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); /* More pronounced shadow on hover */
+        }
+
+        /* Gradient header with subtle text shadow */
+        .gradient-header {
+            background: linear-gradient(to right, #4c69eb, #00d4ff); /* More vibrant blue-cyan gradient */
+            color: #fff;
+            padding: 1.5rem 0; /* Increased padding */
+            border-radius: 1.25rem 1.25rem 0 0; /* Match card radius at top */
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Soft text shadow */
+        }
+
+        /* Input/Textarea focus state */
+        textarea:focus {
+            border-color: #00d4ff; /* Cyan focus ring */
+            box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.2); /* Softer, wider glow on focus */
+        }
+
+        /* Button styling with deeper shadow and hover effect */
+        .btn-gradient {
+            background: linear-gradient(90deg, #4c69eb, #00d4ff); /* Matching header gradient */
+            color: white;
+            padding: 0.9rem 2.5rem; /* Larger button */
+            border-radius: 0.75rem; /* More rounded button */
+            font-weight: 700; /* Bolder text */
+            box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3); /* Deeper button shadow */
+            transition: all 0.3s ease-in-out;
+            border: none;
+        }
+        .btn-gradient:hover {
+            transform: translateY(-3px) scale(1.02); /* Lift and slightly scale */
+            box-shadow: 0 12px 25px rgba(0, 212, 255, 0.4); /* More intense shadow on hover */
+            background: linear-gradient(90deg, #00d4ff, #4c69eb); /* Reverse gradient on hover */
+        }
+
+        /* Answer box with glowing border */
+        .answer-glow-box {
+            background-color: rgba(255, 255, 255, 0.08); /* Very subtle transparent white */
+            border: 1px solid rgba(0, 212, 255, 0.3); /* Lighter blue border */
+            border-radius: 1rem;
+            padding: 2rem; /* More padding */
+            position: relative;
+            overflow: hidden;
+            color: #e0e7ff; /* Lighter text for dark background */
+        }
+        .answer-glow-box::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+            animation: pulse-glow 5s infinite cubic-bezier(0.4, 0, 0.6, 1);
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.8;
+        }
+        @keyframes pulse-glow {
+            0% { transform: scale(0.8) rotate(0deg); opacity: 0.5; }
+            50% { transform: scale(1.1) rotate(180deg); opacity: 0.9; }
+            100% { transform: scale(0.8) rotate(360deg); opacity: 0.5; }
+        }
+        .answer-glow-box h2 {
+            color: #81e6d9; /* Greenish-blue for emphasis */
+            margin-bottom: 1rem;
+            font-size: 1.6rem; /* Larger heading */
+            position: relative;
+            z-index: 1;
+        }
+        .answer-glow-box p {
+            color: #c7d2fe; /* Light blue text for answer */
+            line-height: 1.8; /* More comfortable reading */
+            font-size: 1.1rem; /* Slightly larger text */
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Ad box - refined subtle style */
+        .ad-box {
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+        }
+        .ad-box:hover {
+            background-color: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        .ad-box strong {
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 700;
+        }
+
+        /* Footer links */
+        .footer-links a {
+            color: #81e6d9; /* Matching answer heading color */
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .footer-links a:hover {
+            color: #00d4ff; /* Brighter on hover */
+            text-decoration: underline;
+        }
+        .footer-links span {
+            color: rgba(255, 255, 255, 0.4); /* Muted separator */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center">
+
+    <div class="w-full glass-card p-0 overflow-hidden">
+        <div class="text-center gradient-header">
+            <h1 class="text-3xl font-extrabold tracking-tight mb-1">
+                <span role="img" aria-label="lightbulb">💡</span> AI Doubt Solver
+            </h1>
+            <p class="text-sm opacity-80 max-w-sm mx-auto">
+                Get instant, crystal-clear explanations for *any* academic question.
+            </p>
+        </div>
+
+        <div class="p-8 space-y-6">
+            <div class="ad-box">
+                <strong>✨ Level up your learning:</strong><br>
+                Explore premium study resources and personalized guidance!
+            </div>
+
+            <form method="POST" class="space-y-5">
+                <label for="question" class="block text-base font-semibold text-gray-200">
+                    Enter your question here:
+                </label>
+                <textarea name="question" id="question" rows="6" 
+                          placeholder="E.g., Explain the concept of photosynthesis.&#10;What is the Pythagorean theorem?&#10;How does a balanced diet help in growth?" 
+                          class="w-full bg-white/10 border border-white/20 rounded-xl p-4 text-white text-lg 
+                                 focus:outline-none focus:ring-4 focus:ring-opacity-50 transition-all duration-200 resize-y" 
+                          required>{{ question }}</textarea>
+
+                <div class="text-center">
+                    <button type="submit" class="btn-gradient">
+                        <span role="img" aria-label="sparkles">✨</span> Solve My Doubt
+                    </button>
+                </div>
+            </form>
+
+            {% if answer %}
+                <div class="answer-glow-box">
+                    <h2 class="font-bold">
+                        <span role="img" aria-label="robot">🤖</span> AI Answer:
+                    </h2>
+                    <p class="whitespace-pre-line leading-relaxed">{{ answer }}</p>
+                </div>
+            {% endif %}
+
+            <div class="text-center text-sm mt-8 footer-links">
+                <a href="/">← Back to Home</a>
+                <span class="mx-2">|</span>
+                <a href="/exam">🎯 Go to Exam Generator</a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

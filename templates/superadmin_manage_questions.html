@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Questions - AI Exam</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
+        th { background: #4a90e2; color: white; }
+        .btn { padding: 6px 12px; background: #4a90e2; color: white; text-decoration: none; border-radius: 4px; }
+        .btn:hover { background: #357ab8; }
+        .json-box { max-height: 150px; overflow: auto; background: #f9f9f9; padding: 5px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+
+<h2>Manage Questions</h2>
+
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Class</th>
+        <th>Subject</th>
+        <th>Topic</th>
+        <th>Exam Mode</th>
+        <th>2-Mark Questions</th>
+        <th>5-Mark Questions</th>
+        <th>Actions</th>
+    </tr>
+    {% for id, class_level, subject, topic, exam_mode, qna_2m, qna_5m in questions %}
+    <tr>
+        <td>{{ id }}</td>
+        <td>{{ class_level }}</td>
+        <td>{{ subject }}</td>
+        <td>{{ topic }}</td>
+        <td>{{ exam_mode }}</td>
+        <td>
+            <div class="json-box">
+                <pre>{{ qna_2m }}</pre>
+            </div>
+        </td>
+        <td>
+            <div class="json-box">
+                <pre>{{ qna_5m }}</pre>
+            </div>
+        </td>
+        <td>
+            <a href="/superadmin/delete_question/{{ id }}" class="btn" onclick="return confirm('Delete this?')">Delete</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>

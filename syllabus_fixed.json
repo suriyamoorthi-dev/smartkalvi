@@ -1,0 +1,125 @@
+[
+  {
+    "class_level": null,
+    "subject": "Science",
+    "topics": [
+      {
+        "name": {
+          "name": "Matter Around Us"
+        }
+      },
+      {
+        "name": {
+          "name": "Living Organisms"
+        }
+      },
+      {
+        "name": {
+          "name": "Motion and Force"
+        }
+      }
+    ]
+  },
+  {
+    "class_level": null,
+    "subject": "Maths",
+    "topics": [
+      {
+        "name": {
+          "name": "Number Systems"
+        }
+      },
+      {
+        "name": {
+          "name": "Algebra"
+        }
+      },
+      {
+        "name": {
+          "name": "Geometry"
+        }
+      }
+    ]
+  },
+  {
+    "class_level": "10",
+    "subject": "Science",
+    "topics": [
+      {
+        "name": {
+          "name": "Laws of Motion"
+        }
+      },
+      {
+        "name": {
+          "name": "Optics"
+        }
+      },
+      {
+        "name": {
+          "name": "Acoustics"
+        }
+      },
+      {
+        "name": {
+          "name": "Nuclear Physics"
+        }
+      },
+      {
+        "name": {
+          "name": "Electricity"
+        }
+      },
+      {
+        "name": {
+          "name": "Magnetism"
+        }
+      },
+      {
+        "name": {
+          "name": "Chemistry in Everyday Life"
+        }
+      },
+      {
+        "name": {
+          "name": "Carbon and its Compounds"
+        }
+      },
+      {
+        "name": {
+          "name": "Acids, Bases and Salts"
+        }
+      },
+      {
+        "name": {
+          "name": "Plant Physiology"
+        }
+      },
+      {
+        "name": {
+          "name": "Human Physiology"
+        }
+      },
+      {
+        "name": {
+          "name": "Reproduction"
+        }
+      },
+      {
+        "name": {
+          "name": "Heredity and Evolution"
+        }
+      },
+      {
+        "name": {
+          "name": "Environmental Management"
+        }
+      },
+      {
+        "name": {
+          "name": "Space Science"
+        }
+      }
+    ]
+  }
+]

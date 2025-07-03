@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add New School</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+        h2 {
+            text-align: center;
+        }
+        label {
+            font-weight: bold;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #007BFF;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .show-pass {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>🏫 Add New School</h2>
+
+    <form method="POST">
+        <label for="school_name">School Name:</label>
+        <input type="text" id="school_name" name="school_name" required>
+
+        <label for="admin_username">Admin Username:</label>
+        <input type="text" id="admin_username" name="admin_username" required>
+
+        <label for="admin_password">Admin Password:</label>
+        <input type="password" id="admin_password" name="admin_password" required>
+
+        <div class="show-pass">
+            <input type="checkbox" id="show_password" onclick="togglePassword()"> Show Password
+        </div>
+
+        <button type="submit">Add School</button>
+    </form>
+
+    <script>
+        function togglePassword() {
+            var passInput = document.getElementById("admin_password");
+            passInput.type = (passInput.type === "password") ? "text" : "password";
+        }
+    </script>
+
+</body>
+</html>

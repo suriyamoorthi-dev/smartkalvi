@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>All Uploaded Materials - Super Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background: white;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+        th {
+            background: #4a90e2;
+            color: white;
+        }
+        .btn {
+            padding: 6px 12px;
+            background: #4a90e2;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #357ab8;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 sm:p-6">
+
+<h2 class="text-xl sm:text-2xl font-bold text-center mb-6">All Uploaded Study Materials</h2>
+
+<div class="overflow-x-auto">
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Teacher ID</th>
+            <th>Title</th>
+            <th>Description</th>
+            <th>File</th>
+            <th>Uploaded At</th>
+        </tr>
+        {% for material in materials %}
+        <tr>
+            <td>{{ material.id }}</td>
+            <td>{{ material.teacher_id }}</td>
+            <td>{{ material.title }}</td>
+            <td>{{ material.description }}</td>
+            <td><a href="{{ material.file_url }}" target="_blank" class="btn">View / Download</a></td>
+            <td>{{ material.uploaded_at }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="mt-6 text-center">
+    <a href="{{ url_for('superadmin_dashboard') }}" class="btn">Back to Dashboard</a>
+</div>
+
+</body>
+</html>

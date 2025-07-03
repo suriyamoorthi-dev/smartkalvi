@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Super Admin Dashboard - AI Exam Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Poppins', sans-serif; }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #e0e7ff; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #a78bfa; border-radius: 10px; border: 2px solid #e0e7ff; }
+        ::-webkit-scrollbar-thumb:hover { background: #8b5cf6; }
+        .shadow-custom { box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 p-6 sm:p-8 lg:p-10">
+
+<div class="max-w-7xl mx-auto space-y-10">
+
+    <header class="text-center mb-8">
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-indigo-800 mb-3">
+            <i class="fas fa-crown text-amber-500 mr-3"></i>Super Admin Dashboard
+        </h1>
+        <p class="text-indigo-600 text-lg sm:text-xl">AI Exam Platform Management</p>
+    </header>
+
+    <div class="bg-white p-5 rounded-xl shadow-custom flex flex-wrap justify-center gap-5">
+        <a href="/superadmin/regenerate" class="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
+            <i class="fas fa-sync-alt"></i><span>Question Regenerative</span>
+        </a>
+        <a href="/superadmin/performance" class="flex items-center space-x-2 px-6 py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition">
+            <i class="fas fa-chart-line"></i><span>School Performance</span>
+        </a>
+        <a href="/superadmin/add_school" class="flex items-center space-x-2 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">
+            <i class="fas fa-plus-circle"></i><span>Add School</span>
+        </a>
+        <a href="/superadmin/logout" class="flex items-center space-x-2 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition">
+            <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+        </a>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow-custom">
+        <h2 class="text-2xl font-bold text-indigo-700 mb-5 flex items-center space-x-2">
+            <i class="fas fa-graduation-cap"></i><span>Tuition Management</span>
+        </h2>
+        <div class="flex flex-col sm:flex-row gap-4">
+            <a href="{{ url_for('admin_teachers') }}" class="flex-1 text-center bg-purple-500 text-white py-3 rounded-lg font-semibold hover:bg-purple-600 transition">Manage Teachers</a>
+            <a href="{{ url_for('admin_bookings') }}" class="flex-1 text-center bg-pink-500 text-white py-3 rounded-lg font-semibold hover:bg-pink-600 transition">Manage Bookings</a>
+            <a href="{{ url_for('admin_materials') }}" class="flex-1 text-center bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition">View All Materials</a>
+        </div>
+    </div>
+
+    <!-- Withdrawal Requests Section -->
+    <div class="bg-white p-6 rounded-xl shadow-custom overflow-x-auto">
+        <h2 class="text-2xl font-bold text-indigo-700 mb-5 flex items-center space-x-2">
+            <i class="fas fa-wallet"></i><span>Withdrawal Requests</span>
+        </h2>
+        
+        {% if withdrawals %}
+        <table class="w-full text-left table-auto">
+            <thead class="bg-indigo-600 text-white">
+                <tr>
+                    <th class="p-3">ID</th>
+                    <th class="p-3">Teacher ID</th>
+                    <th class="p-3">Phone</th>
+                    <th class="p-3">Status</th>
+                    <th class="p-3">Requested At</th>
+                    <th class="p-3">Paid</th>
+                    <th class="p-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in withdrawals %}
+                <tr class="border-b">
+                    <td class="p-3">{{ req.id }}</td>
+                    <td class="p-3">{{ req.teacher_id }}</td>
+                    <td class="p-3">{{ req.teacher_phone }}</td>
+                    <td class="p-3">
+                        {% if req.status == 'pending' %}
+                            <span class="text-yellow-600 font-semibold">Pending</span>
+                        {% elif req.status == 'approved' %}
+                            <span class="text-green-600 font-semibold">Approved</span>
+                        {% elif req.status == 'rejected' %}
+                            <span class="text-red-600 font-semibold">Rejected</span>
+                        {% endif %}
+                    </td>
+                    <td class="p-3">{{ req.created_at }}</td>
+                    <td class="p-3">
+                        {% if req.paid %}
+                            ✅ Paid<br>{{ req.paid_at }}<br>{{ req.payment_reference }}
+                        {% else %}
+                            ❌ Not Paid
+                        {% endif %}
+                    </td>
+                    <td class="p-3 space-y-2">
+                        {% if req.status == 'pending' %}
+                            <a href="{{ url_for('update_withdrawal', request_id=req.id, action='approved') }}" class="bg-green-600 text-white px-3 py-1 rounded block text-center">Approve</a>
+                            <a href="{{ url_for('update_withdrawal', request_id=req.id, action='rejected') }}" class="bg-red-600 text-white px-3 py-1 rounded block text-center">Reject</a>
+                        {% elif req.status == 'approved' and not req.paid %}
+                            <form action="{{ url_for('mark_withdrawal_paid', request_id=req.id) }}" method="POST" class="space-y-2">
+                                <input type="text" name="payment_reference" placeholder="GPay Ref ID" required class="border px-2 py-1 w-full">
+                                <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded w-full">Mark as Paid</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-gray-600 text-lg text-center">No withdrawal requests found.</p>
+        {% endif %}
+    </div>
+
+</div>
+
+</body>
+</html>

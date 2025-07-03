@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manual Question Upload - AI Exam Platform</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+        input[type="text"], select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #aaa;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        textarea {
+            height: 150px;
+            font-family: monospace;
+        }
+        .btn {
+            background: #4a90e2;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+        .btn:hover {
+            background: #357ab8;
+        }
+        .count {
+            font-size: 13px;
+            color: green;
+            margin-bottom: 15px;
+        }
+        .flash {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .flash-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .flash-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Manual Question Upload</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {% if category == 'success' %}flash-success{% else %}flash-error{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <label>Class:</label>
+        <input type="text" name="class" value="{{ class_level }}" required>
+
+        <label>Subject:</label>
+        <input type="text" name="subject" value="{{ subject }}" required>
+
+        <label>Topic/Unit:</label>
+        <input type="text" name="topic" value="{{ topic }}" required>
+
+        <label>Exam Mode:</label>
+        <select name="exam_mode">
+            <option value="topic" {% if exam_mode == "topic" %}selected{% endif %}>Topic Wise</option>
+            <option value="unit" {% if exam_mode == "unit" %}selected{% endif %}>Unit Wise</option>
+            <option value="full" {% if exam_mode == "full" %}selected{% endif %}>Full Portion</option>
+        </select>
+
+        <label>2-Mark Questions (JSON Array):</label>
+        <textarea name="qna_2m" required>{{ qna_2m }}</textarea>
+        <div class="count">Total: {{ count_2m }} questions</div>
+
+        <label>5-Mark Questions (JSON Array):</label>
+        <textarea name="qna_5m" required>{{ qna_5m }}</textarea>
+        <div class="count">Total: {{ count_5m }} questions</div>
+
+        <button type="submit" class="btn">💾 Save Questions</button>
+    </form>
+</div>
+
+</body>
+</html>

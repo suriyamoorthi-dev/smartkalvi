@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment - AI Exam Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-purple-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white shadow-xl rounded-xl p-8 space-y-6 max-w-sm w-full text-center">
+        
+        <h2 class="text-2xl font-bold text-gray-800">💳 Pay ₹{{ total_fee }}</h2>
+        <p class="text-gray-600 mb-4">Complete your school subscription payment</p>
+
+        <button id="paybtn" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Pay Now</button>
+
+    </div>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        document.getElementById('paybtn').onclick = function(){
+            var options = {
+                "key": "YOUR_KEY_ID", 
+                "amount": "{{ order.amount }}",
+                "currency": "INR",
+                "name": "AI Exam Platform",
+                "description": "School Subscription Fee",
+                "order_id": "{{ order.id }}",
+                "handler": function (response){
+                    window.location.href = "/school_admin/payment_success";
+                }
+            };
+            var rzp = new Razorpay(options);
+            rzp.open();
+        }
+    </script>
+    
+</body>
+</html>

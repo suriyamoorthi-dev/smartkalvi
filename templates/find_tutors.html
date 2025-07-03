@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Find Tutors</title>
+    <style>
+        .tutor-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px;
+            border-radius: 8px;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Find Tutors</h1>
+
+    <form method="get" action="/find_tutors">
+        <label for="subject">Filter by Subject:</label>
+        <input type="text" id="subject" name="subject" placeholder="Enter subject" value="{{ selected_subject }}">
+        <button type="submit">Search</button>
+    </form>
+
+    <h2>Available Tutors:</h2>
+    
+    {% if teachers %}
+        {% for teacher in teachers %}
+            <div class="tutor-card">
+                <h3>{{ teacher.name }}</h3>
+                <p><strong>Subject:</strong> {{ teacher.subject }}</p>
+                <p><strong>Bio:</strong> {{ teacher.bio }}</p>
+                <p><strong>Monthly Fee:</strong> ₹{{ teacher.monthly_fee if teacher.monthly_fee else 'N/A' }}</p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No tutors found.</p>
+    {% endif %}
+</body>
+</html>

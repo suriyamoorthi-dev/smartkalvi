@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Subscribe to {{ teacher.name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-r from-yellow-100 to-orange-200 p-6">
+    <div class="bg-white p-6 rounded-lg shadow w-full max-w-md space-y-4 text-center">
+        <h2 class="text-2xl font-bold text-orange-700">📚 Subscribe to {{ teacher.name }}</h2>
+        <p class="text-gray-700">Subject: {{ teacher.subject }}</p>
+        <p class="text-gray-700">Monthly Fee: <span class="font-bold">₹{{ teacher.monthly_fee }}</span></p>
+
+        <form method="POST" class="space-y-4">
+            <input type="email" name="student_email" placeholder="Your Email" required class="w-full border p-3 rounded-lg">
+            <button type="submit" class="w-full bg-orange-600 text-white py-3 rounded-lg hover:bg-orange-700">Subscribe Now</button>
+        </form>
+
+        <p class="text-sm text-gray-600 mt-2">Subscription valid for 30 days from today.</p>
+    </div>
+</body>
+</html>

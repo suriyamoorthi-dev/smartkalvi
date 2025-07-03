@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Become a Tutor: Benefits & Earning Potential</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2j+omkWT/rYD9-WfRjCNKk9q+MlQy7JjY+rKA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        :root {
+            --primary-green: #28a745;
+            --light-green: #e6ffee;
+            --dark-gray: #343a40;
+            --text-gray: #6c757d;
+            --white: #ffffff;
+            --shadow-light: rgba(0, 0, 0, 0.08);
+            --shadow-medium: rgba(0, 0, 0, 0.15);
+            --accent-blue: #007bff;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0fff4 0%, #e0ffe0 100%);
+            color: var(--dark-gray);
+            line-height: 1.7;
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: var(--white);
+            border-radius: 1.5rem;
+            box-shadow: 0 15px 40px var(--shadow-medium);
+            max-width: 960px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .hero-section {
+            background: linear-gradient(45deg, #1abc9c 0%, #2ecc71 100%);
+            color: var(--white);
+            padding: 3.5rem 2rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero-section h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            line-height: 1.2;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .hero-section p {
+            font-size: 1.4rem;
+            font-weight: 400;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .content-section {
+            padding: 2.5rem 3rem;
+        }
+        .section-heading {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #212529;
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+        .section-heading::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background-color: var(--primary-green);
+            border-radius: 2px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        .info-card {
+            background-color: var(--light-green);
+            border-radius: 1.25rem;
+            padding: 2rem;
+            box-shadow: 0 8px 25px var(--shadow-light);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .info-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px var(--shadow-medium);
+        }
+        .info-card .icon-circle {
+            background-color: var(--primary-green);
+            color: var(--white);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+        .info-card h3 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--dark-gray);
+            margin-bottom: 1rem;
+        }
+        .info-card p {
+            font-size: 1.05rem;
+            color: var(--text-gray);
+            flex-grow: 1;
+        }
+        .how-it-works {
+            list-style: none;
+            padding: 0;
+            margin-top: 2rem;
+        }
+        .how-it-works li {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1.8rem;
+            font-size: 1.1rem;
+            color: var(--text-gray);
+        }
+        .how-it-works li .step-number {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--accent-blue);
+            color: var(--white);
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-right: 1.5rem;
+            box-shadow: 0 3px 10px rgba(0, 123, 255, 0.3);
+        }
+        .how-it-works li strong {
+            color: var(--dark-gray);
+            font-weight: 600;
+        }
+        .earning-potential-section p {
+            font-size: 1.1rem;
+            margin-bottom: 1.2rem;
+            color: var(--text-gray);
+        }
+        .highlight-box {
+            background-color: var(--light-green);
+            border-left: 5px solid var(--primary-green);
+            padding: 1.8rem;
+            border-radius: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--dark-gray);
+            margin: 2.5rem 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        .highlight-box strong {
+            color: var(--primary-green);
+            font-weight: 700;
+        }
+        .highlight-box span.note {
+            display: block;
+            font-size: 0.95rem;
+            color: var(--text-gray);
+            margin-top: 0.75rem;
+        }
+        .earning-factors ul {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 1.5rem;
+        }
+        .earning-factors ul li {
+            position: relative;
+            padding-left: 2.8rem;
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+            color: var(--text-gray);
+        }
+        .earning-factors ul li::before {
+            content: "\f058";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            color: #28a745;
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-size: 1.5rem;
+        }
+        .earning-factors ul li strong {
+            color: var(--dark-gray);
+        }
+        .call-to-action {
+            text-align: center;
+            padding: 2.5rem 0 3.5rem;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #1abc9c 0%, #2ecc71 100%);
+            color: var(--white);
+            padding: 1.2rem 3rem;
+            border-radius: 2.5rem;
+            font-size: 1.35rem;
+            font-weight: 600;
+            text-decoration: none;
+            box-shadow: 0 10px 25px rgba(46, 204, 113, 0.4);
+            transition: all 0.3s ease;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .btn-primary:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 18px 35px rgba(46, 204, 113, 0.6);
+            background: linear-gradient(45deg, #2ecc71 0%, #1abc9c 100%);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="hero-section">
+        <h1>Ignite Minds, Build Futures</h1>
+        <p>Become a tutor and make a real difference. Share your knowledge, empower students, and earn a rewarding income on your terms.</p>
+    </div>
+
+    <div class="content-section">
+        <h2 class="section-heading">Why Tutor With Us?</h2>
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="icon-circle"><i class="fas fa-graduation-cap"></i></div>
+                <h3>Empower Students</h3>
+                <p>Guide learners to overcome challenges, master new concepts, and achieve their academic goals.</p>
+            </div>
+            <div class="info-card">
+                <div class="icon-circle"><i class="fas fa-wallet"></i></div>
+                <h3>Earn a Rewarding Income</h3>
+                <p>Leverage your knowledge to generate income. Set your own rates and grow your earnings.</p>
+            </div>
+            <div class="info-card">
+                <div class="icon-circle"><i class="fas fa-clock"></i></div>
+                <h3>Flexible Schedule</h3>
+                <p>Work when it suits you. Enjoy the freedom to set your availability.</p>
+            </div>
+            <div class="info-card">
+                <div class="icon-circle"><i class="fas fa-chart-line"></i></div>
+                <h3>Personal & Professional Growth</h3>
+                <p>Sharpen your skills, deepen subject mastery, and develop teaching abilities.</p>
+            </div>
+        </div>
+
+        <h2 class="section-heading">How Tutoring Works</h2>
+        <ul class="how-it-works">
+            <li><div class="step-number">1</div> <div><strong>Create Your Profile:</strong> Showcase your expertise.</div></li>
+            <li><div class="step-number">2</div> <div><strong>Set Availability:</strong> Choose your preferred schedule.</div></li>
+            <li><div class="step-number">3</div> <div><strong>Connect with Students:</strong> Get discovered by learners.</div></li>
+            <li><div class="step-number">4</div> <div><strong>Deliver Sessions:</strong> Teach one-on-one or groups.</div></li>
+            <li><div class="step-number">5</div> <div><strong>Get Paid:</strong> Receive timely payments.</div></li>
+        </ul>
+
+        <h2 class="section-heading earning-potential-section">Your Earning Potential</h2>
+        <p>Your income grows with your dedication and impact as a tutor.</p>
+
+        <div class="highlight-box">
+            Experienced tutors typically earn <strong>₹500 to ₹2,500+ per hour</strong>. Your income depends on value delivered.
+            <span class="note">Figures are indicative and may vary.</span>
+        </div>
+
+        <div class="highlight-box" style="background-color: #fff3cd; border-left-color: #ffc107;">
+            <strong>Important Notice:</strong> Your earnings are <strong>strictly based on your ratings and reviews</strong>, not solely on qualifications or experience.
+            <ul class="earning-factors" style="margin-top: 1rem;">
+                <li><strong>4.5 Star Rating or Above:</strong> 70% share of student fees.</li>
+                <li><strong>Lower Ratings:</strong> Share percentage reduces with lower ratings.</li>
+                <li><strong>Below 2 Stars:</strong> Only 20% share.</li>
+                <li><strong>Negative Reviews:</strong> Risk of account termination.</li>
+            </ul>
+            <span class="note">Maintain good ratings to maximize your earnings and stay active on the platform.</span>
+        </div>
+    </div>
+
+    <div class="call-to-action">
+        <a href="/teacher_register" class="btn-primary">
+            <i class="fas fa-user-plus"></i> Join Our Tutor Community <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>

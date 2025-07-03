@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>School Admin Dashboard - AI Exam Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-50: #eff6ff;
+            --primary-100: #dbeafe;
+            --primary-500: #3b82f6;
+            --primary-600: #2563eb;
+            --primary-700: #1d4ed8;
+
+            --green-100: #dcfce7;
+            --green-700: #15803d;
+
+            --red-100: #fee2e2;
+            --red-700: #b91c1c;
+
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-300: #d1d5db;
+            --gray-500: #6b7280;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+
+            --white: #fff;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--gray-50);
+            color: var(--gray-800);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .header {
+            background-color: var(--white);
+            color: var(--gray-900);
+            padding: 1.25rem 2rem;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            border-bottom: 1px solid var(--gray-100);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .container {
+            flex-grow: 1;
+            width: 100%;
+            max-width: 720px;
+            margin: 2rem auto;
+            padding: 1.5rem;
+        }
+
+        .welcome-card {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            padding: 2rem 1.5rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin: 0;
+        }
+        
+        .welcome-subtitle {
+            font-size: 1rem;
+            color: var(--gray-500);
+        }
+
+        .info-card {
+            background: var(--primary-50);
+            border: 1px solid var(--primary-100);
+            padding: 1rem;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            text-align: left;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .info-item strong {
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .status-active {
+            background-color: var(--green-100);
+            color: var(--green-700);
+        }
+
+        .status-inactive {
+            background-color: var(--red-100);
+            color: var(--red-700);
+        }
+
+        .fee {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--primary-700);
+        }
+
+        .btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            width: 100%;
+            background-color: var(--primary-600);
+            color: var(--white);
+            padding: 0.875rem 1.25rem;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            border: 1px solid transparent;
+            transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+            box-shadow: var(--shadow-sm);
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-700);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn-secondary {
+            background-color: var(--gray-100);
+            color: var(--gray-800);
+            border-color: var(--gray-300);
+        }
+        
+        .btn-secondary:hover {
+             background-color: var(--gray-300);
+        }
+
+        .btn-pay {
+            background-color: var(--green-700);
+            animation: pulse 2s infinite;
+        }
+        
+        .btn-pay:hover {
+            background-color: #166534;
+        }
+        
+        @keyframes pulse {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow: var(--shadow-md);
+          }
+          50% {
+            transform: scale(1.03);
+            box-shadow: var(--shadow-lg);
+          }
+        }
+
+        .button-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            padding: 2rem 1rem;
+        }
+
+        @media (min-width: 640px) {
+            .info-card {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .button-grid {
+                flex-direction: row;
+            }
+
+            .btn {
+                width: auto;
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    AI Exam Platform
+</header>
+
+<div class="container">
+    <div class="welcome-card">
+        <h2>Welcome, {{ school.name }}</h2>
+        <p class="welcome-subtitle">Your school administration dashboard.</p>
+
+        <div class="info-card">
+            <div class="info-item">
+                <strong>Current Monthly Fee:</strong>
+                <span class="fee">₹{{ total_fee }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Payment Status:</strong>
+                {% if school.payment_status == 'active' %}
+                    <span class="status status-active">Active till {{ school.next_due_date }}</span>
+                {% else %}
+                    <span class="status status-inactive">Pending / Expired</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if school.payment_status != 'active' %}
+            <a href="/school_admin/pay_now" class="btn btn-pay">💳 Pay Now</a>
+        {% endif %}
+
+        <div class="button-grid">
+            <a href="/school_admin/students" class="btn btn-secondary">Manage Students</a>
+            <a href="/school_admin/performance" class="btn">View Performance</a>
+        </div>
+    </div>
+</div>
+
+<footer>
+    &copy; 2025 AI Exam Platform - Tamil Nadu Syllabus
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Payment Tracking</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container my-5">
+    <h2 class="mb-4">💰 Monthly Plan Payments</h2>
+
+    {% if payments %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover bg-white">
+            <thead class="table-primary">
+                <tr>
+                    <th>#</th>
+                    <th>Student Email</th>
+                    <th>Teacher</th>
+                    <th>Subject</th>
+                    <th>Amount (₹)</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ p.student_email }}</td>
+                    <td>{{ p.teacher_name }}</td>
+                    <td>{{ p.subject }}</td>
+                    <td>{{ p.amount }}</td>
+                    <td>{{ p.start_date }}</td>
+                    <td>{{ p.end_date }}</td>
+                    <td>
+                        {% if p.end_date >= current_date %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-danger">Expired</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">No payments found yet.</div>
+    {% endif %}
+</div>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>KALVIMATE - AI-Powered Learning</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, .poppins { font-family: 'Poppins', sans-serif; }
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%236B7280' viewBox='0 0 20 20'%3E%3Cpath d='M5.25 7.25L10 12l4.75-4.75'/%3E%3C/svg%3E");
+            background-position: right 1rem center;
+            background-repeat: no-repeat;
+            background-size: 1rem;
+            padding-right: 2.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+<!-- Navbar -->
+<header class="bg-white shadow sticky top-0 z-50 p-4 flex justify-between items-center">
+    <a href="/" class="flex items-center space-x-2">
+        <span class="text-3xl">🌟</span>
+        <h1 class="text-xl sm:text-2xl font-bold text-indigo-700 poppins">KALVIMATE</h1>
+    </a>
+    <nav class="hidden md:flex space-x-6 font-medium text-gray-700">
+        <a href="/" class="hover:text-indigo-600">Home</a>
+        <a href="/about" class="hover:text-indigo-600">About</a>
+        <a href="/teachers" class="hover:text-indigo-600">Tutors</a>
+        <a href="/contact" class="hover:text-indigo-600">Contact</a>
+        <a href="/events">Events</a>
+
+        <a href="/contact" class="hover:text-indigo-600">Ai Assist</a>
+    </nav>
+    <a href="/doubt_solver" class="hidden md:block bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-indigo-700 transition">AI Assist</a>
+    <button id="menu-btn" class="md:hidden text-2xl text-gray-700">
+        <i class="fas fa-bars"></i>
+    </button>
+</header>
+
+<!-- Mobile Menu -->
+<div id="mobile-menu" class="hidden fixed inset-0 bg-black/50 z-40">
+    <div class="bg-white w-2/3 h-full p-6">
+        <nav class="flex flex-col space-y-5 text-lg mt-10">
+            <a href="/" class="hover:text-indigo-600">Home</a>
+            <a href="/about" class="hover:text-indigo-600">About</a>
+            <a href="/teachers" class="hover:text-indigo-600">Tutors</a>
+            <a href="/contact" class="hover:text-indigo-600">Contact</a>
+            <a href="/events">Events</a>
+            <a href="/contact" class="hover:text-indigo-600">Ai Assist</a>
+
+        </nav>
+    </div>
+</div>
+
+<!-- Hero -->
+<section class="py-16 px-6 text-center bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
+    <div class="max-w-5xl mx-auto">
+        <h2 class="text-4xl sm:text-6xl font-extrabold text-indigo-800 poppins mb-4">Your AI Learning Partner</h2>
+        <p class="text-lg sm:text-xl text-gray-700 mb-8 max-w-2xl mx-auto">Generate custom exams, master topics, and connect with tutors—all with AI!</p>
+        <a href="#tool" class="inline-block bg-indigo-600 text-white px-8 py-3 rounded-full font-bold hover:bg-indigo-700 shadow-lg transition">Get Started</a>
+    </div>
+</section>
+
+<!-- AI Tool Section -->
+<section id="tool" class="py-16 px-4 bg-white">
+    <div class="max-w-xl mx-auto bg-gray-50 p-6 sm:p-8 rounded-xl shadow-lg">
+        <div class="flex mb-6 bg-gray-200 rounded-full p-1">
+            <button id="examTab" onclick="showSection('exam')" class="w-1/2 py-2 rounded-full font-semibold bg-indigo-600 text-white">AI Exam</button>
+            <button id="tuitionTab" onclick="showSection('tuition')" class="w-1/2 py-2 rounded-full font-semibold text-gray-700 hover:bg-gray-300">Find Tutors</button>
+        </div>
+
+        <!-- Exam Form -->
+        <div id="examSection">
+            <form method="POST" action="/exam" class="space-y-4">
+    <div>
+        <label class="block mb-1 font-medium">Board</label>
+        <select name="board" class="w-full p-3 border rounded-lg focus:ring-indigo-500">
+            <option value="state">State Board</option>
+            <option value="cbse">CBSE</option>
+        </select>
+    </div>
+    <div>
+        <label class="block mb-1 font-medium">Class</label>
+        <select name="class" id="class" onchange="populateSubjects()" class="w-full p-3 border rounded-lg focus:ring-indigo-500">
+            <option value="">Select Class</option>
+            {% set seen_classes = [] %}
+            {% for item in syllabus %}
+                {% if item.class_level not in seen_classes %}
+                    <option value="{{ item.class_level }}">{{ item.class_level }}</option>
+                    {% set _ = seen_classes.append(item.class_level) %}
+                {% endif %}
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label class="block mb-1 font-medium">Subject</label>
+        <select name="subject" id="subject" onchange="populateTopics()" class="w-full p-3 border rounded-lg focus:ring-indigo-500">
+            <option value="">Select Subject</option>
+        </select>
+    </div>
+    <div>
+        <label class="block mb-1 font-medium">Topic</label>
+        <select name="topic" id="topic" class="w-full p-3 border rounded-lg focus:ring-indigo-500">
+            <option value="">Select Topic</option>
+        </select>
+    </div>
+    <div>
+        <label class="block mb-1 font-medium">Exam Mode</label>
+        <select name="exam_mode" class="w-full p-3 border rounded-lg focus:ring-indigo-500">
+            <option value="topic">Topic Wise (25 Marks)</option>
+            <option value="unit">Unit Wise (40 Marks)</option>
+            <option value="full">Full Portion (100 Marks)</option>
+        </select>
+    </div>
+    <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow">✨ Generate Exam ✨</button>
+</form>
+
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-gray-900 text-white text-center py-10">
+    <div class="space-y-4">
+        <a href="/" class="flex justify-center items-center space-x-2">
+            <span class="text-2xl">🌟</span>
+            <h1 class="text-xl font-bold">KALVIMATE</h1>
+        </a>
+        <div class="flex justify-center space-x-5 text-xl">
+            <a href="#" class="hover:text-indigo-400"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="hover:text-indigo-400"><i class="fab fa-instagram"></i></a>
+            <a href="#" class="hover:text-indigo-400"><i class="fab fa-facebook"></i></a>
+        </div>
+        <p class="text-gray-400 text-sm">&copy; 2025 Kalvimate. All Rights Reserved.</p>
+    </div>
+</footer>
+
+<!-- Scripts -->
+<script>
+const syllabus = {{ syllabus | tojson | safe }};
+const classSelect = document.getElementById('class');
+const subjectSelect = document.getElementById('subject');
+const topicSelect = document.getElementById('topic');
+
+function populateSubjects() {
+    subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+    topicSelect.innerHTML = '<option value="">Select Topic</option>';
+    const selectedClass = classSelect.value;
+    if (!selectedClass) return;
+    const subjects = [...new Set(syllabus.filter(i => i.class_level == selectedClass).map(i => i.subject))];
+    subjects.forEach(sub => {
+        subjectSelect.innerHTML += `<option value="${sub}">${sub}</option>`;
+    });
+}
+
+function populateTopics() {
+    topicSelect.innerHTML = '<option value="">Select Topic</option>';
+    const selectedClass = classSelect.value;
+    const selectedSubject = subjectSelect.value;
+    if (!selectedClass || !selectedSubject) return;
+
+    const filteredData = syllabus.filter(i => i.class_level == selectedClass && i.subject == selectedSubject);
+    
+    let allTopics = [];
+    filteredData.forEach(data => {
+        if (data.topics) {
+            allTopics = allTopics.concat(data.topics);
+        }
+    });
+
+    const uniqueTopics = [...new Set(allTopics.map(t => t.name))];
+
+    uniqueTopics.forEach(topicName => {
+        topicSelect.innerHTML += `<option value="${topicName}">${topicName}</option>`;
+    });
+}
+
+function showSection(section) {
+    const examTab = document.getElementById('examTab');
+    const tuitionTab = document.getElementById('tuitionTab');
+    if (section === 'exam') {
+        examTab.classList.add('bg-indigo-600', 'text-white');
+        tuitionTab.classList.remove('bg-indigo-600', 'text-white');
+    } else {
+        window.location.href = "/teachers";
+    }
+}
+
+const menuBtn = document.getElementById('menu-btn');
+const mobileMenu = document.getElementById('mobile-menu');
+menuBtn.addEventListener('click', () => {
+    mobileMenu.classList.toggle('hidden');
+});
+</script>
+
+</body>
+</html>

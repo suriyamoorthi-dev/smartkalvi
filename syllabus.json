@@ -1,0 +1,43 @@
+[
+  {
+    "class": "9",
+    "subject": "Science",
+    "topics": [
+      {"name": "Matter Around Us"},
+      {"name": "Living Organisms"},
+      {"name": "Motion and Force"}
+    ]
+  },
+  {
+    "class": "9",
+    "subject": "Maths",
+    "topics": [
+      {"name": "Number Systems"},
+      {"name": "Algebra"},
+      {"name": "Geometry"}
+    ]
+  },
+
+
+  {
+    "class_level": "10",
+    "subject": "Science",
+    "topics": [
+      { "name": "Laws of Motion" },
+      { "name": "Optics" },
+      { "name": "Acoustics" },
+      { "name": "Nuclear Physics" },
+      { "name": "Electricity" },
+      { "name": "Magnetism" },
+      { "name": "Chemistry in Everyday Life" },
+      { "name": "Carbon and its Compounds" },
+      { "name": "Acids, Bases and Salts" },
+      { "name": "Plant Physiology" },
+      { "name": "Human Physiology" },
+      { "name": "Reproduction" },
+      { "name": "Heredity and Evolution" },
+      { "name": "Environmental Management" },
+      { "name": "Space Science" }
+    ]
+  }
+]
