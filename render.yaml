@@ -3,5 +3,5 @@ services:
     name: ai-exam-platform
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -U pip setuptools wheel && pip install -r requirements.txt
     startCommand: gunicorn app:app
