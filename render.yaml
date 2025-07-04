@@ -1,7 +1,12 @@
 services:
   - type: web
-    name: ai-exam-platform
+    name: smartkalvi
     env: python
-    plan: free
-    buildCommand: pip install -U pip setuptools wheel && pip install -r requirements.txt
+    buildCommand: |
+      pip install -U pip setuptools wheel
+      pip install -r requirements.txt
     startCommand: gunicorn app:app
+    plan: free
+    envVars:
+      - key: PORT
+        value: 10000
