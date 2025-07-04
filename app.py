@@ -52,10 +52,28 @@ DOUBT_SOLVER_API_KEY = "dbfb5267b3c4062b3f8b51a4999dfc27579a11f59bd3354378d14baa
 DOUBT_SOLVER_MODEL = "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"  # Or your preferred model
 
 # === Google Cloud Config ===
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r"C:\Users\welcome\Downloads\cosmic-abbey-457305-n2-7f39e257180a.json"
+import json
+from google.oauth2 import service_account
+
+credentials = None
+
+# Try to load from environment (for Render)
+credentials_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+
+if credentials_json:
+    credentials_dict = json.loads(credentials_json)
+    credentials = service_account.Credentials.from_service_account_info(credentials_dict)
+# Fallback to local file for your laptop
+elif os.path.exists(r"C:\Users\welcome\Downloads\cosmic-abbey-457305-n2-7f39e257180a.json"):
+    credentials = service_account.Credentials.from_service_account_file(
+        r"C:\Users\welcome\Downloads\cosmic-abbey-457305-n2-7f39e257180a.json"
+    )
+else:
+    raise Exception("Google credentials not found. Check your Render Environment or local file path.")
+
 GCS_BUCKET_NAME = "suriyan"
-storage_client = storage.Client()
-vision_client = vision.ImageAnnotatorClient()
+storage_client = storage.Client(credentials=credentials)
+vision_client = vision.ImageAnnotatorClient(credentials=credentials)
 
 # === Load Syllabus ===
 with open('syllabus.json', 'r', encoding='utf-8') as f:
