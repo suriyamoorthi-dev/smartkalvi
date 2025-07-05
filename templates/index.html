@@ -22,7 +22,6 @@
 </head>
 <body class="bg-gray-50 text-gray-800">
 
-<!-- Navbar -->
 <header class="bg-white shadow sticky top-0 z-50 p-4 flex justify-between items-center">
     <a href="/" class="flex items-center space-x-2">
         <span class="text-3xl">🌟</span>
@@ -34,8 +33,7 @@
         <a href="/teachers" class="hover:text-indigo-600">Tutors</a>
         <a href="/contact" class="hover:text-indigo-600">Contact</a>
         <a href="/events">Events</a>
-
-        <a href="/contact" class="hover:text-indigo-600">Ai Assist</a>
+        <a href="/doubt_solver" class="hover:text-indigo-600">Ai Assist</a>
     </nav>
     <a href="/doubt_solver" class="hidden md:block bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-indigo-700 transition">AI Assist</a>
     <button id="menu-btn" class="md:hidden text-2xl text-gray-700">
@@ -43,7 +41,6 @@
     </button>
 </header>
 
-<!-- Mobile Menu -->
 <div id="mobile-menu" class="hidden fixed inset-0 bg-black/50 z-40">
     <div class="bg-white w-2/3 h-full p-6">
         <nav class="flex flex-col space-y-5 text-lg mt-10">
@@ -52,13 +49,11 @@
             <a href="/teachers" class="hover:text-indigo-600">Tutors</a>
             <a href="/contact" class="hover:text-indigo-600">Contact</a>
             <a href="/events">Events</a>
-            <a href="/contact" class="hover:text-indigo-600">Ai Assist</a>
-
+            <a href="/doubt_solver" class="hover:text-indigo-600">Ai Assist</a>
         </nav>
     </div>
 </div>
 
-<!-- Hero -->
 <section class="py-16 px-6 text-center bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
     <div class="max-w-5xl mx-auto">
         <h2 class="text-4xl sm:text-6xl font-extrabold text-indigo-800 poppins mb-4">Your AI Learning Partner</h2>
@@ -67,7 +62,6 @@
     </div>
 </section>
 
-<!-- AI Tool Section -->
 <section id="tool" class="py-16 px-4 bg-white">
     <div class="max-w-xl mx-auto bg-gray-50 p-6 sm:p-8 rounded-xl shadow-lg">
         <div class="flex mb-6 bg-gray-200 rounded-full p-1">
@@ -75,57 +69,60 @@
             <button id="tuitionTab" onclick="showSection('tuition')" class="w-1/2 py-2 rounded-full font-semibold text-gray-700 hover:bg-gray-300">Find Tutors</button>
         </div>
 
-        <!-- Exam Form -->
         <div id="examSection">
             <form method="POST" action="/exam" class="space-y-4">
-    <div>
-        <label class="block mb-1 font-medium">Board</label>
-        <select name="board" class="w-full p-3 border rounded-lg focus:ring-indigo-500">
-            <option value="state">State Board</option>
-            <option value="cbse">CBSE</option>
-        </select>
-    </div>
-    <div>
-        <label class="block mb-1 font-medium">Class</label>
-        <select name="class" id="class" onchange="populateSubjects()" class="w-full p-3 border rounded-lg focus:ring-indigo-500">
-            <option value="">Select Class</option>
-            {% set seen_classes = [] %}
-            {% for item in syllabus %}
-                {% if item.class_level not in seen_classes %}
-                    <option value="{{ item.class_level }}">{{ item.class_level }}</option>
-                    {% set _ = seen_classes.append(item.class_level) %}
-                {% endif %}
-            {% endfor %}
-        </select>
-    </div>
-    <div>
-        <label class="block mb-1 font-medium">Subject</label>
-        <select name="subject" id="subject" onchange="populateTopics()" class="w-full p-3 border rounded-lg focus:ring-indigo-500">
-            <option value="">Select Subject</option>
-        </select>
-    </div>
-    <div>
-        <label class="block mb-1 font-medium">Topic</label>
-        <select name="topic" id="topic" class="w-full p-3 border rounded-lg focus:ring-indigo-500">
-            <option value="">Select Topic</option>
-        </select>
-    </div>
-    <div>
-        <label class="block mb-1 font-medium">Exam Mode</label>
-        <select name="exam_mode" class="w-full p-3 border rounded-lg focus:ring-indigo-500">
-            <option value="topic">Topic Wise (25 Marks)</option>
-            <option value="unit">Unit Wise (40 Marks)</option>
-            <option value="full">Full Portion (100 Marks)</option>
-        </select>
-    </div>
-    <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow">✨ Generate Exam ✨</button>
-</form>
-
+                <div>
+                    <label class="block mb-1 font-medium">Board</label>
+                    <select name="board" class="w-full p-3 border rounded-lg focus:ring-indigo-500">
+                        <option value="state">State Board</option>
+                        <option value="cbse">CBSE</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block mb-1 font-medium">Class</label>
+                    <select name="class" id="class" onchange="populateSubjects()" class="w-full p-3 border rounded-lg focus:ring-indigo-500">
+                        <option value="">Select Class</option>
+                        {% set seen_classes = [] %}
+                        {% for item in syllabus %}
+                            {% if item.class_level not in seen_classes %}
+                                <option value="{{ item.class_level }}">{{ item.class_level }}</option>
+                                {% set _ = seen_classes.append(item.class_level) %}
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block mb-1 font-medium">Subject</label>
+                    <select name="subject" id="subject" onchange="populateTopics()" class="w-full p-3 border rounded-lg focus:ring-indigo-500">
+                        <option value="">Select Subject</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block mb-1 font-medium">Topic</label>
+                    <select name="topic" id="topic" class="w-full p-3 border rounded-lg focus:ring-indigo-500">
+                        <option value="">Select Topic</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block mb-1 font-medium">Exam Mode</label>
+                    <select name="exam_mode" class="w-full p-3 border rounded-lg focus:ring-indigo-500">
+                        <option value="topic">Topic Wise (25 Marks)</option>
+                        <option value="unit">Unit Wise (40 Marks)</option>
+                        <option value="full">Full Portion (100 Marks)</option>
+                    </select>
+                </div>
+                <button id="generateBtn" type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow flex items-center justify-center gap-2">
+                    <span id="btnText">✨ Generate Exam ✨</span>
+                    <svg id="loadingSpinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16 8 8 0 01-8-8z"></path>
+                    </svg>
+                </button>
+            </form>
         </div>
     </div>
 </section>
 
-<!-- Footer -->
 <footer class="bg-gray-900 text-white text-center py-10">
     <div class="space-y-4">
         <a href="/" class="flex justify-center items-center space-x-2">
@@ -141,12 +138,14 @@
     </div>
 </footer>
 
-<!-- Scripts -->
 <script>
 const syllabus = {{ syllabus | tojson | safe }};
 const classSelect = document.getElementById('class');
 const subjectSelect = document.getElementById('subject');
 const topicSelect = document.getElementById('topic');
+const generateBtn = document.getElementById('generateBtn');
+const loadingSpinner = document.getElementById('loadingSpinner');
+const btnText = document.getElementById('btnText');
 
 function populateSubjects() {
     subjectSelect.innerHTML = '<option value="">Select Subject</option>';
@@ -196,6 +195,21 @@ const menuBtn = document.getElementById('menu-btn');
 const mobileMenu = document.getElementById('mobile-menu');
 menuBtn.addEventListener('click', () => {
     mobileMenu.classList.toggle('hidden');
+});
+
+// Form Loading Logic
+const form = document.querySelector('form');
+form.addEventListener('submit', (e) => {
+    generateBtn.disabled = true;
+    btnText.textContent = "Generating... Please wait up to 2 minutes";
+    loadingSpinner.classList.remove('hidden');
+
+    setTimeout(() => {
+        generateBtn.disabled = false;
+        btnText.textContent = "✨ Generate Exam ✨";
+        loadingSpinner.classList.add('hidden');
+        alert("If you faced Internal Server Error, kindly reload and try again.");
+    }, 120000); 
 });
 </script>
 

@@ -11,7 +11,7 @@
     <div class="max-w-5xl mx-auto bg-white shadow-xl rounded-xl p-4 sm:p-6 space-y-6">
         
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-gray-200 space-y-4 sm:space-y-0">
-            <h1 class="text-2xl sm:text-3xl font-bold text-indigo-800">Teacher Approvals</h1>
+            <h1 class="text-2xl sm:text-3xl font-bold text-indigo-800">Teacher Management</h1>
             <a href="{{ url_for('superadmin_dashboard') }}" class="bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition text-center">Back to Dashboard</a>
         </div>
 
@@ -22,28 +22,38 @@
                 <div>
                     <p class="text-lg font-semibold text-gray-800">{{ teacher.name }} <span class="text-sm text-gray-500">({{ teacher.subject }})</span></p>
                     <p class="text-sm text-gray-600">Verified: {{ teacher.verified }}</p>
+
+                    {# Plan Show Logic Start #}
+                    {% set plan = plan_map.get(teacher.id|string) %}
+                    {% if plan %}
+                        <p class="text-sm text-gray-600 mt-1">
+                            Plan: ₹{{ plan.price }} - {{ plan.description }}
+                        </p>
+                    {% else %}
+                        <p class="text-sm text-gray-400 italic mt-1">No Monthly Plan Set</p>
+                    {% endif %}
+                    {# Plan Show Logic End #}
                 </div>
 
-                {% if teacher.verified %}
-                    <span class="text-green-600 font-semibold">Approved</span>
-                {% else %}
-                    <div class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-3 w-full md:w-auto">
-
+                <div class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-3 w-full md:w-auto">
+                
+                    {% if teacher.verified %}
+                        <span class="text-green-600 font-semibold">Approved ✅</span>
+                        <a href="{{ url_for('set_monthly_plan', teacher_id=teacher.id) }}" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm w-full sm:w-auto">Edit Monthly Plan</a>
+                    {% else %}
                         <form action="{{ url_for('set_teacher_login', teacher_id=teacher.id) }}" method="POST" class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full md:w-auto">
                             <input type="text" name="username" placeholder="Set Username" required class="border px-3 py-2 rounded-md focus:outline-indigo-500 text-sm w-full sm:w-auto">
                             <input type="text" name="password" placeholder="Set Password" required class="border px-3 py-2 rounded-md focus:outline-indigo-500 text-sm w-full sm:w-auto">
                             <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm w-full sm:w-auto">Approve & Set Login</button>
                         </form>
 
-                        <a href="{{ url_for('set_monthly_plan', teacher_id=teacher.id) }}"" method="POST" class="flex space-x-2 w-full sm:w-auto">
-                            <input type="number" name="monthly_fee" placeholder="₹ Fee" value="{{ teacher.monthly_fee }}" class="border px-3 py-2 rounded-md focus:outline-indigo-500 text-sm w-full sm:w-28">
-                            <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm w-full sm:w-auto">Update</button>
-                        </form>
+                        <a href="{{ url_for('set_monthly_plan', teacher_id=teacher.id) }}" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm w-full sm:w-auto">Set Monthly Plan</a>
 
                         <a href="{{ url_for('review_teacher', teacher_id=teacher.id, action='reject') }}" class="text-red-600 font-semibold hover:underline text-sm text-center">Reject</a>
+                    {% endif %}
 
-                    </div>
-                {% endif %}
+                </div>
+
             </li>
         {% endfor %}
         </ul>

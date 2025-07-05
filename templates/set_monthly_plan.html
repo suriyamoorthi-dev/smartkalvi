@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Set Monthly Plan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+
+    <div class="bg-white shadow-xl rounded-xl p-6 w-full max-w-md space-y-6">
+        
+        <h2 class="text-2xl font-bold text-indigo-800">Set Monthly Plan for {{ teacher.name }}</h2>
+        
+        <form method="POST" class="space-y-4">
+            
+            <div>
+                <label class="block text-gray-700 mb-1">Price (₹)</label>
+                <input type="number" name="price" value="{{ plan.price if plan else '' }}" required class="w-full border px-3 py-2 rounded-md focus:outline-indigo-500">
+            </div>
+
+            <div>
+                <label class="block text-gray-700 mb-1">Description</label>
+                <textarea name="description" required class="w-full border px-3 py-2 rounded-md focus:outline-indigo-500" rows="3">{{ plan.description if plan else '' }}</textarea>
+            </div>
+
+            <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 w-full">
+                {{ 'Update Plan' if plan else 'Create Plan' }}
+            </button>
+
+        </form>
+
+        <a href="{{ url_for('admin_teachers') }}" class="block text-center text-sm text-indigo-600 hover:underline mt-4">← Back to Teachers</a>
+
+    </div>
+
+</body>
+</html>

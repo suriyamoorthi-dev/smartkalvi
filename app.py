@@ -1482,15 +1482,14 @@ def admin_teachers():
     response = supabase.table("teachers").select("*").execute()
     teachers_data = response.data
 
-    # Fetch all monthly plans
     plans_res = supabase.table("teacher_monthly_plans").select("*").execute()
     plans = plans_res.data if plans_res.data else []
 
-    # Map plans by teacher_id for easy lookup
-    plan_map = {plan['teacher_id']: plan for plan in plans}
+    plan_map = {str(plan['teacher_id']): plan for plan in plans}
+
+    print("Plan Map:", plan_map)
 
     return render_template('admin_teachers.html', teachers=teachers_data, plan_map=plan_map)
-
 
 @app.route('/admin/teacher/set_login/<int:teacher_id>', methods=['POST'])
 def set_teacher_login(teacher_id):
@@ -1524,10 +1523,15 @@ Your teacher account has been approved and your login details are as follows:
 🔐 Username: {username}  
 🔑 Password: {password}  
 
-Please log in to your account and start using the platform.
+You can log in here: https://smartkalvi.onrender.com/teacher/login
 
-Regards,  
-Online Tuition Team
+Please log in to your account and start using the platform.
+We encourage you to log in and start exploring the platform. If you face any issues or need assistance, feel free to contact our support team.
+
+Thank you for being part of SmartKalvi.
+
+Best regards,  
+SmartKalvi Team
 """
             mail.send(msg)
         except Exception as e:
@@ -1545,7 +1549,9 @@ def set_monthly_plan(teacher_id):
         price = request.form['price']
         description = request.form['description']
 
-        existing_plan = supabase.table("teacher_monthly_plans").select("*").eq("teacher_id", teacher_id).single().execute().data
+        # Check if existing plan available
+        existing_plan_res = supabase.table("teacher_monthly_plans").select("*").eq("teacher_id", teacher_id).limit(1).execute()
+        existing_plan = existing_plan_res.data[0] if existing_plan_res.data else None
 
         if existing_plan:
             supabase.table("teacher_monthly_plans").update({
@@ -1563,11 +1569,16 @@ def set_monthly_plan(teacher_id):
 
         return redirect(url_for('admin_teachers'))
 
-    teacher_res = supabase.table("teachers").select("*").eq("id", teacher_id).single().execute()
-    teacher = teacher_res.data
+    # Get teacher details
+    teacher_res = supabase.table("teachers").select("*").eq("id", teacher_id).limit(1).execute()
+    teacher = teacher_res.data[0] if teacher_res.data else None
 
-    plan_res = supabase.table("teacher_monthly_plans").select("*").eq("teacher_id", teacher_id).single().execute()
-    plan = plan_res.data
+    if not teacher:
+        return "Teacher not found", 404
+
+    # Get plan details if exists
+    plan_res = supabase.table("teacher_monthly_plans").select("*").eq("teacher_id", teacher_id).limit(1).execute()
+    plan = plan_res.data[0] if plan_res.data else None
 
     return render_template('set_monthly_plan.html', teacher=teacher, plan=plan)
 

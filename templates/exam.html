@@ -84,5 +84,22 @@
     &copy; 2025 AI Exam Generator. All rights reserved.
   </footer>
 
+  <!-- Loading Spinner Overlay -->
+  <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="flex flex-col items-center space-y-4">
+      <div class="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+      <p class="text-white text-lg font-semibold">Uploading... Please wait</p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.querySelector('form');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+
+    form.addEventListener('submit', () => {
+      loadingOverlay.classList.remove('hidden');
+    });
+  </script>
+
 </body>
 </html>
