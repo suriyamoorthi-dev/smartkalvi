@@ -5,40 +5,85 @@
     <title>Edit My Profile</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Live image preview when user pastes URL
+        function previewAvatar() {
+            const url = document.getElementById('image_url').value;
+            document.getElementById('avatarPreview').src = url;
+        }
+    </script>
 </head>
 <body class="min-h-screen bg-gradient-to-r from-blue-50 to-purple-100 flex items-center justify-center p-4">
 
 <div class="w-full max-w-lg bg-white p-4 sm:p-8 rounded-xl shadow-2xl space-y-6">
     <h1 class="text-xl sm:text-2xl font-bold text-center text-blue-700">✏️ Edit My Profile</h1>
 
-    <form method="POST" class="space-y-4">
-        
+    <!-- ✅ Fixed: form action added -->
+    <form action="/teacher/edit-profile" method="POST" class="space-y-4">
+
+        <!-- Name -->
         <div>
             <label class="block mb-1 font-medium text-gray-700">Name</label>
             <input type="text" name="name" value="{{ teacher.name }}" required class="w-full p-3 border rounded-lg focus:outline-blue-500">
         </div>
 
+        <!-- Subject -->
         <div>
             <label class="block mb-1 font-medium text-gray-700">Subject</label>
             <input type="text" name="subject" value="{{ teacher.subject }}" required class="w-full p-3 border rounded-lg focus:outline-blue-500">
         </div>
 
+        <!-- Bio -->
         <div>
             <label class="block mb-1 font-medium text-gray-700">Bio</label>
             <textarea name="bio" rows="4" class="w-full p-3 border rounded-lg focus:outline-blue-500" required>{{ teacher.bio }}</textarea>
         </div>
 
+        <!-- Experience -->
         <div>
-            <label class="block mb-1 font-medium text-gray-700">Profile Image URL</label>
-            <input type="text" name="image_url" value="{{ teacher.image_url }}" placeholder="Eg: https://ui-avatars.com/api/?name=John+Doe" class="w-full p-3 border rounded-lg focus:outline-blue-500">
-            <p class="text-sm text-gray-500 mt-1">
-                Don't have an image? <a href="https://ui-avatars.com" target="_blank" class="text-indigo-600 underline">Click here</a> to generate a free avatar and paste the link here.
-            </p>
+            <label class="block mb-1 font-medium text-gray-700">Experience (in years)</label>
+            <input type="text" name="experience" value="{{ teacher.experience }}" required class="w-full p-3 border rounded-lg focus:outline-blue-500">
         </div>
 
-        <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700">Update Profile</button>
+        <!-- Rating -->
+        <div>
+            <label class="block mb-1 font-medium text-gray-700">Rating (1 to 5)</label>
+            <input type="number" name="rating" min="1" max="5" step="0.1" value="{{ teacher.rating }}" required class="w-full p-3 border rounded-lg focus:outline-blue-500">
+        </div>
+
+        <!-- Profile Image -->
+        <div> 
+            <label class="block mb-1 font-medium text-gray-700">Profile Image URL</label>
+            <input 
+                type="text" 
+                name="image_url" 
+                id="image_url"
+                oninput="previewAvatar()"
+                value="{{ teacher.image_url }}" 
+                placeholder="Eg: https://api.together.ai/shrt/DRV6phNebKA2nJDH" 
+                class="w-full p-3 border rounded-lg focus:outline-blue-500"
+            >
+            <p class="text-sm text-gray-500 mt-1">
+                Don't have an image? 
+                <a href="https://artifyme.onrender.com" target="_blank" class="text-indigo-600 underline">
+                    Click here
+                </a> to generate your avatar and paste the image link here.
+            </p>
+
+            <!-- Avatar Preview -->
+            <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-600 mb-1">Preview</label>
+                <img id="avatarPreview" src="{{ teacher.image_url }}" class="w-24 h-24 rounded-full border" alt="Avatar Preview">
+            </div>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700">
+            Update Profile
+        </button>
     </form>
 
+    <!-- Back -->
     <div class="text-center">
         <a href="{{ url_for('teacher_dashboard') }}" class="text-blue-600 hover:underline">⬅️ Back to Dashboard</a>
     </div>

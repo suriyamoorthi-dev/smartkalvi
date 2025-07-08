@@ -114,6 +114,44 @@
         <p class="text-gray-600 text-lg text-center">No withdrawal requests found.</p>
         {% endif %}
     </div>
+<!-- Place this BELOW your Withdrawal Requests Section -->
+<div class="bg-white p-6 rounded-xl shadow-custom overflow-x-auto">
+    <h2 class="text-2xl font-bold text-indigo-700 mb-5 flex items-center space-x-2">
+        <i class="fas fa-file-invoice"></i><span>🧾 School Payment Submissions</span>
+    </h2>
+
+    <table class="w-full table-auto border border-gray-300">
+        <thead class="bg-gray-200">
+            <tr>
+                <th class="p-2 border">School Name</th>
+                <th class="p-2 border">Payment Proof</th>
+                <th class="p-2 border">Status</th>
+                <th class="p-2 border">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for school in schools %}
+            {% if school.payment_status == 'pending' and school.payment_proof %}
+            <tr class="text-center">
+                <td class="border p-2 font-semibold">{{ school.name }}</td>
+                <td class="border p-2">
+                    <a href="/static/payment_proofs/{{ school.payment_proof }}" target="_blank" class="text-blue-600 underline">📷 View</a>
+                </td>
+                <td class="border p-2 text-yellow-600 font-bold">Pending</td>
+                <td class="border p-2 space-y-2">
+                    <a href="/superadmin/mark_paid/{{ school.id }}" class="block bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">✅ Approve</a>
+                    <a href="/superadmin/reject_payment/{{ school.id }}" class="block bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">❌ Reject</a>
+                </td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if not schools|selectattr('payment_status', 'equalto', 'pending')|selectattr('payment_proof')|list %}
+    <p class="text-gray-600 text-center mt-6">No new payment proofs submitted.</p>
+    {% endif %}
+</div>
 
 </div>
 

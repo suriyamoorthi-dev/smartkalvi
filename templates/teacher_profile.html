@@ -361,8 +361,10 @@
     <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Back to Tutors</span>
 </a>
 
-            <img src="{{ teacher.image_url if teacher.image_url else 'https://i.pravatar.cc/150?img=' ~ teacher.id }}" alt="{{ teacher.name }}" class="profile-picture">
-        </div>
+        {% if teacher.image_url %}
+  <img src="{{ teacher.image_url }}?v={{ loop.index }}" alt="{{ teacher.name }}" class="w-32 h-32 rounded-full mb-4 object-cover border-4 border-indigo-300 shadow-lg">
+{% endif %}
+</div>
 
         <div class="profile-info">
             <h1>{{ teacher.name }}</h1>
@@ -376,11 +378,7 @@
                     <span class="value">{{ teacher.experience }} Years</span>
                     <span class="label">Experience</span>
                 </div>
-                <div class="stat">
-                    <span class="value">{{ teacher.students_count if teacher.students_count else '120+' }}</span>
-                    <span class="label">Students Taught</span>
                 </div>
-            </div>
             <p class="profile-bio">{{ teacher.bio }}</p>
         </div>
 

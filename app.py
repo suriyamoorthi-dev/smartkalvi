@@ -535,23 +535,12 @@ def school_admin_dashboard():
     return render_template('school_admin_dashboard.html', school=school, total_fee=total_fee)
 
 import datetime  # Make sure this is present at the top of your file
-
 @app.route('/school_admin/pay_now')
 def school_admin_pay_now():
     if 'school_admin_id' not in session:
         return redirect(url_for('school_admin_login'))
 
-    school_id = session['school_id']
-
-    # Correct date calculation with datetime
-    next_due_date = (datetime.date.today() + datetime.timedelta(days=30)).isoformat()
-
-    supabase.table('schools').update({
-        'payment_status': 'active',
-        'next_due_date': next_due_date
-    }).eq('id', school_id).execute()
-
-    return redirect(url_for('school_admin_dashboard'))
+    return render_template('school_pay_now.html')  # This should only have GForm button now
 
 from werkzeug.security import check_password_hash
 
@@ -759,17 +748,24 @@ def calculate_total_fee(school):
 
     return total_fee
 
+@app.route('/superadmin/payments')
+def superadmin_payments():
+    response = supabase.table('schools').select('*').order('payment_status', desc=False).execute()
+    schools = response.data
+    return render_template('superadmin_payments.html', schools=schools)
 
 @app.route('/superadmin/mark_paid/<school_id>')
 def mark_payment_received(school_id):
-    next_due_date = (datetime.date.today() + datetime.timedelta(days=30)).strftime('%Y-%m-%d')
+    today = datetime.date.today()
+    next_due_date = (today + datetime.timedelta(days=30)).strftime('%Y-%m-%d')
 
     supabase.table('schools').update({
         'payment_status': 'active',
-        'next_due_date': next_due_date
+        'next_due_date': next_due_date,
+        'payment_marked_on': today.strftime('%Y-%m-%d')  # optional
     }).eq('id', school_id).execute()
 
-    return redirect(url_for('superadmin_dashboard'))
+    return redirect(url_for('superadmin_payments'))
 
 
 @app.route('/superadmin/get_admin_password/<int:school_id>')
@@ -1176,18 +1172,38 @@ def teacher_dashboard():
                            total_monthly_earning=total_monthly_earning)
 
 
-
 @app.route('/teachers')
 def list_teachers():
     category = request.args.get('category')
 
+    # Step 1: Fetch verified teachers (with or without category)
     if category:
-        response = supabase.table("teachers").select("*").eq("category", category).execute()
+        response = supabase.table("teachers").select("*")\
+            .eq("category", category)\
+            .eq("verified", True)\
+            .execute()
     else:
-        response = supabase.table("teachers").select("*").execute()
+        response = supabase.table("teachers").select("*")\
+            .eq("verified", True)\
+            .execute()
 
     teachers_data = response.data
-    print(teachers_data)
+
+    # Step 2: Fetch all active monthly plans
+    plans_res = supabase.table("teacher_monthly_plans").select("*").eq("active", True).execute()
+    plans = plans_res.data if plans_res.data else []
+
+    # Step 3: Create teacher_id -> plan map
+    plan_map = {str(plan["teacher_id"]): plan for plan in plans}
+
+    # Step 4: Inject fee into each teacher
+    for teacher in teachers_data:
+        tid = str(teacher["id"])
+        if tid in plan_map:
+            teacher["monthly_fee"] = plan_map[tid]["price"]
+        else:
+            teacher["monthly_fee"] = None  # or 0 if you prefer
+
     return render_template('teachers.html', teachers=teachers_data, selected_category=category)
 
 @app.route('/teacher/profile/<int:teacher_id>')
@@ -1474,6 +1490,7 @@ def delete_material(material_id):
     supabase.table("teacher_materials").delete().eq("id", material_id).eq("teacher_id", teacher_id).execute()
 
     return redirect(url_for('teacher_dashboard'))
+
 @app.route('/admin/teachers')
 def admin_teachers():
     if not session.get('superadmin_logged_in'):
@@ -1485,9 +1502,8 @@ def admin_teachers():
     plans_res = supabase.table("teacher_monthly_plans").select("*").execute()
     plans = plans_res.data if plans_res.data else []
 
+    # 🔥 FIXED: Convert teacher_id to string before mapping
     plan_map = {str(plan['teacher_id']): plan for plan in plans}
-
-    print("Plan Map:", plan_map)
 
     return render_template('admin_teachers.html', teachers=teachers_data, plan_map=plan_map)
 
@@ -1757,5 +1773,8 @@ def request_withdrawal():
 
 
 # === Run App ===
+import os
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)

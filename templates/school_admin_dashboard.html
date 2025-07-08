@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>School Admin Dashboard - AI Exam Platform</title>
+    <title>School Admin Dashboard - SmartKalvi</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,6 +20,9 @@
 
             --red-100: #fee2e2;
             --red-700: #b91c1c;
+
+            --yellow-400: #facc15; /* Added for teacher button */
+            --yellow-500: #eab308; /* Darker yellow for hover */
 
             --gray-50: #f9fafb;
             --gray-100: #f3f4f6;
@@ -41,42 +44,47 @@
 
         body {
             margin: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             background-color: var(--gray-50);
             color: var(--gray-800);
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            line-height: 1.5; /* Improved readability */
         }
 
         .header {
             background-color: var(--white);
             color: var(--gray-900);
-            padding: 1.25rem 2rem;
+            padding: 1rem 1.5rem; /* Adjusted padding */
             text-align: center;
             font-size: 1.5rem;
             font-weight: 700;
             border-bottom: 1px solid var(--gray-100);
             box-shadow: var(--shadow-sm);
+            position: sticky; /* Sticky header for better UX */
+            top: 0;
+            z-index: 1000;
         }
 
         .container {
             flex-grow: 1;
             width: 100%;
-            max-width: 720px;
+            max-width: 768px; /* Slightly wider container for desktop */
             margin: 2rem auto;
-            padding: 1.5rem;
+            padding: 0 1.5rem; /* Horizontal padding for smaller screens */
         }
 
-        .welcome-card {
+        .welcome-card, .add-teacher-card { /* Combined styling for consistency */
             background: var(--white);
             border-radius: 12px;
             box-shadow: var(--shadow-md);
-            padding: 2rem 1.5rem;
+            padding: 2rem; /* Consistent padding */
             text-align: center;
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
+            margin-bottom: 2rem;
         }
 
         h2 {
@@ -84,29 +92,59 @@
             font-weight: 700;
             color: var(--gray-900);
             margin: 0;
+            line-height: 1.2;
         }
-        
+
         .welcome-subtitle {
             font-size: 1rem;
             color: var(--gray-500);
+            margin-top: -0.5rem; /* Adjust spacing */
         }
 
         .info-card {
             background: var(--primary-50);
             border: 1px solid var(--primary-100);
-            padding: 1rem;
+            padding: 1.25rem; /* Slightly more padding */
             border-radius: 8px;
             display: flex;
             flex-direction: column;
             gap: 1rem;
             text-align: left;
         }
+        /* Specific styling for the payment warning info-card */
+        .info-card.payment-warning {
+            background-color: var(--red-100);
+            border-color: var(--red-700);
+        }
+        .info-card.payment-warning h3 {
+            color: var(--red-700);
+            font-weight: 700;
+        }
+        .info-card.payment-warning ul {
+            list-style: none; /* Removed default disc style */
+            margin: 0;
+            padding: 0;
+        }
+        .info-card.payment-warning li {
+            margin-bottom: 0.25rem;
+            font-size: 0.95rem;
+            color: var(--gray-700);
+        }
+        .info-card.payment-warning li strong {
+            color: var(--gray-800); /* Make key names slightly darker */
+        }
+        .info-card.payment-warning p {
+            color: var(--red-700);
+            margin-top: 0.75rem;
+            font-weight: 600;
+        }
 
         .info-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
+            flex-wrap: wrap; /* Allow wrapping on small screens */
+            gap: 0.5rem; /* Space between items when wrapped */
         }
 
         .info-item strong {
@@ -115,7 +153,7 @@
         }
 
         .status {
-            padding: 0.25rem 0.75rem;
+            padding: 0.35rem 0.85rem; /* Slightly more padding */
             border-radius: 9999px;
             font-size: 0.875rem;
             font-weight: 500;
@@ -134,8 +172,8 @@
         }
 
         .fee {
-            font-size: 1.125rem;
-            font-weight: 600;
+            font-size: 1.25rem; /* Slightly larger fee */
+            font-weight: 700;
             color: var(--primary-700);
         }
 
@@ -147,14 +185,15 @@
             width: 100%;
             background-color: var(--primary-600);
             color: var(--white);
-            padding: 0.875rem 1.25rem;
+            padding: 0.875rem 1.5rem; /* More horizontal padding */
             text-decoration: none;
             border-radius: 8px;
             font-weight: 600;
             border: 1px solid transparent;
             transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
             box-shadow: var(--shadow-sm);
-            margin-top: 1rem;
+            margin-top: 1rem; /* Consistent spacing */
+            cursor: pointer; /* Indicate clickable */
         }
 
         .btn:hover {
@@ -162,35 +201,37 @@
             transform: translateY(-2px);
             box-shadow: var(--shadow-md);
         }
-        
+
         .btn-secondary {
             background-color: var(--gray-100);
             color: var(--gray-800);
             border-color: var(--gray-300);
         }
-        
+
         .btn-secondary:hover {
-             background-color: var(--gray-300);
+            background-color: var(--gray-300);
+            color: var(--gray-900); /* Darker text on hover */
         }
 
         .btn-pay {
             background-color: var(--green-700);
             animation: pulse 2s infinite;
         }
-        
+
         .btn-pay:hover {
-            background-color: #166534;
+            background-color: #166534; /* Darker green on hover */
+            animation: none; /* Stop pulse on hover */
         }
-        
+
         @keyframes pulse {
-          0%, 100% {
-            transform: scale(1);
-            box-shadow: var(--shadow-md);
-          }
-          50% {
-            transform: scale(1.03);
-            box-shadow: var(--shadow-lg);
-          }
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: var(--shadow-md);
+            }
+            50% {
+                transform: scale(1.02); /* Slightly less intense pulse */
+                box-shadow: var(--shadow-lg);
+            }
         }
 
         .button-grid {
@@ -200,11 +241,90 @@
             margin-top: 1.5rem;
         }
 
+        .add-teacher-btn { /* Specific class for the add teacher button */
+            background-color: var(--yellow-400) !important; /* Use important to override .btn */
+            color: var(--gray-900) !important;
+            font-weight: 700;
+        }
+
+        .add-teacher-btn:hover {
+            background-color: var(--yellow-500) !important;
+            color: var(--gray-900) !important;
+        }
+
+        .ad-placement {
+            background-color: var(--gray-100);
+            border: 1px dashed var(--gray-300);
+            padding: 1.5rem;
+            text-align: center;
+            margin: 2rem auto; /* Consistent margin */
+            border-radius: 8px;
+            color: var(--gray-500);
+            font-size: 0.9rem;
+            max-width: 100%; /* Ensure it fits smaller screens */
+            overflow: hidden; /* Hide overflow if ad content is too wide */
+        }
+
         footer {
             text-align: center;
             font-size: 0.875rem;
             color: var(--gray-500);
             padding: 2rem 1rem;
+            margin-top: auto; /* Push footer to the bottom */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 767px) {
+            .header {
+                padding: 1rem 1rem;
+                font-size: 1.3rem;
+            }
+
+            .container {
+                margin: 1.5rem auto;
+                padding: 0 1rem;
+            }
+
+            .welcome-card, .add-teacher-card {
+                padding: 1.5rem;
+                gap: 1rem;
+                margin-bottom: 1.5rem;
+            }
+
+            h2 {
+                font-size: 1.75rem;
+            }
+
+            .welcome-subtitle {
+                font-size: 0.95rem;
+            }
+
+            .info-card {
+                padding: 1rem;
+            }
+
+            .info-item {
+                flex-direction: column; /* Stack items on very small screens */
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+
+            .info-item strong {
+                width: 100%; /* Full width for strong tag */
+            }
+
+            .fee {
+                font-size: 1.1rem;
+            }
+
+            .status {
+                width: fit-content; /* Adjust width to content */
+            }
+
+            .btn {
+                padding: 0.8rem 1rem;
+                font-size: 0.95rem;
+            }
         }
 
         @media (min-width: 640px) {
@@ -222,6 +342,18 @@
                 width: auto;
                 flex: 1;
             }
+
+            .info-item {
+                flex-direction: row; /* Back to row for larger screens */
+                align-items: center;
+                gap: initial;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                padding: 0; /* Remove horizontal padding on larger screens */
+            }
         }
     </style>
 </head>
@@ -232,6 +364,10 @@
 </header>
 
 <div class="container">
+    <div class="ad-placement">
+        <p>Advertisement Space - Top Banner</p>
+    </div>
+
     <div class="welcome-card">
         <h2>Welcome, {{ school.name }}</h2>
         <p class="welcome-subtitle">Your school administration dashboard.</p>
@@ -252,7 +388,30 @@
         </div>
 
         {% if school.payment_status != 'active' %}
-            <a href="/school_admin/pay_now" class="btn btn-pay">💳 Pay Now</a>
+        <div class="info-card payment-warning" style="margin-top: 1.5rem;">
+    <div style="flex-direction: column; align-items: flex-start; gap: 0.75rem; width: 100%;">
+        <h3 style="margin-bottom: 0.5rem; text-align: left;">Pay via GPay / UPI / Bank Transfer:</h3>
+        <ul style="text-align: left;">
+            <li><strong>GPay Number:</strong> +91 6383750156</li>
+            <li><strong>UPI ID:</strong> suriyamoorthi8920@oksbi</li>
+            <li><strong>Bank Name:</strong> BOI Bank</li>
+            <li><strong>Account No:</strong> 815210110031645</li>
+            <li><strong>IFSC:</strong> BKID0008152</li>
+        </ul>
+        <a href="upi://pay?pa=suriyamoorthi8920@oksbi&pn=Suriyamoorthi&cu=INR" target="_blank" style="margin-top: 0.5rem; font-weight: bold; color: green; text-decoration: underline;">
+            💸 Click here to pay directly via GPay / UPI
+        </a>
+        <p style="margin-top: 0.75rem; font-size: 0.875rem; text-align: left;">
+            <strong>⚠️ Important: Upload your payment proof after paying.</strong>
+        </p>
+    </div>
+</div>
+<a href="https://forms.gle/BH8c5QNN48cTKgB3A" target="_blank" class="btn btn-pay" style="margin-top: 1rem;">
+            📤 Fill Google Form & Upload Payment Proof
+        </a>
+        <p class="welcome-subtitle" style="margin-top: 0.75rem; font-size: 0.9rem;">
+            We'll activate your account after verifying your uploaded proof from the form.
+        </p>
         {% endif %}
 
         <div class="button-grid">
@@ -260,10 +419,26 @@
             <a href="/school_admin/performance" class="btn">View Performance</a>
         </div>
     </div>
+
+    <div class="welcome-card add-teacher-card">
+        <h2>👩‍🏫 Add a Teacher to tutor {{ school.name }}</h2>
+        <p class="welcome-subtitle">Create teacher profiles, set subjects, and earn.</p>
+        <a href="/become-a-tutor"
+           class="btn add-teacher-btn">
+            ➕ Add a New Teacher
+        </a>
+        <p class="welcome-subtitle" style="margin-top: 0.75rem; font-size: 0.9rem;">
+            Encourage quality teaching by onboarding skilled tutors.
+        </p>
+    </div>
+
+    <div class="ad-placement">
+        <p>Advertisement Space - Bottom Banner</p>
+    </div>
 </div>
 
 <footer>
-    &copy; 2025 AI Exam Platform - Tamil Nadu Syllabus
+    &copy; 2025 SmartKalvi - Tamil Nadu Syllabus
 </footer>
 
 </body>
