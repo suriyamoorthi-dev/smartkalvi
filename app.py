@@ -1835,7 +1835,7 @@ def subscribe_teacher(teacher_id):
         }).execute()
 
         flash("✅ Subscription submitted for approval.")
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('booking_success.html'))
 
     teacher_data["monthly_fee"] = plan["price"]
     return render_template('subscribe_plan.html', teacher=teacher_data)
@@ -1917,6 +1917,9 @@ def request_withdrawal():
 
 import os
 
+import os
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    debug_mode = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)
