@@ -2,486 +2,137 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <title>{{ teacher.name }} - Profile</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ teacher.name }}'s Profile - AI Tuition</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
-        body {
-            /* Vibrant, modern background gradient */
-            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh; /* Ensure full viewport height */
-            display: flex;
-            flex-direction: column;
-        }
-
-        h1, h2, h3, .profile-info h1 {
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .container {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center; /* Center content vertically */
-            padding-top: 2rem; /* Give some space from the top */
-            padding-bottom: 2rem;
-        }
-
-        .profile-container {
-            max-width: 900px;
-            margin: auto;
-            border-radius: 1.5rem; /* More rounded corners */
-            overflow: hidden; /* Important for shadow and overflow */
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15); /* Stronger, diffused shadow */
-            background-color: #ffffff; /* Ensure white background for main content */
-            position: relative; /* For floating elements */
-        }
-
-        .profile-header-banner {
-            /* Modern, vibrant banner background */
-            background: linear-gradient(45deg, #6a11cb 0%, #2575fc 100%); /* Deep purple to bright blue */
-            padding-top: 2rem; /* Initial padding, adjust below for picture */
-            padding-bottom: 0; /* No bottom padding here, adjusted for image */
-            color: white;
-            text-align: center;
-            position: relative; /* For profile picture positioning */
-            /* Add this to allow the image to extend the banner's height */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-bottom: 80px; /* Space for the bottom half of the image to sit in the banner */
-        }
-
-        .profile-picture {
-            width: 150px; /* Slightly larger picture */
-            height: 150px;
-            border-radius: 50%;
-            border: 6px solid #ffffff; /* Thicker white border */
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3); /* More prominent shadow */
-            position: absolute;
-            bottom: -75px; /* Position half its height below the banner bottom */
-            left: 50%;
-            transform: translateX(-50%); /* Center horizontally */
-            object-fit: cover;
-            z-index: 10; /* Ensure it's above other elements */
-        }
-
-        .back-btn {
-            position: absolute;
-            top: 1.5rem; /* Adjusted for better spacing */
-            left: 1.5rem;
-            z-index: 20; /* Ensure it's above everything */
-            background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white */
-            border: none;
-            color: white;
-            padding: 0.6rem 1rem;
-            border-radius: 0.75rem;
-            font-size: 1rem;
-            transition: background-color 0.3s ease;
-            backdrop-filter: blur(5px); /* Subtle blur behind the button */
-        }
-        .back-btn:hover {
-            background-color: rgba(255, 255, 255, 0.3);
-            color: white;
-        }
-
-        .profile-info {
-            padding: 1rem 2rem 0; /* Adjust padding for info section */
-            text-align: center;
-            margin-top: 80px; /* Space to clear the bottom half of the profile picture */
-        }
-        .profile-info h1 {
-            font-weight: 800; /* Bolder name */
-            font-size: 2.2rem; /* Larger name font */
-            color: #212529; /* Darker text for name */
-            margin-bottom: 0.25rem;
-        }
-        .profile-info .lead {
-            font-size: 1.2rem;
-            color: #555;
-            font-weight: 500;
-        }
-
-        .stats {
-            display: flex;
-            justify-content: center;
-            gap: 2rem; /* Increased gap */
-            margin: 1.5rem 0; /* More vertical space */
-            flex-wrap: wrap;
-            padding: 0 1rem; /* Padding for stats on smaller screens */
-        }
-        .stat {
-            text-align: center;
-            min-width: 90px; /* Wider stats for better presentation */
-            padding: 0.5rem 0;
-        }
-        .stat .value {
-            font-size: 1.6rem; /* Larger values */
-            font-weight: 700;
-            color: #2575fc; /* Accent color for values */
-        }
-        .stat .label {
-            font-size: 0.95rem; /* Slightly larger label */
-            color: #6c757d;
-            margin-top: 0.2rem;
-        }
-
-        .profile-bio {
-            font-size: 1.05rem; /* Slightly larger bio text */
-            line-height: 1.6;
-            max-width: 700px;
-            margin: 1rem auto 2rem auto; /* More bottom margin */
-            color: #495057;
-            padding: 0 2rem; /* Padding for bio on smaller screens */
-        }
-
-        .main-content {
-            background-color: #ffffff; /* White background for this section */
-            padding: 2rem; /* Increased padding */
-            border-bottom-left-radius: 1.5rem;
-            border-bottom-right-radius: 1.5rem;
-        }
-
-        .nav-tabs {
-            border-bottom: 2px solid #e0e0e0; /* More defined tab border */
-            margin-bottom: 1.5rem; /* More space below tabs */
-        }
-        .nav-tabs .nav-link {
-            font-weight: 600;
-            color: #6c757d; /* Muted color for inactive tabs */
-            padding: 1rem 1.25rem; /* Larger clickable area */
-            transition: all 0.3s ease;
-            border: none; /* Remove default Bootstrap borders */
-            border-bottom: 3px solid transparent; /* Prepare for active state underline */
-        }
-        .nav-tabs .nav-link.active {
-            color: #6a11cb; /* Primary color for active tab */
-            border-bottom-color: #6a11cb; /* Underline effect */
-            background-color: transparent; /* Ensure no background on active */
-        }
-        .nav-tabs .nav-link:hover:not(.active) {
-            color: #2575fc; /* Accent color on hover for inactive tabs */
-            border-bottom-color: #2575fc; /* Hover underline */
-        }
-
-        .list-group-item {
-            border: 1px solid #e0e0e0; /* Subtle border for list items */
-            border-radius: 0.75rem; /* Rounded list items */
-            margin-bottom: 0.75rem; /* Space between items */
-            padding: 1.25rem; /* More padding */
-            transition: all 0.2s ease;
-        }
-        .list-group-item:hover {
-            transform: translateY(-3px); /* Lift on hover */
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.08); /* Subtle shadow on hover */
-        }
-        .list-group-item a { /* For material links */
-            text-decoration: none;
-            color: inherit;
-        }
-        .list-group-item a:hover {
-            color: #6a11cb; /* Highlight link on hover */
-        }
-
-        .btn-success {
-            background-color: #28a745; /* Standard success green */
-            border-color: #28a745;
-            padding: 0.6rem 1.5rem; /* Larger button */
-            font-weight: 600;
-            border-radius: 0.5rem;
-            transition: all 0.2s ease;
-        }
-        .btn-success:hover {
-            background-color: #218838;
-            border-color: #1e7e34;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.2);
-        }
-        .badge.bg-danger {
-            background-color: #dc3545 !important; /* Consistent danger red */
-            font-size: 0.9em;
-            padding: 0.5em 0.8em;
-            border-radius: 0.5rem;
-        }
-        
-        /* Empty state messages */
-        .empty-state {
-            padding: 3rem;
-            background-color: #f8f9fa;
-            border-radius: 0.75rem;
-            text-align: center;
-            color: #6c757d;
-            font-size: 1.1rem;
-            border: 1px dashed #ced4da; /* Dashed border for empty states */
-        }
-        .empty-state i {
-            font-size: 3rem; /* Larger icon */
-            margin-bottom: 1rem;
-            color: #adb5bd;
-        }
-
-        .alert-info {
-            background-color: #e3f2fd; /* Light blue background */
-            color: #0d6efd; /* Dark blue text */
-            border-color: #b3e5fc;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            font-size: 1.1rem;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-        }
-
-        /* Responsive Adjustments */
-        @media (max-width: 768px) {
-            .profile-header-banner {
-                padding-bottom: 60px; /* Adjusted for smaller image */
-            }
-            .profile-picture {
-                width: 120px;
-                height: 120px;
-                bottom: -60px; /* Half of new height */
-            }
-            .profile-info {
-                margin-top: 65px; /* Adjusted to clear smaller image */
-            }
-            .profile-info h1 {
-                font-size: 1.8rem;
-            }
-            .profile-info .lead {
-                font-size: 1rem;
-            }
-            .stats {
-                gap: 1rem;
-                margin: 1rem 0;
-            }
-            .stat .value {
-                font-size: 1.4rem;
-            }
-            .stat .label {
-                font-size: 0.85rem;
-            }
-            .profile-bio {
-                font-size: 0.95rem;
-                margin-bottom: 1.5rem;
-                padding: 0 1.5rem;
-            }
-            .main-content {
-                padding: 1.5rem;
-            }
-            .nav-tabs .nav-link {
-                padding: 0.8rem 1rem;
-                font-size: 0.9rem;
-            }
-            .list-group-item {
-                flex-direction: column; /* Stack content vertically on small screens */
-                align-items: flex-start !important; /* Align left */
-            }
-            .list-group-item div {
-                margin-bottom: 0.5rem; /* Space between info and button */
-            }
-        }
-
-        @media (max-width: 576px) {
-            .profile-container {
-                border-radius: 1rem;
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            }
-            .profile-header-banner {
-                padding-bottom: 50px; /* Adjusted for smallest image */
-            }
-            .profile-picture {
-                width: 100px;
-                height: 100px;
-                border-width: 4px;
-                bottom: -50px; /* Half of new height */
-            }
-            .back-btn {
-                top: 1rem;
-                left: 1rem;
-                padding: 0.5rem 0.8rem;
-                font-size: 0.9rem;
-            }
-            .profile-info {
-                margin-top: 55px; /* Adjusted to clear smallest image */
-            }
-            .profile-info h1 {
-                font-size: 1.5rem;
-            }
-            .profile-info .lead {
-                font-size: 0.9rem;
-            }
-            .stats {
-                gap: 0.8rem;
-            }
-            .stat {
-                min-width: 70px;
-            }
-            .stat .value {
-                font-size: 1.2rem;
-            }
-            .stat .label {
-                font-size: 0.8rem;
-            }
-            .profile-bio {
-                font-size: 0.9rem;
-                margin: 0.75rem auto 1rem auto;
-                padding: 0 1rem;
-            }
-            .main-content {
-                padding: 1rem;
-            }
-            .nav-tabs .nav-link {
-                padding: 0.7rem 0.7rem;
-                font-size: 0.85rem;
-            }
-            .list-group-item {
-                padding: 1rem;
-            }
-            .btn-success {
-                padding: 0.5rem 1rem;
-                font-size: 0.9rem;
-            }
-            .empty-state {
-                padding: 1.5rem;
-                font-size: 1rem;
-            }
-            .empty-state i {
-                font-size: 2.5rem;
-            }
+        /* Optional: for smoother transitions on hover */
+        .transition-all {
+            transition: all 0.3s ease-in-out;
         }
     </style>
 </head>
-<body>
-<div class="container py-3">
-    <div class="profile-container">
-        <div class="profile-header-banner">
-            <a href="{{ url_for('list_teachers') }}" class="btn back-btn">
-    <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Back to Tutors</span>
-</a>
+<body class="bg-slate-100 font-sans flex items-center justify-center min-h-screen p-4">
 
+<div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden my-8">
+
+    <div class="relative">
+        <div class="h-32 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
         {% if teacher.image_url %}
-  <img src="{{ teacher.image_url }}?v={{ loop.index }}" alt="{{ teacher.name }}" class="w-32 h-32 rounded-full mb-4 object-cover border-4 border-indigo-300 shadow-lg">
-{% endif %}
-</div>
-
-        <div class="profile-info">
-            <h1>{{ teacher.name }}</h1>
-            <p class="lead mb-2">{{ teacher.subject }} Tutor</p>
-            <div class="stats">
-                <div class="stat">
-                    <span class="value">{{ '%.1f' % teacher.rating }} ★</span>
-                    <span class="label">Rating</span>
-                </div>
-                <div class="stat">
-                    <span class="value">{{ teacher.experience }} Years</span>
-                    <span class="label">Experience</span>
-                </div>
-                </div>
-            <p class="profile-bio">{{ teacher.bio }}</p>
+        <div class="absolute left-8 top-32 -translate-y-1/2">
+            <img src="{{ teacher.image_url }}" alt="{{ teacher.name }}" class="w-24 h-24 rounded-full ring-4 ring-white shadow-lg object-cover">
         </div>
-
-        <div class="main-content">
-            <ul class="nav nav-tabs nav-fill mb-3" id="myTab" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="slots-tab" data-bs-toggle="tab" data-bs-target="#slots-tab-pane" type="button" role="tab" aria-controls="slots-tab-pane" aria-selected="true">Available Slots</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="materials-tab" data-bs-toggle="tab" data-bs-target="#materials-tab-pane" type="button" role="tab" aria-controls="materials-tab-pane" aria-selected="false">Study Materials</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews-tab-pane" type="button" role="tab" aria-controls="reviews-tab-pane" aria-selected="false">Student Reviews</button>
-                </li>
-            </ul>
-
-            <div class="tab-content">
-                <div class="tab-pane fade show active" id="slots-tab-pane" role="tabpanel" tabindex="0">
-                    {% if slots %}
-                        <ul class="list-group">
-                            {% for slot in slots %}
-                                <li class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
-                                    <div>
-                                        <h5 class="mb-1 text-primary"><i class="bi bi-calendar3 me-2"></i>{{ slot.date }}</h5>
-                                        <p class="mb-1 text-muted"><i class="bi bi-clock me-2"></i>{{ slot.start_time }} - {{ slot.end_time }}</p>
-                                        <p class="mb-0 text-secondary small">Seats: {{ slot.total_booked }}/{{ slot.seat_limit }}</p>
-                                    </div>
-                                    {% if slot.total_booked >= slot.seat_limit %}
-                                        <span class="badge bg-danger mt-2 mt-md-0">Fully Booked</span>
-                                    {% else %}
-                                        <a href="{{ url_for('book_slot', slot_id=slot.id) }}" class="btn btn-success mt-2 mt-md-0">Book Now</a>
-                                    {% endif %}
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <div class="empty-state">
-                            <i class="bi bi-calendar-x"></i>
-                            <p>No available slots at the moment. Please check back later!</p>
-                        </div>
-                    {% endif %}
-                </div>
-
-                <div class="tab-pane fade" id="materials-tab-pane" role="tabpanel" tabindex="0">
-                    {% if materials %}
-                        <ul class="list-group">
-                            {% for material in materials %}
-                                <a href="{{ material.file_url }}" target="_blank" class="list-group-item list-group-item-action">
-                                    <h5 class="mb-1 text-primary"><i class="bi bi-file-earmark-text me-2"></i>{{ material.title }}</h5>
-                                    <p class="mb-0 text-muted">{{ material.description }}</p>
-                                </a>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <div class="empty-state">
-                            <i class="bi bi-journal-x"></i>
-                            <p>No study materials uploaded yet.</p>
-                        </div>
-                    {% endif %}
-                </div>
-                <div class="tab-pane fade" id="reviews-tab-pane" role="tabpanel" tabindex="0">
-    {% if reviews %}
-        <ul class="list-group">
-            {% for review in reviews %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="mb-0 text-primary">{{ review.student_name }}</h5>
-                        <span class="text-warning fs-5">{{ '★' * review.rating }}</span>
-                    </div>
-                    <p class="mb-0 text-secondary">{{ review.comment }}</p>
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <div class="empty-state">
-            <i class="bi bi-star-half"></i>
-            <p>Be the first to review {{ teacher.name }}!</p>
-        </div>
-    {% endif %}
-
-    <!-- Add Review Button -->
-    <div class="text-center mt-3">
-        <a href="{{ url_for('review_teacher', teacher_id=teacher.id) }}" class="btn btn-success">
-            <i class="bi bi-pencil-square me-1"></i> Add Review
-        </a>
+        {% endif %}
     </div>
-</div>
 
+    <div class="pt-16 px-6 pb-6 space-y-4">
+        <div class="flex items-start justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">{{ teacher.name }}</h1>
+                <p class="text-md text-gray-600 flex items-center gap-2"><i class="fas fa-book text-indigo-500"></i>{{ teacher.subject }}</p>
+            </div>
+            {% if is_active_subscriber %}
+            <span class="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">Subscribed</span>
+            {% endif %}
+        </div>
 
-            
-
-       
-            {% if monthly_plan %}
-                <div class="alert alert-info text-center my-4">
-                    <strong>Monthly Tuition Plan:</strong> <span class="fw-bold fs-4 text-primary">₹{{ monthly_plan.price }}</span> <br>
-                    <small>{{ monthly_plan.description }}</small>
-                    <a href="#" class="btn btn-primary mt-3">Enroll Now</a> </div>
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+            {% if teacher.rating %}
+            <div class="flex items-center text-yellow-500 space-x-1">
+                {% for i in range(1, 6) %}
+                    {% if i <= teacher.rating|int %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star text-gray-300"></i>{% endif %}
+                {% endfor %}
+                <span class="text-gray-500 ml-1 font-medium">({{ teacher.rating }}/5)</span>
+            </div>
             {% endif %}
 
+            {% if monthly_plan %}
+            <p class="text-gray-700 flex items-center gap-2"><i class="fas fa-rupee-sign text-pink-500"></i><span class="font-semibold">{{ monthly_plan.price }}</span> / month</p>
+            {% endif %}
+        </div>
+        
+        {% if active_subscription %}
+            <p class="text-xs text-gray-400 font-medium">Subscription valid until: {{ active_subscription.end_date }}</p>
+        {% endif %}
+    </div>
+
+    <div class="px-6 pb-6 space-y-6 bg-white">
+
+        <div class="bg-slate-50 p-4 rounded-lg shadow-sm">
+            <h2 class="text-lg font-semibold text-purple-800 flex items-center gap-3 mb-3"><i class="fas fa-book-open"></i>Study Materials</h2>
+            {% if materials %}
+            <ul class="space-y-2 text-sm">
+                {% for mat in materials %}
+                <li class="p-2 rounded-md hover:bg-slate-200 transition-all">
+                    <a href="{{ mat.link }}" class="text-blue-600 hover:underline font-medium" target="_blank"><i class="fas fa-link mr-2 text-gray-400"></i>{{ mat.title }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-sm text-gray-500">No materials have been uploaded yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="bg-slate-50 p-4 rounded-lg shadow-sm">
+            <h2 class="text-lg font-semibold text-green-800 flex items-center gap-3 mb-3"><i class="fas fa-calendar-check"></i>Available Slots</h2>
+            {% if is_active_subscriber %}
+                {% if slots %}
+                <ul class="space-y-2 text-sm">
+                    {% for slot in slots %}
+                    <li class="flex items-center justify-between p-2 rounded-md hover:bg-slate-200 transition-all">
+                        <span class="font-mono text-gray-700">{{ slot.date }} | {{ slot.start_time }} - {{ slot.end_time }}</span>
+                        {% if not slot.is_booked %}
+                        <a href="/book-slot/{{ slot.id }}" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-full font-semibold hover:bg-blue-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Book Now</a>
+                        {% else %}
+                        <span class="text-red-600 text-xs font-bold">Booked</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-sm text-gray-500">No new slots are available right now. Please check back later.</p>
+                {% endif %}
+            {% else %}
+            <div class="bg-indigo-100 text-center text-indigo-900 p-4 rounded-lg">
+                <i class="fas fa-lock text-2xl mb-2"></i>
+                <p class="font-semibold mb-3">Unlock Available Slots</p>
+                <p class="text-sm mb-4">You need to subscribe to view and book available time slots with this teacher.</p>
+                <a href="/subscribe/{{ teacher.id }}" class="inline-block bg-indigo-600 text-white px-6 py-2 rounded-full font-bold hover:bg-indigo-700 transition-all shadow-md">Subscribe Now</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="bg-slate-50 p-4 rounded-lg shadow-sm">
+            <h2 class="text-lg font-semibold text-pink-700 flex items-center gap-3 mb-3"><i class="fas fa-comments"></i>Reviews</h2>
+            {% if reviews %}
+            <ul class="space-y-4 text-sm">
+                {% for r in reviews %}
+                <li class="bg-white p-3 rounded-md border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between mb-1">
+                        <p class="font-bold text-gray-800">{{ r.student_name }}</p>
+                        <div class="text-yellow-500 text-xs">
+                            {% for i in range(1, 6) %}{% if i <= r.rating|int %}<i class="fas fa-star text-yellow-400"></i>{% else %}<i class="far fa-star text-gray-300"></i>{% endif %}{% endfor %}
+                        </div>
+                    </div>
+                    <p class="text-gray-600">{{ r.comment }}</p>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-sm text-gray-500">Be the first to leave a review!</p>
+            {% endif %}
+
+            {% if is_active_subscriber %}
+            <div class="mt-4 text-center">
+                <a href="/review/{{ teacher.id }}" class="inline-block bg-pink-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-pink-700 transition-all shadow-md">
+                    <i class="fas fa-pencil-alt mr-2"></i>Write a Review
+                </a>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

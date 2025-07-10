@@ -960,14 +960,12 @@ def superadmin_delete_question(question_id):
 
     flash("✅ Question deleted successfully", "success")
     return redirect(url_for('superadmin_manage_questions'))
-
 @app.route('/student_login', methods=['GET', 'POST'])
 def student_login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
 
-        # Fetch student from Supabase safely
         response = supabase.table('students').select('*').eq('username', username).limit(1).execute()
 
         if not response.data:
@@ -975,35 +973,29 @@ def student_login():
 
         student = response.data[0]
 
-        # Fetch school details
+        # School check
         school_response = supabase.table('schools').select('*').eq('id', student['school_id']).limit(1).execute()
-
         if not school_response.data:
-            return "❌ School information not found", 500
+            return "❌ School info not found", 500
 
         school = school_response.data[0]
-
-        # Payment Status Check
         today = datetime.date.today()
-        next_due_date = None
-        if school.get('next_due_date'):
-            next_due_date = datetime.datetime.strptime(school['next_due_date'], '%Y-%m-%d').date()
 
         if school.get('payment_status') != 'active':
-            return "❌ Access Denied. Your school has not paid the fees. Please contact your school admin.", 403
+            return "❌ Access Denied. Your school has not paid."
 
-        if next_due_date and today > next_due_date:
-            return "❌ Access Denied. Your school's subscription has expired. Please contact your school admin to renew.", 403
+        if school.get('next_due_date') and today > datetime.datetime.strptime(school['next_due_date'], '%Y-%m-%d').date():
+            return "❌ School subscription expired.", 403
 
-        # Password Check
+        # Password match
         if check_password_hash(student['password'], password):
             session['student_id'] = student['id']
             session['student_name'] = student['name']
-            session['student_class'] = student['class_level']  # ✅ Corrected key
+            session['student_class'] = student['class_level']
             session['school_name'] = school['name']
             return redirect(url_for('dashboard'))
 
-        return "❌ Invalid username or password", 401
+        return "❌ Invalid credentials", 401
 
     return render_template('student_login.html')
 
@@ -1027,11 +1019,16 @@ def doubt_solver():
         
         if question:
             prompt = (
-                f"Explain this question to a Tamil Nadu school student in a very simple way. "
-                f"Give real-life examples and shortcut tricks if possible. "
-                f"Avoid complex language. Question:\n{question}\n\n"
-                f"Your Answer:"
-            )
+    f"You are a friendly teacher helping an Indian school student (CBSE or Tamil Nadu board, class 6–12). "
+    f"Explain the answer in simple English only. Don't reply in Hindi. "
+    f"Use Tamil-English mix only if needed, but no Hindi. "
+    f"Break it step-by-step. Use real-life examples like school, autos, mobile recharge, etc. "
+    f"If it's math or science, give easy tips or memory tricks.\n\n"
+    f"📘 Question: {question}\n\n"
+    f"👨‍🏫 Answer (in simple English):"
+)
+
+
             
             headers = {
                 "Authorization": f"Bearer {DOUBT_SOLVER_API_KEY}",
@@ -1070,24 +1067,31 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-
 @app.route('/teacher/login', methods=['GET', 'POST'])
 def teacher_login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
 
-        res = supabase.table("teachers").select("*").eq("username", username).eq("password", password).eq("verified", True).single().execute()
+        # ✅ Safe fetch with .limit(1)
+        res = supabase.table("teachers").select("*")\
+            .eq("username", username)\
+            .eq("password", password)\
+            .eq("verified", True)\
+            .limit(1)\
+            .execute()
         teacher_data = res.data
 
         if teacher_data:
+            teacher = teacher_data[0]
             session['teacher_logged_in'] = True
-            session['teacher_id'] = teacher_data['id']
+            session['teacher_id'] = teacher['id']
             return redirect(url_for('teacher_dashboard'))
         else:
             return render_template('teacher_login.html', error="Invalid credentials or not approved yet.")
 
     return render_template('teacher_login.html')
+
 @app.route('/find_tutors')
 def find_tutors():
     subject_filter = request.args.get('subject', '')  # Get subject from query params
@@ -1118,13 +1122,15 @@ def teacher_dashboard():
 
     teacher_id = session['teacher_id']
 
-    # Fetch teacher
-    teacher_res = supabase.table("teachers").select("*").eq("id", teacher_id).single().execute()
-    teacher = teacher_res.data
+    # ✅ Safe fetch teacher
+    teacher_res = supabase.table("teachers").select("*").eq("id", teacher_id).limit(1).execute()
+    teacher_data = teacher_res.data
 
-    if not teacher:
+    if not teacher_data:
         session.pop('teacher_id', None)
         return redirect(url_for('teacher_login'))
+
+    teacher = teacher_data[0]
 
     # Fetch slots
     slots_res = supabase.table("available_slots").select("*").eq("teacher_id", teacher_id).execute()
@@ -1171,19 +1177,18 @@ def teacher_dashboard():
                            total_students=total_students,
                            total_monthly_earning=total_monthly_earning)
 
-
 @app.route('/teachers')
 def list_teachers():
     category = request.args.get('category')
 
     # Step 1: Fetch verified teachers (with or without category)
     if category:
-        response = supabase.table("teachers").select("*")\
+        response = supabase.table("teachers").select("id, name, subject, image_url, bio, rating, verified, category")\
             .eq("category", category)\
             .eq("verified", True)\
             .execute()
     else:
-        response = supabase.table("teachers").select("*")\
+        response = supabase.table("teachers").select("id, name, subject, image_url, bio, rating, verified, category")\
             .eq("verified", True)\
             .execute()
 
@@ -1199,25 +1204,20 @@ def list_teachers():
     # Step 4: Inject fee into each teacher
     for teacher in teachers_data:
         tid = str(teacher["id"])
-        if tid in plan_map:
-            teacher["monthly_fee"] = plan_map[tid]["price"]
-        else:
-            teacher["monthly_fee"] = None  # or 0 if you prefer
+        teacher["monthly_fee"] = plan_map.get(tid, {}).get("price")
 
     return render_template('teachers.html', teachers=teachers_data, selected_category=category)
 
 @app.route('/teacher/profile/<int:teacher_id>')
 def teacher_profile(teacher_id):
-    
     teacher_res = supabase.table("teachers").select("*").eq("id", teacher_id).single().execute()
     teacher = teacher_res.data
-
     if not teacher:
         return "Teacher not found", 404
 
-    # Monthly Plan Safe Fetch
-    monthly_plan_res = supabase.table("monthly_plans").select("*").eq("teacher_id", teacher_id).execute()
-    plans = monthly_plan_res.data
+    # Monthly Plan
+    plan_res = supabase.table("teacher_monthly_plans").select("*").eq("teacher_id", teacher_id).eq("active", True).limit(1).execute()
+    plans = plan_res.data
     monthly_plan = plans[0] if plans else None
 
     # Slots
@@ -1232,27 +1232,47 @@ def teacher_profile(teacher_id):
     reviews_res = supabase.table("reviews").select("*").eq("teacher_id", teacher_id).execute()
     reviews = reviews_res.data if reviews_res.data else []
 
-    return render_template("teacher_profile.html", teacher=teacher, slots=slots, materials=materials, reviews=reviews, monthly_plan=monthly_plan)
+    # ✅ Subscription check (corrected to use student_id)
+    student_id = session.get("student_id")
+    is_active_subscriber = False
 
+    if student_id:
+        sub_res = supabase.table("subscriptions")\
+            .select("*")\
+            .eq("teacher_id", teacher_id)\
+            .eq("student_id", student_id)\
+            .eq("status", "paid")\
+            .execute()
 
+        from datetime import datetime
+        today = datetime.today().date()
+        for sub in sub_res.data:
+            end_date = datetime.strptime(sub["end_date"], "%Y-%m-%d").date()
+            if end_date >= today:
+                is_active_subscriber = True
+                break
+
+    return render_template("teacher_profile.html", 
+        teacher=teacher, 
+        slots=slots, 
+        materials=materials, 
+        reviews=reviews, 
+        monthly_plan=monthly_plan,
+        is_active_subscriber=is_active_subscriber
+    )
 @app.route('/book-slot/<int:slot_id>', methods=['GET', 'POST'])
 def book_slot(slot_id):
-    # Fetch slot details
     slot_res = supabase.table("available_slots").select("*").eq("id", slot_id).single().execute()
     slot_data = slot_res.data
-
     if not slot_data:
         return "Slot not found", 404
 
-    # Fetch teacher details
     teacher_res = supabase.table("teachers").select("*").eq("id", slot_data["teacher_id"]).single().execute()
     teacher_data = teacher_res.data
 
-    # Count existing bookings for this slot
+    # Count bookings
     bookings_res = supabase.table("bookings").select("id").eq("slot_id", slot_id).execute()
-    existing_bookings = bookings_res.data
-    total_booked = len(existing_bookings)
-
+    total_booked = len(bookings_res.data)
     seat_limit = 30
 
     if total_booked >= seat_limit:
@@ -1260,38 +1280,52 @@ def book_slot(slot_id):
 
     if request.method == 'POST':
         student_name = request.form['student_name']
-        student_email = request.form['student_email']
+        student_id = session.get("student_id")
+        if not student_id:
+            return redirect(url_for('student_login'))
+
+        # ✅ Check subscription with student_id
+        sub_res = supabase.table("subscriptions") \
+            .select("*") \
+            .eq("student_id", student_id) \
+            .eq("teacher_id", slot_data["teacher_id"]) \
+            .eq("status", "paid") \
+            .execute()
+
+        if not sub_res.data:
+            flash("Please subscribe to this teacher before booking a slot.")
+            return redirect(url_for('subscribe_teacher', teacher_id=slot_data["teacher_id"]))
+
         meet_link = teacher_data.get("meet_link", "")
 
+        # ✅ Insert booking with student_id
         supabase.table("bookings").insert({
             "student_name": student_name,
-            "student_email": student_email,
+            "student_id": student_id,
             "teacher_id": slot_data["teacher_id"],
             "slot_id": slot_id,
-            "payment_status": "pending",
+            "payment_status": "paid",
             "meeting_link": meet_link
         }).execute()
 
-        # If after booking, total reaches seat limit, mark slot as fully booked
+        # Mark full if needed
         if total_booked + 1 >= seat_limit:
             supabase.table("available_slots").update({"is_booked": True}).eq("id", slot_id).execute()
 
-        # Send confirmation email
+        # Send mail (optional)
         msg = Message(
-            subject="Booking Confirmation - Your Class is Booked!",
+            subject="Booking Confirmed!",
             sender=app.config['MAIL_USERNAME'],
-            recipients=[student_email]
+            recipients=[session.get("student_email", "test@example.com")]  # fallback email
         )
         msg.body = f"""
 Hi {student_name},
 
-Your booking with {teacher_data['name']} for {teacher_data['subject']} is confirmed!
+Your slot with {teacher_data['name']} for {teacher_data['subject']} is confirmed!
 
 🗓️ Date: {slot_data['date']}
 ⏰ Time: {slot_data['start_time']} - {slot_data['end_time']}
-📍 Meet Link: {meet_link if meet_link else 'Link will be shared later'}
-
-Thank you for booking with us!
+📍 Meeting Link: {meet_link if meet_link else 'Will be shared later'}
 
 Regards,
 Online Tuition Team
@@ -1300,7 +1334,13 @@ Online Tuition Team
 
         return redirect(url_for('booking_success', meet_link=meet_link))
 
-    return render_template('book_slot.html', slot=slot_data, teacher=teacher_data, total_booked=total_booked, seat_limit=seat_limit)
+    return render_template(
+        'book_slot.html',
+        slot=slot_data,
+        teacher=teacher_data,
+        total_booked=total_booked,
+        seat_limit=seat_limit
+    )
 
 @app.route('/booking-success')
 def booking_success():
@@ -1614,8 +1654,58 @@ def admin_bookings():
     if not session.get('superadmin_logged_in'):
         return redirect(url_for('superadmin_login'))
 
-    bookings_res = supabase.table("bookings").select("*").execute()
+    bookings_res = supabase.table("bookings").select("*").order("created_at", desc=True).execute()
+
     bookings_data = bookings_res.data
+
+    # Slots
+    slot_ids = list({b["slot_id"] for b in bookings_data})
+    slots_map = {}
+    if slot_ids:
+        slots_res = supabase.table("slots").select("*").in_("id", slot_ids).execute()
+        slots_map = {s["id"]: s for s in slots_res.data}
+
+    # Teachers
+    teacher_ids = list({b["teacher_id"] for b in bookings_data})
+    teachers_map = {}
+    if teacher_ids:
+        teachers_res = supabase.table("teachers").select("*").in_("id", teacher_ids).execute()
+        teachers_map = {t["id"]: t for t in teachers_res.data}
+
+    # Students
+    student_ids = list({b["student_id"] for b in bookings_data if "student_id" in b})
+    students_map = {}
+    if student_ids:
+        students_res = supabase.table("students").select("*").in_("id", student_ids).execute()
+        students_map = {s["id"]: s for s in students_res.data}
+
+    # ✅ Subscriptions
+    subs_map = {}
+    if student_ids:
+        subs_res = supabase.table("subscriptions").select("*").in_("student_id", student_ids).execute()
+        for sub in subs_res.data:
+            key = (sub["student_id"], sub["teacher_id"])
+            subs_map[key] = sub
+
+    print("🔎 Subscriptions Loaded:", subs_map.keys())
+
+    # Attach all info
+    for b in bookings_data:
+        slot = slots_map.get(b["slot_id"], {})
+        teacher = teachers_map.get(b["teacher_id"], {})
+        student = students_map.get(b.get("student_id"), {})
+
+        b["slot_time"] = f"{slot.get('date', '')} {slot.get('start_time', '')} - {slot.get('end_time', '')}"
+        b["teacher_name"] = teacher.get("name", "Unknown")
+        b["subject"] = teacher.get("subject", "Unknown")
+        b["student_name"] = student.get("name", "Unknown")
+        b["student_email"] = student.get("email", "Unknown")
+
+        sub_key = (b.get("student_id"), b.get("teacher_id"))
+        subscription = subs_map.get(sub_key)
+        b["subscription_status"] = subscription["status"] if subscription else "❌ Not Subscribed"
+
+        print("📦 Booking ID:", b["id"], "| Sub Key:", sub_key, "| Sub Status:", b["subscription_status"])
 
     return render_template('admin_bookings.html', bookings=bookings_data)
 
@@ -1715,36 +1805,87 @@ from datetime import timedelta
 
 @app.route('/subscribe/<int:teacher_id>', methods=['GET', 'POST'])
 def subscribe_teacher(teacher_id):
-    student_email = session.get('student_email')
-
-    if not student_email:
+    student_id = session.get('student_id')
+    if not student_id:
         return redirect(url_for('student_login'))
 
     teacher_res = supabase.table("teachers").select("*").eq("id", teacher_id).single().execute()
     teacher_data = teacher_res.data
-
     if not teacher_data:
         return "Teacher not found", 404
 
+    plan_res = supabase.table("teacher_monthly_plans").select("*").eq("teacher_id", teacher_id).eq("active", True).limit(1).execute()
+    plan = plan_res.data[0] if plan_res.data else None
+
+    if not plan:
+        return "No active plan for this teacher", 400
+
     if request.method == 'POST':
+        payment_ref_id = request.form['payment_ref_id']
         now = datetime.datetime.now()
 
-        # Mock payment ID using current timestamp
-        payment_id = f"PAY-{int(now.timestamp())}"
-
         supabase.table("subscriptions").insert({
-            "student_email": student_email,
+            "student_id": student_id,
             "teacher_id": teacher_id,
-            "payment_id": payment_id,
-            "amount": teacher_data["monthly_fee"],
-            "status": "paid",
+            "amount": plan["price"],
+            "status": "pending",
+            "payment_ref_id": payment_ref_id,
             "start_date": now.strftime("%Y-%m-%d"),
             "end_date": (now + timedelta(days=30)).strftime("%Y-%m-%d")
         }).execute()
 
-        return redirect(url_for('subscription_success'))
+        flash("✅ Subscription submitted for approval.")
+        return redirect(url_for('dashboard'))
 
-    return render_template('subscribe.html', teacher=teacher_data)
+    teacher_data["monthly_fee"] = plan["price"]
+    return render_template('subscribe_plan.html', teacher=teacher_data)
+
+@app.route('/admin/subscriptions')
+def admin_subscriptions():
+    if not session.get('superadmin_logged_in'):
+        return redirect(url_for('superadmin_login'))
+
+    subs_res = supabase.table("subscriptions").select("*").order("created_at", desc=True).execute()
+    subscriptions = subs_res.data
+
+    # Map student & teacher info
+    student_ids = {sub["student_id"] for sub in subscriptions if sub.get("student_id")}
+    teacher_ids = {sub["teacher_id"] for sub in subscriptions}
+
+    students_map = {}
+    if student_ids:
+        res = supabase.table("students").select("id,name").in_("id", list(student_ids)).execute()
+
+        students_map = {s["id"]: s for s in res.data}
+
+    teachers_map = {}
+    if teacher_ids:
+        res = supabase.table("teachers").select("id,name,subject").in_("id", list(teacher_ids)).execute()
+        teachers_map = {t["id"]: t for t in res.data}
+
+    # Attach info
+    for sub in subscriptions:
+        sub["student"] = students_map.get(sub["student_id"], {})
+        sub["teacher"] = teachers_map.get(sub["teacher_id"], {})
+
+    return render_template("admin_subscriptions.html", subscriptions=subscriptions)
+
+@app.route('/admin/update-subscription/<string:sub_id>', methods=['POST'])
+def update_subscription_status(sub_id):
+    if not session.get('superadmin_logged_in'):
+        return redirect(url_for('superadmin_login'))
+
+    action = request.form.get('action')
+    if action == "approve":
+        status = "paid"
+    elif action == "reject":
+        status = "rejected"
+    else:
+        status = "pending"
+
+    supabase.table("subscriptions").update({"status": status}).eq("id", sub_id).execute()
+    flash(f"Subscription marked as {status.upper()}")
+    return redirect(url_for('admin_subscriptions'))
 
 @app.route('/teacher/request_withdrawal', methods=['GET', 'POST'])
 def request_withdrawal():
@@ -1763,7 +1904,7 @@ def request_withdrawal():
             "created_at": datetime.now().isoformat()
         }).execute()
 
-        return redirect(url_for('teacher_dashboard'))
+        return redirect(url_for('dashboard'))
 
     # If GET request, show form
     teacher_res = supabase.table("teachers").select("*").eq("id", teacher_id).single().execute()
@@ -1773,8 +1914,9 @@ def request_withdrawal():
 
 
 # === Run App ===
+
 import os
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=True)

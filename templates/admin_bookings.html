@@ -12,29 +12,64 @@
 
 <div class="overflow-x-auto">
     <table class="min-w-full bg-white shadow rounded-lg">
-        <thead>
-            <tr class="bg-purple-600 text-white">
-                <th class="p-3 text-left">Booking ID</th>
-                <th class="p-3 text-left">Teacher ID</th>
-                <th class="p-3 text-left">Student Name</th>
-                <th class="p-3 text-left">Student Email</th>
-                <th class="p-3 text-left">Slot Time</th>
-                <th class="p-3 text-left">Booked At</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for booking in bookings %}
-            <tr class="border-b hover:bg-gray-100">
-                <td class="p-3">{{ booking.id }}</td>
-                <td class="p-3">{{ booking.teacher_id }}</td>
-                <td class="p-3">{{ booking.student_name }}</td>
-                <td class="p-3">{{ booking.student_email }}</td>
-                <td class="p-3">{{ booking.slot_time }}</td>
-                <td class="p-3">{{ booking.booked_at }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <thead>
+        <tr class="bg-purple-600 text-white">
+            <th class="p-3 text-left">Booking ID</th>
+            <th class="p-3 text-left">Teacher ID</th>
+            <th class="p-3 text-left">Student Name</th>
+            <th class="p-3 text-left">Email</th>
+            <th class="p-3 text-left">Slot Time</th>
+            <th class="p-3 text-left">Subscription</th>
+            <th class="p-3 text-left">Booked At</th>
+            <th class="p-3 text-left">Payment Ref ID</th>
+            <th class="p-3 text-left">Status</th>
+            <th class="p-3 text-left">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for booking in bookings %}
+        <tr class="border-b hover:bg-gray-100">
+            <td class="p-3">{{ booking.id }}</td>
+            <td class="p-3">{{ booking.teacher_id }}</td>
+            <td class="p-3">{{ booking.student_name }}</td>
+            <td class="p-3">{{ booking.student_email }}</td>
+            <td class="p-3">{{ booking.slot_time }}</td>
+            <td class="p-3">
+                {% if booking.subscription_status == 'active' %}
+                    <span class="text-green-600 font-semibold">Active</span>
+                {% elif booking.subscription_status == 'pending' %}
+                    <span class="text-yellow-600 font-semibold">Pending</span>
+                {% else %}
+                    <span class="text-red-600 font-semibold">Not Subscribed</span>
+                {% endif %}
+            </td>
+            <td class="p-3">{{ booking.booking_time or booking.booked_at }}</td>
+            <td class="p-3">{{ booking.payment_id }}</td>
+            <td class="p-3">
+                {% if booking.status == 'pending' %}
+                    <span class="text-yellow-600 font-semibold">Pending</span>
+                {% elif booking.status == 'approved' %}
+                    <span class="text-green-600 font-semibold">Approved</span>
+                {% else %}
+                    <span class="text-red-600 font-semibold">Rejected</span>
+                {% endif %}
+            </td>
+            <td class="p-3">
+                {% if booking.status == 'pending' %}
+                <form method="POST" action="{{ url_for('update_booking_status', booking_id=booking.id) }}">
+                    <div class="flex space-x-2">
+                        <button type="submit" name="action" value="approve" class="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm">Approve</button>
+                        <button type="submit" name="action" value="reject" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm">Reject</button>
+                    </div>
+                </form>
+                {% else %}
+                    <span class="text-gray-500 text-sm">No action</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 </div>
 
 <div class="mt-6 text-center">
