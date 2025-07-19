@@ -1,44 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Book Slot</title>
+    <meta charset="UTF-8">
+    <title>Book a Slot</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="min-h-screen bg-gradient-to-r from-yellow-100 to-orange-200 p-6 flex flex-col items-center">
+<body class="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-100 p-6 flex flex-col items-center">
 
-    <h1 class="text-2xl font-bold text-orange-700 mb-6">🗓️ Book Slot</h1>
+    <div class="w-full max-w-xl bg-white shadow-2xl rounded-2xl p-8">
+        <h1 class="text-3xl font-bold text-center text-orange-700 mb-6">📅 Book a Slot</h1>
 
-    <div class="bg-white p-6 rounded-lg shadow w-full max-w-md space-y-4">
-        
-        <p><strong>Teacher:</strong> {{ teacher.name }}</p>
-        <p><strong>Subject:</strong> {{ teacher.subject }}</p>
-        <p><strong>Date:</strong> {{ slot.date }}</p>
-        <p><strong>Time:</strong> {{ slot.start_time }} - {{ slot.end_time }}</p>
-        <p><strong>Seats Booked:</strong> {{ total_booked }} / {{ seat_limit }}</p>
+        <!-- Teacher Info -->
+        <div class="bg-orange-100 p-4 rounded-lg mb-4">
+            <p class="text-lg"><strong>👩‍🏫 Teacher:</strong> {{ teacher.name }}</p>
+            <p class="text-lg"><strong>📘 Subject:</strong> {{ teacher.subject }}</p>
+            <p class="text-lg"><strong>📅 Date:</strong> {{ slot.date }}</p>
+            <p class="text-lg"><strong>⏰ Time:</strong> {{ slot.start_time }} - {{ slot.end_time }}</p>
+            <p class="text-lg"><strong>🪑 Seats Booked:</strong> {{ total_booked }} / {{ seat_limit }}</p>
+        </div>
 
+        <!-- Slot Full -->
         {% if total_booked >= seat_limit %}
-            <div class="bg-red-100 text-red-700 p-3 rounded-lg text-center font-medium">
-                Sorry, this slot is fully booked.
+            <div class="bg-red-100 text-red-700 text-center p-4 rounded-lg font-semibold">
+                🚫 Sorry, this slot is fully booked.
             </div>
         {% else %}
-            <form method="POST" class="space-y-4">
+            <!-- Slot Booking Form -->
+            <form method="POST" class="space-y-6">
                 <div>
-                    <label class="block mb-1 font-medium text-gray-700">Your Name</label>
-                    <input type="text" name="student_name" class="w-full border p-3 rounded-lg" required>
+                    <label class="block font-medium text-gray-700 mb-1">Your Name</label>
+                    <input type="text" name="student_name" class="w-full border border-gray-300 p-3 rounded-lg" required>
                 </div>
 
                 <div>
-                    <label class="block mb-1 font-medium text-gray-700">Your Email</label>
-                    <input type="email" name="student_email" class="w-full border p-3 rounded-lg" required>
+                    <label class="block font-medium text-gray-700 mb-1">Your Email</label>
+                    <input type="email" name="student_email" class="w-full border border-gray-300 p-3 rounded-lg" required>
                 </div>
 
-                <button type="submit" class="w-full bg-orange-600 text-white py-3 rounded-lg hover:bg-orange-700">
-                    📩 Book Slot
+                <button type="submit" class="w-full bg-orange-600 text-white py-3 rounded-lg hover:bg-orange-700 font-bold text-lg">
+                    ✅ Confirm Booking
                 </button>
             </form>
 
-            <p class="text-sm text-gray-600 mt-4">
-                📧 You will receive a confirmation email after booking.
+            <p class="text-sm text-gray-500 mt-4 text-center">
+                📩 A confirmation email will be sent to your email address.
             </p>
         {% endif %}
     </div>

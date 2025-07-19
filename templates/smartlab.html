@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SmartLab Experiments</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    function openSimulator(id, url) {
+      const modal = document.getElementById("simulatorModal");
+      const iframe = document.getElementById("simulatorIframe");
+      iframe.src = url;
+      modal.classList.remove("hidden");
+    }
+
+    function closeSimulator() {
+      const modal = document.getElementById("simulatorModal");
+      const iframe = document.getElementById("simulatorIframe");
+      iframe.src = "";
+      modal.classList.add("hidden");
+    }
+  </script>
+</head>
+<body class="bg-gray-100 min-h-screen p-4">
+
+  <div class="max-w-6xl mx-auto">
+    <!-- Title -->
+    <h1 class="text-3xl font-bold text-indigo-700 mb-6 text-center">🔬 SmartLab Experiments</h1>
+
+    <!-- Back to Home -->
+    <div class="mb-4 text-center">
+      <a href="{{ url_for('dashboard') }}"
+         class="inline-block bg-gray-700 hover:bg-gray-800 text-white font-medium py-2 px-6 rounded-lg transition">
+        ⬅️ Back to Home
+      </a>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="flex flex-col md:flex-row gap-3 mb-6">
+      <select name="class" class="p-2 rounded border w-full md:w-1/4">
+        <option value="">All Classes</option>
+        {% for c in ['9', '10', '11', '12'] %}
+        <option value="{{ c }}" {% if request.args.get('class') == c %}selected{% endif %}>Class {{ c }}</option>
+        {% endfor %}
+      </select>
+
+      <select name="subject" class="p-2 rounded border w-full md:w-1/4">
+        <option value="">All Subjects</option>
+        {% for sub in ['Physics', 'Chemistry', 'Biology'] %}
+        <option value="{{ sub }}" {% if request.args.get('subject') == sub %}selected{% endif %}>{{ sub }}</option>
+        {% endfor %}
+      </select>
+
+      <input type="text" name="q" placeholder="Search experiments..." value="{{ request.args.get('q', '') }}"
+             class="p-2 rounded border w-full md:flex-1">
+
+      <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+        Search
+      </button>
+    </form>
+
+    <!-- Experiments List -->
+    <div class="grid gap-6">
+      {% for exp in experiments %}
+      <div class="bg-white shadow-md rounded p-4">
+        <h2 class="text-xl font-bold text-indigo-800">{{ exp.title }}</h2>
+        <p class="text-sm text-gray-600 mb-1">Class: {{ exp.class }} | Subject: {{ exp.subject }} | Chapter: {{ exp.chapter }}</p>
+        <p class="text-gray-700 mb-3">{{ exp.description }}</p>
+
+        {% if exp.url %}
+        <button onclick="openSimulator('{{ exp.id }}', '{{ exp.url }}')"
+                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          🚀 Simulate
+        </button>
+        {% else %}
+        <p class="text-red-500">No simulator available.</p>
+        {% endif %}
+      </div>
+      {% else %}
+      <p class="text-center text-gray-500">No experiments found.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Simulator Modal -->
+  <div id="simulatorModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden">
+    <div class="relative w-full h-full">
+      <button onclick="closeSimulator()" class="absolute top-4 right-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 z-50">
+        ❌ Close
+      </button>
+      <iframe id="simulatorIframe" class="w-full h-full border-none rounded"></iframe>
+    </div>
+  </div>
+
+</body>
+</html>

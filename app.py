@@ -51,6 +51,14 @@ TOGETHER_MODEL = "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"
 DOUBT_SOLVER_API_KEY = "dbfb5267b3c4062b3f8b51a4999dfc27579a11f59bd3354378d14baa3a50e5aa"
 DOUBT_SOLVER_MODEL = "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"  # Or your preferred model
 
+import requests
+import fitz  # or use pdfplumber if PyMuPDF fails
+from flask import request, render_template, session, redirect, url_for
+import together
+
+together.api_key = "3041964b24957ccdabbb5678a13f8e5bcb895a98c508c1c0469dfb9ad5e0bfce"
+
+
 # === Google Cloud Config ===
 import json
 from google.oauth2 import service_account
@@ -348,34 +356,90 @@ def exam():
     exam_mode = request.form.get('exam_mode', 'topic')
     board = request.form.get('board', 'state')  # Default 'state' if not provided
 
-    qna_2m, qna_5m = [], []
+    qna_1m, qna_2m, qna_5m = [], [], []
 
     try:
-        response = supabase_questions.table("questions").select("qna_2m, qna_5m").match({
-            "class_level": class_level,
+        # Fetch from Supabase
+        response = supabase.table("question_sets").select("question_json").match({
+            "class": class_level,
             "subject": subject,
-            "topic": topic,
-            "exam_mode": exam_mode,
+            "chapter": topic,
             "board": board
-        }).limit(1).execute()
+        }).order("created_at", desc=True).limit(1).execute()
 
         if response.data:
-            try:
-                qna_2m = json.loads(response.data[0].get('qna_2m', '[]'))
-                qna_5m = json.loads(response.data[0].get('qna_5m', '[]'))
-                print(f"✅ Using cached questions from Supabase ({board.upper()}).")
-            except:
-                qna_2m, qna_5m = [], []
-    except Exception as e:
-        print(f"⚠️ Supabase fetch error: {e}")
+            raw = response.data[0].get("question_json", {})
 
-    if not qna_2m and not qna_5m:
-        print(f"⚡ No cached questions for {board.upper()}. Generating new...")
-        qna_2m, qna_5m = generate_exam_qna(class_level, subject, topic, exam_mode, board=board, force=True)
+            if isinstance(raw, str):
+                # Handle free-text format (like your example)
+                lines = raw.split("\n")
+                current_section = None
+
+                for line in lines:
+                    clean_line = line.strip()
+
+                    if "5 Mark" in clean_line:
+                        current_section = "5m"
+                        continue
+                    elif "2 Mark" in clean_line:
+                        current_section = "2m"
+                        continue
+                    elif "1 Mark" in clean_line or "choose" in clean_line.lower() or "fillups" in clean_line.lower() or "match" in clean_line.lower():
+                        current_section = "1m"
+                        continue
+
+                    if current_section == "1m":
+                        if clean_line and not clean_line.lower().startswith("in the blanks") and "____" in clean_line:
+                            qna_1m.append(clean_line)
+                    elif current_section == "2m":
+                        if clean_line:
+                            qna_2m.append(clean_line)
+                    elif current_section == "5m":
+                        if clean_line and (clean_line.startswith("1.") or clean_line.startswith("2.") or clean_line[0].isdigit()):
+                            qna_5m.append(clean_line)
+
+            elif isinstance(raw, dict):
+                # Handle structured JSON format
+                if "choose" in raw and raw["choose"]:
+                    qna_1m += [line.strip() for line in raw["choose"].split("\n") if line.strip()]
+
+                if "fillups" in raw and raw["fillups"]:
+                    qna_1m += [
+                        line.strip()
+                        for line in raw["fillups"].split("\n")
+                        if line.strip() and not line.strip().startswith("**") and not line.strip().lower().startswith("in the blanks")
+                        and "____" in line
+                    ]
+
+                if "match" in raw and raw["match"]:
+                    qna_1m += [line.strip() for line in raw["match"].split("\n") if line.strip()]
+
+                qna_2m = raw.get("2m", "").split("\n") if raw.get("2m") else []
+                qna_5m = raw.get("5m", "").split("\n") if raw.get("5m") else []
+
+            print("✅ Loaded question set from Supabase.")
+
+        else:
+            print("⚠️ No matching questions found. Generating new...")
+            generated = generate_exam_qna(class_level, subject, topic, exam_mode, board=board, force=True)
+
+            if isinstance(generated, dict):
+                qna_1m = generated.get("1m", [])
+                qna_2m = generated.get("2m", [])
+                qna_5m = generated.get("5m", [])
+            else:
+                qna_2m, qna_5m = generated
+
+    except Exception as e:
+        print(f"❌ Supabase fetch error: {e}")
 
     total_marks = 25 if exam_mode == "topic" else 40 if exam_mode == "unit" else 100
 
-    correct_answer_text = json.dumps({"2m": qna_2m, "5m": qna_5m}, ensure_ascii=False)
+    correct_answer_text = json.dumps({
+        "1m": qna_1m,
+        "2m": qna_2m,
+        "5m": qna_5m
+    }, ensure_ascii=False)
 
     return render_template(
         'exam.html',
@@ -384,11 +448,13 @@ def exam():
         topic=topic,
         exam_mode=exam_mode,
         board=board,
+        qna_1m=qna_1m,
         qna_2m=qna_2m,
         qna_5m=qna_5m,
         total_marks=total_marks,
         correct_answer_text=correct_answer_text
     )
+
 
 @app.route('/upload_exam', methods=['POST'])
 def upload_exam():
@@ -523,16 +589,23 @@ def school_admin_dashboard():
     if 'school_admin_id' not in session:
         return redirect(url_for('school_admin_login'))
 
-    school_id = session['school_id']  # Assuming you store this during login
+    school_id = session['school_id']
 
     # Fetch school details
-    response = supabase.table('schools').select("*").eq('id', school_id).single().execute()
-    school = response.data
+    school_resp = supabase.table('schools').select("*").eq('id', school_id).single().execute()
+    school = school_resp.data
 
-    # Calculate total fee based on student counts
+    # Fetch teachers of this school
+    teachers_resp = supabase.table('school_teachers').select("*").eq('school_id', school_id).execute()
+    teachers = teachers_resp.data
+
     total_fee = calculate_total_fee(school)
 
-    return render_template('school_admin_dashboard.html', school=school, total_fee=total_fee)
+    return render_template('school_admin_dashboard.html',
+                           school=school,
+                           teachers=teachers,
+                           total_fee=total_fee)
+
 
 import datetime  # Make sure this is present at the top of your file
 @app.route('/school_admin/pay_now')
@@ -564,6 +637,8 @@ def school_admin_login():
         return render_template('school_admin_login.html', error="❌ Invalid username or password")
 
     return render_template('school_admin_login.html')
+from collections import defaultdict
+
 @app.route('/school_admin/performance')
 def school_admin_performance():
     if 'school_admin_id' not in session:
@@ -573,46 +648,566 @@ def school_admin_performance():
     selected_class = request.args.get('class', '')
 
     all_classes = []
+    performance_by_subject = defaultdict(lambda: {
+        'total_score': 0,
+        'total_marks': 0,
+        'students': 0
+    })
+
+    try:
+        # Fetch all class levels
+        response = supabase.table('answers').select('class_level').eq('school_id', school_id).execute()
+        if response.data:
+            all_classes = list(set([row['class_level'] for row in response.data if 'class_level' in row]))
+
+        # Fetch data
+        query = supabase.table('answers').select('*').eq('school_id', school_id)
+        if selected_class:
+            query = query.eq('class_level', selected_class)
+        data = query.execute().data
+
+        for row in data:
+            subject = row.get('subject', 'Unknown')
+            class_level = row.get('class_level', 'N/A')
+            score = row.get('score', 0)
+            total = row.get('total_marks', 1)
+
+            key = (subject, class_level)
+            performance_by_subject[key]['total_score'] += score
+            performance_by_subject[key]['total_marks'] += total
+            performance_by_subject[key]['students'] += 1
+
+        final_subject_data = []
+        for (subject, class_level), stats in performance_by_subject.items():
+            total_score = stats['total_score']
+            total_marks = stats['total_marks']
+            students = stats['students']
+            avg_percentage = round((total_score / total_marks) * 100, 2) if total_marks else 0
+
+            final_subject_data.append((
+                subject,
+                class_level,
+                students,
+                round(total_score / students, 2),
+                avg_percentage
+            ))
+
+    except Exception as e:
+        print("Error:", e)
+        final_subject_data = []
+
+    return render_template("school_admin_performance_subjectwise.html",
+                           subject_data=final_subject_data,
+                           all_classes=all_classes,
+                           selected_class=selected_class)
+
+
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask import flash, session, redirect, url_for, render_template, request
+
+@app.route('/school_admin/add_teacher', methods=['GET', 'POST'])
+def add_teacher():
+    if 'school_admin_id' not in session:
+        return redirect(url_for('school_admin_login'))
+
+    if request.method == 'POST':
+        # Handle form submission
+        school_id = session['school_id']
+        name = request.form['name']
+        username = request.form['username']  # ✅ ADD THIS
+        subject = request.form['subject']
+        email = request.form['email']
+        phone = request.form['phone']
+        password = request.form['password']
+
+        # Insert into Supabase
+        supabase.table('school_teachers').insert({
+            "school_id": school_id,
+            "name": name,
+            "username": username,       # ✅ Important field
+            "email": email,
+            "phone": phone,
+            "subject": subject,
+            "password": password
+        }).execute()
+
+        return redirect(url_for('school_admin_dashboard'))
+
+    # Render the teacher add form
+    return render_template('add_teacher.html')
+
+@app.route('/school_teacher/login', methods=['GET', 'POST'])
+def school_teacher_login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        result = supabase.table('school_teachers').select("*").eq('username', username).single().execute()
+        teacher = result.data
+
+        if teacher and teacher['password'] == password:
+            session['school_teacher_id'] = teacher['id']
+            return redirect(url_for('school_teacher_dashboard'))
+        else:
+            return render_template('school_teacher_login.html', error="Invalid username or password.")
+
+    return render_template('school_teacher_login.html')
+
+@app.route('/school_teacher/dashboard')
+def school_teacher_dashboard():
+    if 'school_teacher_id' not in session:
+        return redirect(url_for('school_teacher_login'))
+
+
+    teacher_id = session['school_teacher_id']
+    teacher_resp = supabase.table('school_teachers').select("*").eq('id', teacher_id).single().execute()
+    teacher = teacher_resp.data
+
+    return render_template('school_teacher_dashboard.html', teacher=teacher)
+
+@app.route('/school_admin/teachers')
+def school_list_teachers():
+    if 'school_admin_id' not in session:
+        return redirect(url_for('school_admin_login'))
+
+    school_id = session['school_id']
+    response = supabase.table('school_teachers').select("*").eq("school_id", school_id).execute()
+    teachers = response.data
+
+    return render_template('school_list_teachers.html', teachers=teachers)
+
+@app.route('/school_admin/edit_teacher/<string:teacher_id>', methods=['GET', 'POST'])
+def edit_teacher(teacher_id):
+    if 'school_admin_id' not in session:
+        return redirect(url_for('school_admin_login'))
+
+    # GET method: load teacher info
+    if request.method == 'GET':
+        response = supabase.table('school_teachers').select("*").eq('id', teacher_id).single().execute()
+        teacher = response.data
+        return render_template('edit_teacher.html', teacher=teacher)
+
+    # POST method: update the teacher info
+    name = request.form['name']
+    subject = request.form['subject']
+    assigned_class = request.form['assigned_class']
+    rating = float(request.form['rating'])
+
+    supabase.table('school_teachers').update({
+        "name": name,
+        "subject": subject,
+        "assigned_class": assigned_class,
+        "rating": rating
+    }).eq('id', teacher_id).execute()
+
+    return redirect(url_for('school_list_teachers'))
+
+@app.route('/school_teacher/logout')
+def school_teacher_logout():
+    session.pop('school_teacher_id', None)
+    return redirect(url_for('school_teacher_login'))
+
+@app.route('/teacher/logout')
+def teacher_logout():
+    session.pop('tutor_teacher_id', None)
+    return redirect(url_for('teacher_login'))
+
+
+import os
+import gdown
+import fitz  # PyMuPDF
+from flask import request, render_template, session, redirect, url_for
+import together
+together.api_key = "3041964b24957ccdabbb5678a13f8e5bcb895a98c508c1c0469dfb9ad5e0bfce"
+import os
+import gdown
+import fitz  # PyMuPDF
+from flask import request, render_template, session, redirect, url_for
+import together
+
+def get_or_extract_chapter_text(board, class_name, subject, chapter, gdrive_id):
+    from supabase import create_client
+    import gdown
+    import fitz  # PyMuPDF
+    import os
+
+    # ✅ Step 0: Ensure supabase client is ready
+    # (Assuming `supabase` is globally initialized)
+
+    # ✅ Step 1: Check Supabase for existing chapter content
+    try:
+        res = supabase.table("chapter_contents").select("*")\
+            .eq("board", board)\
+            .eq("class", int(class_name))\
+            .eq("subject", subject)\
+            .eq("chapter", chapter)\
+            .execute()
+
+        if res.data and len(res.data) > 0:
+            print("📦 Fetched chapter from Supabase cache")
+            return res.data[0]['content']
+    except Exception as e:
+        print("❌ Supabase fetch error:", str(e))
+
+    # ✅ Step 2: Get page range from Supabase
+    try:
+        page_info = supabase.table("chapter_ranges").select("*")\
+            .eq("board", board)\
+            .eq("class", int(class_name))\
+            .eq("subject", subject)\
+            .eq("chapter", chapter)\
+            .single()\
+            .execute()
+
+        start_page = page_info.data['start_page']
+        end_page = page_info.data['end_page']
+        print(f"📄 Pages to extract: {start_page} - {end_page}")
+    except Exception as e:
+        print("⚠️ Chapter page range not found in Supabase:", str(e))
+        return "⚠️ Chapter page range not found in Supabase."
+
+    # ✅ Step 3: Download the PDF from Google Drive
+    local_pdf = "temp_chapter.pdf"
+    try:
+        gdown.download(f"https://drive.google.com/uc?id={gdrive_id}", local_pdf, quiet=False)
+    except Exception as e:
+        print("❌ PDF download failed:", str(e))
+        return "❌ Failed to download textbook PDF."
+
+    # ✅ Step 4: Extract specific pages
+    try:
+        doc = fitz.open(local_pdf)
+        extracted_text = ""
+        for i in range(start_page - 1, end_page):
+            extracted_text += doc[i].get_text()
+        doc.close()
+        os.remove(local_pdf)  # clean up
+    except Exception as e:
+        print("❌ PDF extraction error:", str(e))
+        return "❌ Failed to extract pages from PDF."
+
+    chapter_text = extracted_text.strip()
+
+    # ✅ Step 5: Save to Supabase for caching
+    try:
+        supabase.table("chapter_contents").insert({
+            "board": board,
+            "class": int(class_name),
+            "subject": subject,
+            "chapter": chapter,
+            "content": chapter_text
+        }).execute()
+        print("✅ Chapter content saved to Supabase")
+    except Exception as e:
+        print("⚠️ Failed to insert chapter content into Supabase:", str(e))
+
+    return chapter_text
+
+@app.route('/school_teacher/create_question_set', methods=['GET', 'POST'])
+def create_question_set():
+    if 'school_teacher_id' not in session:
+        return redirect(url_for('school_teacher_login'))
+
+    def safe_int(value):
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            return 0
+
+    if request.method == 'POST':
+        board = request.form['board']
+        class_name = request.form['class']
+        subject = request.form['subject']
+        chapter = request.form['chapter']
+        difficulty = request.form['difficulty']
+
+        total_marks = safe_int(request.form.get('total_marks'))
+        choose_count = safe_int(request.form.get('choose_count'))
+        fillups_count = safe_int(request.form.get('fillups_count'))
+        match_count = safe_int(request.form.get('match_count'))
+        count_2m = safe_int(request.form.get('2m_count'))
+        count_5m = safe_int(request.form.get('5m_count'))
+        count_10m = safe_int(request.form.get('10m_count'))
+
+        grammar = 'grammar' in request.form
+        extras = []
+        if 'map' in request.form: extras.append("map-based")
+        if 'diagram' in request.form: extras.append("diagram-based")
+        if 'graph' in request.form: extras.append("graph-based")
+
+        if total_marks == 0:
+            return render_template('create_question_set.html', questions=["⚠️ Please enter a valid number for Total Marks."])
+
+        print("🎯 INPUTS →", board, class_name, subject, chapter)
+
+        # Get book PDF info
+        book_result = supabase.table("book_files").select("*") \
+            .ilike("board", board) \
+                .eq("class", int(class_name)) \
+                    .ilike("subject", subject).execute()
+
+
+        if not book_result.data:
+            return render_template('create_question_set.html', questions=["⚠️ Book PDF not found in Supabase."])
+
+        gdrive_id = book_result.data[0].get("gdrive_id")
+
+        # Get chapter page range
+        chapter_result = supabase.table("chapter_ranges").select("*") \
+            .eq("class", int(class_name)) \
+                .ilike("subject", subject) \
+                    .ilike("chapter", chapter).execute()
+
+        if not chapter_result.data:
+            return render_template('create_question_set.html', questions=["⚠️ Chapter page range not found in Supabase."])
+
+        start_page = chapter_result.data[0].get("start_page")
+        end_page = chapter_result.data[0].get("end_page")
+
+        if not gdrive_id or not start_page or not end_page:
+            return render_template('create_question_set.html', questions=["⚠️ Missing book or chapter page info."])
+
+        # Extract text from PDF
+        chapter_text = get_or_extract_chapter_text(board, class_name, subject, chapter, gdrive_id, )
+
+        def trim_chapter_text(text, max_tokens=4000):
+            return text[:max_tokens] + "\n\n[...trimmed for length...]" if len(text) > max_tokens else text
+
+        chapter_text = trim_chapter_text(chapter_text)
+
+        # Build section prompts
+        section_prompt = ""
+        if choose_count > 0:
+            section_prompt += f"- Section A: Choose the Correct Answer (1 mark each) — {choose_count} questions\n"
+        if fillups_count > 0:
+            section_prompt += f"- Section B: Fill in the Blanks (1 mark each) — {fillups_count} questions\n"
+        if match_count > 0:
+            section_prompt += f"- Section C: Match the Following (1 mark each) — {match_count} questions\n"
+        if count_2m > 0:
+            section_prompt += f"- Section D: 2 Mark Questions — {count_2m} questions\n"
+        if count_5m > 0:
+            section_prompt += f"- Section E: 5 Mark Questions — {count_5m} questions\n"
+        if count_10m > 0:
+            section_prompt += f"- Section F: 10 Mark Essay Questions — {count_10m} questions\n"
+        if grammar and subject.lower() == "english":
+            section_prompt += "- Include grammar-based questions\n"
+        if extras:
+            section_prompt += f"- Include at least one {' / '.join(extras)} question.\n"
+
+        full_board_name = "Central Board of Secondary Education" if board.lower() == "cbse" else "Tamil Nadu State Board"
+
+        prompt = f"""
+You are an expert question paper setter for the {full_board_name} ({board} syllabus) in India.
+
+🎯 Create a *{difficulty.title()} Level* Model Question Paper with the following structure:
+
+-------------------------------------
+Class: {class_name}
+Subject: {subject}
+Chapter: {chapter}
+Board: {full_board_name.upper()}
+Total Marks: {total_marks}
+Time: 2½ Hours
+-------------------------------------
+
+📘 Use the following official chapter content for question generation:
+\"\"\"{chapter_text}\"\"\"
+
+{section_prompt}
+
+📝 Guidelines:
+- Only output the question paper. Do NOT include any answers, hints, or explanations.
+- Format questions in numbered order under each section heading.
+- Indicate marks at the end of each question, e.g., [2 marks].
+- Ensure clean formatting like a final printed exam paper.
+"""
+
+        try:
+            response = together.Complete.create(
+                model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+                prompt=prompt,
+                max_tokens=800,
+                temperature=0.7
+            )
+
+            full_text = response['choices'][0]['text'].strip()
+
+            def extract_section(title):
+                if title in full_text:
+                    parts = full_text.split(title)
+                    return parts[1].split("Section", 1)[0].strip() if len(parts) > 1 else ""
+                return ""
+
+            question_json = {
+                "choose": extract_section("Section A: Choose"),
+                "fillups": extract_section("Section B: Fill"),
+                "match": extract_section("Section C: Match"),
+                "2m": extract_section("Section D: 2 Mark"),
+                "5m": extract_section("Section E: 5 Mark"),
+                "10m": extract_section("Section F: 10 Mark"),
+                "grammar": extract_section("grammar"),
+                "map": extract_section("map"),
+                "diagram": extract_section("diagram"),
+                "graph": extract_section("graph")
+            }
+
+            # ✅ Save to Supabase
+            save_result = supabase.table("question_sets").insert({
+                "school_teacher_id": session['school_teacher_id'],
+                "board": board,
+                "class_number": safe_int(class_name),
+                "subject": subject,
+                "chapter": chapter,
+                "difficulty": difficulty,
+                "total_marks": total_marks,
+                "question_types": [],  # Manual split, so empty
+                "questions": full_text,
+                "question_json": question_json
+            }).execute()
+
+            print("✅ Inserted Question Set:", save_result.data)
+            return render_template('create_question_set.html', questions=full_text.splitlines())
+
+        except Exception as e:
+            print("❌ AI Generation Error:", str(e))
+            return render_template('create_question_set.html', questions=[f"⚠️ AI error: {str(e)}"])
+
+    return render_template('create_question_set.html')
+
+
+@app.route('/school_teacher/question_sets')
+def my_question_sets():
+    print("🚀 Route /school_teacher/question_sets was called")
+
+    if 'school_teacher_id' not in session:
+        print("❌ session['school_teacher_id'] missing")
+        return redirect(url_for('school_teacher_login'))
+
+    teacher_id = str(session['school_teacher_id'])
+    print("✅ Session ID:", teacher_id)
+
+    result = supabase.table("question_sets") \
+        .select("*") \
+        .eq("school_teacher_id", teacher_id) \
+        .order("created_at", desc=True) \
+        .execute()
+
+    question_sets = result.data
+    print("✅ Question Sets from DB:", question_sets)
+
+    return render_template('school_teacher_question_sets.html', sets=question_sets)
+
+from flask import make_response
+from fpdf import FPDF  # install: pip install fpdf
+
+# 📥 Route to download question set as PDF
+@app.route('/school_teacher/question_sets/<set_id>/download')
+def download_question_set_pdf(set_id):
+    if 'school_teacher_id' not in session:
+        return redirect(url_for('school_teacher_login'))
+
+    # Fetch the question set
+    res = supabase.table("question_sets").select("*").eq("id", set_id).single().execute()
+    qset = res.data
+
+    if not qset or str(qset.get("school_teacher_id")) != str(session['school_teacher_id']):
+        return "Unauthorized", 403
+
+    # Generate PDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    pdf.cell(200, 10, txt=f"{qset['subject']} - {qset['chapter']}", ln=True, align='C')
+    pdf.ln(10)
+    for line in qset['questions'].split('\n'):
+        pdf.multi_cell(0, 10, txt=line)
+
+    response = make_response(pdf.output(dest='S').encode('latin1'))
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=question_set_{set_id}.pdf'
+    return response
+
+# 🗑️ Route to delete question set
+@app.route('/school_teacher/question_sets/<set_id>/delete', methods=['POST'])
+def delete_question_set(set_id):
+    if 'school_teacher_id' not in session:
+        return redirect(url_for('school_teacher_login'))
+
+    # Check ownership before deleting
+    res = supabase.table("question_sets").select("school_teacher_id").eq("id", set_id).single().execute()
+    owner_id = res.data.get("school_teacher_id") if res.data else None
+
+    if not owner_id or str(owner_id) != str(session['school_teacher_id']):
+        return "Unauthorized", 403
+
+    supabase.table("question_sets").delete().eq("id", set_id).execute()
+    return redirect(url_for('my_question_sets'))
+
+@app.route('/school_teacher/assigned_work')
+def assigned_work():
+    if 'school_teacher_id' not in session:
+        return redirect(url_for('school_teacher_login'))
+
+    teacher_id = session['school_teacher_id']
+
+    # Fetch assigned work (customize based on your table)
+    response = supabase.table('assigned_work').select('*').eq('teacher_id', teacher_id).execute()
+    work_items = response.data
+
+    return render_template('assigned_work.html', work_items=work_items)
+
+@app.route('/teacher/performance')
+def teacher_performance():
+    if 'school_teacher_id' not in session:
+        return redirect(url_for('school_teacher_login'))
+
+    teacher_id = session['school_teacher_id']
+    subject = session.get('subject', '')  # ✅ Must set this during login
+    selected_class = request.args.get('class', '')
+
+    all_classes = []
     performance_data = []
     weak_students = []
 
     try:
-        # Fetch available classes from answers (1st project)
-        response = supabase.table('answers').select('class_level').eq('school_id', school_id).execute()
-        if response.data:
-            all_classes = list(set([row['class_level'] for row in response.data if 'class_level' in row]))
+        # Fetch classes where this teacher's subject was answered
+        class_resp = supabase.table('answers').select('class_level').eq('subject', subject).execute()
+        if class_resp.data:
+            all_classes = list(set([row['class_level'] for row in class_resp.data if 'class_level' in row]))
     except Exception as e:
-        print(f"Error fetching classes: {e}")
+        print(f"Error fetching teacher classes: {e}")
 
     try:
-        # Fetch answers for performance (1st project)
-        query = supabase.table('answers').select('*').eq('school_id', school_id)
+        # Fetch answers filtered by teacher subject and optional class
+        query = supabase.table('answers').select('*').eq('subject', subject)
+
         if selected_class:
             query = query.eq('class_level', selected_class)
 
-        data = query.execute().data
+        answers = query.execute().data
 
-        for row in data:
+        for row in answers:
             student_id = row.get('student_id', 'N/A')
             class_level = row.get('class_level', 'N/A')
             score = row.get('score', 0)
             total_marks = row.get('total_marks', 1)
 
-            # Fetch student name from 1st project
+            # Fetch student name
             student_name = "N/A"
             try:
                 student_response = supabase.table('students').select('name').eq('id', student_id).single().execute()
                 if student_response.data and 'name' in student_response.data:
                     student_name = student_response.data['name']
             except Exception as e:
-                print(f"Error fetching student name for ID {student_id}: {e}")
+                print(f"Error fetching student name: {e}")
 
             percentage = round((score / total_marks) * 100, 2) if total_marks else 0
 
             performance_data.append((
                 student_name,
                 class_level,
-                1,  # Exams attempted
+                1,  # exams attempted
                 score,
                 percentage
             ))
@@ -621,16 +1216,17 @@ def school_admin_performance():
                 weak_students.append((student_name, class_level, percentage))
 
     except Exception as e:
-        print(f"Error fetching performance: {e}")
+        print(f"Error fetching teacher performance: {e}")
 
-    return render_template("school_admin_performance.html",
+    return render_template("teacher_performance.html",
                            performance=performance_data,
                            all_classes=all_classes,
                            selected_class=selected_class,
                            weak_students=weak_students)
 
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask import flash, session, redirect, url_for, render_template, request
+@app.route('/teacher/rating')
+def teacher_rating():
+    return "Teacher rating page coming soon"
 
 @app.route('/school_admin/students', methods=['GET', 'POST'])
 def manage_students():
@@ -1059,6 +1655,62 @@ def doubt_solver():
 
     return render_template("doubt_solver.html", question=question, answer=answer)
 
+@app.route("/chalkboard_notes", methods=["GET", "POST"])
+def chalkboard_notes():
+    notes = None
+    topic = ""
+    subject = ""
+    class_value = ""
+
+    if request.method == "POST":
+        topic = request.form.get("topic", "").strip()
+        subject = request.form.get("subject", "").strip()
+        class_value = request.form.get("class", "").strip()
+
+        if topic and subject and class_value:
+            prompt = f"""
+You are a helpful teacher preparing chalkboard notes for Tamil Nadu or CBSE board.
+- Topic: {topic}
+- Class: {class_value}
+- Subject: {subject}
+
+Write the explanation like it should be written on a classroom blackboard:
+- Bullet points or small sentences
+- Use simple English (Tamil-English if useful)
+- Include key formulas/definitions
+- Add 1 solved example (if applicable)
+- Keep it clean and board-friendly.
+
+✏️ Chalkboard Notes:
+"""
+
+            headers = {
+                "Authorization": f"Bearer {DOUBT_SOLVER_API_KEY}",
+                "Content-Type": "application/json"
+            }
+
+            payload = {
+                "model": DOUBT_SOLVER_MODEL,
+                "prompt": prompt,
+                "max_tokens": 300,
+                "temperature": 0.6
+            }
+
+            try:
+                response = requests.post(
+                    "https://api.together.xyz/v1/completions",
+                    headers=headers,
+                    json=payload
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    notes = data.get("choices", [{}])[0].get("text", "").strip()
+                else:
+                    notes = "⚠️ AI is currently unavailable. Please try again."
+            except Exception as e:
+                notes = f"⚠️ Error: {str(e)}"
+
+    return render_template("chalkboard_notes.html", notes=notes, topic=topic, subject=subject, class_value=class_value)
 
 from supabase import create_client, Client
 
@@ -1341,11 +1993,31 @@ Online Tuition Team
         total_booked=total_booked,
         seat_limit=seat_limit
     )
-
 @app.route('/booking-success')
 def booking_success():
     meet_link = request.args.get('meet_link', '')
-    return render_template('booking_success.html', meet_link=meet_link)
+    slot_id = request.args.get('slot_id')
+    teacher_id = request.args.get('teacher_id')
+    payment_id = request.args.get('payment_id')
+
+    slot_data = None
+    teacher_data = None
+
+    if slot_id:
+        slot_resp = supabase.table("available_slots").select("*").eq("id", slot_id).single().execute()
+        slot_data = slot_resp.data if slot_resp.data else None
+
+    if teacher_id:
+        teacher_resp = supabase.table("teachers").select("*").eq("id", teacher_id).single().execute()
+        teacher_data = teacher_resp.data if teacher_resp.data else None
+
+    return render_template(
+        'booking_success.html',
+        meet_link=meet_link,
+        slot=slot_data,
+        teacher=teacher_data,
+        payment_id=payment_id
+    )
 
 
 @app.route('/teacher_register', methods=['GET', 'POST'])
@@ -1912,14 +2584,37 @@ def request_withdrawal():
 
     return render_template('request_withdrawal.html', teacher=teacher_data)
 
+from flask import Flask, render_template, request
+from supabase_client import supabase  # your Supabase client setup
+
+@app.route("/smartlab")
+def smartlab():
+    selected_class = request.args.get('class', '').strip()
+    selected_subject = request.args.get('subject', '').strip()
+    search_query = request.args.get('q', '').lower().strip()
+
+    query = supabase.table("smartlab_experiments").select("*")
+
+    if selected_class:
+        query = query.eq("class", selected_class)
+    if selected_subject:
+        query = query.eq("subject", selected_subject)
+
+    response = query.execute()
+    data = response.data or []
+
+    if search_query:
+        data = [d for d in data if search_query in d['title'].lower()]
+
+    return render_template("smartlab.html", experiments=data)
+
 
 # === Run App ===
 
 import os
 
-import os
+
+
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    debug_mode = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
-    app.run(host='0.0.0.0', port=port, debug=debug_mode)
+    app.run(debug=True)

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Manage Teachers - SmartKalvi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen px-4 py-6">
+
+  <div class="max-w-5xl mx-auto bg-white p-6 rounded-lg shadow-lg">
+    <h2 class="text-2xl font-bold text-blue-700 mb-6">📋 Manage Teachers</h2>
+
+    <table class="min-w-full border border-gray-300">
+      <thead class="bg-blue-100 text-left">
+        <tr>
+          <th class="py-2 px-4 border-b">Name</th>
+          <th class="py-2 px-4 border-b">Subject</th>
+          <th class="py-2 px-4 border-b">Assigned Class</th>
+          <th class="py-2 px-4 border-b">Rating</th>
+          <th class="py-2 px-4 border-b">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for teacher in teachers %}
+        <tr class="hover:bg-gray-50">
+          <td class="py-2 px-4 border-b">{{ teacher.name }}</td>
+          <td class="py-2 px-4 border-b">{{ teacher.subject }}</td>
+          <td class="py-2 px-4 border-b">{{ teacher.assigned_class or 'N/A' }}</td>
+          <td class="py-2 px-4 border-b">
+            {% if teacher.rating %}
+              ⭐ {{ teacher.rating }}/5
+            {% else %}
+              Not Rated
+            {% endif %}
+          </td>
+          <td class="py-2 px-4 border-b text-center">
+  <a href="{{ url_for('edit_teacher', teacher_id=teacher.id) }}" 
+     class="text-blue-600 hover:underline font-medium">
+    ✏️ Edit
+  </a>
+</td>
+
+            <!-- Add delete/reset buttons here if needed -->
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="mt-6">
+      <a href="{{ url_for('add_teacher') }}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">➕ Add New Teacher</a>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Add New Teacher</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Poppins', sans-serif; }
+  </style>
+</head>
+<body class="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-8">
+
+  <div class="w-full max-w-xl bg-white rounded-lg shadow-lg p-6">
+    <h2 class="text-2xl font-bold text-blue-700 mb-4 text-center">➕ Add New Teacher</h2>
+    
+    <form action="{{ url_for('add_teacher') }}" method="POST" class="space-y-4">
+
+      <div>
+        <label for="name" class="block text-sm font-medium text-gray-700">Full Name</label>
+        <input type="text" id="name" name="name" required class="mt-1 w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500">
+      </div>
+
+      <div>
+        <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+        <input type="text" id="username" name="username" required class="mt-1 w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500" placeholder="e.g. moorthi_tamil">
+      </div>
+
+      <div>
+        <label for="subject" class="block text-sm font-medium text-gray-700">Subject</label>
+        <input type="text" id="subject" name="subject" required class="mt-1 w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500">
+      </div>
+
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+        <input type="email" id="email" name="email" required class="mt-1 w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500">
+      </div>
+
+      <div>
+        <label for="phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
+        <input type="text" id="phone" name="phone" required class="mt-1 w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500">
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+        <input type="password" id="password" name="password" required class="mt-1 w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500">
+      </div>
+
+      <div class="pt-4 flex justify-between">
+        <a href="{{ url_for('school_admin_dashboard') }}" class="text-gray-600 hover:text-gray-900">← Back to Dashboard</a>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Add Teacher</button>
+      </div>
+
+    </form>
+  </div>
+
+</body>
+</html>

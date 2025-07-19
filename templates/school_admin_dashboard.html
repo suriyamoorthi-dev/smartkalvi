@@ -362,79 +362,92 @@
 <header class="header">
     AI Exam Platform
 </header>
+<!-- Keep all your head content as is -->
 
 <div class="container">
-    <div class="ad-placement">
-        <p>Advertisement Space - Top Banner</p>
-    </div>
+  <!-- Ad space -->
+  <div class="ad-placement">
+    <p>Advertisement Space - Top Banner</p>
+  </div>
 
-    <div class="welcome-card">
-        <h2>Welcome, {{ school.name }}</h2>
-        <p class="welcome-subtitle">Your school administration dashboard.</p>
+  <!-- Welcome Card -->
+  <div class="welcome-card">
+    <h2>Welcome, {{ school.name }}</h2>
+    <p class="welcome-subtitle">Your school administration dashboard.</p>
 
-        <div class="info-card">
-            <div class="info-item">
-                <strong>Current Monthly Fee:</strong>
-                <span class="fee">₹{{ total_fee }}</span>
-            </div>
-            <div class="info-item">
-                <strong>Payment Status:</strong>
-                {% if school.payment_status == 'active' %}
-                    <span class="status status-active">Active till {{ school.next_due_date }}</span>
-                {% else %}
-                    <span class="status status-inactive">Pending / Expired</span>
-                {% endif %}
-            </div>
-        </div>
-
-        {% if school.payment_status != 'active' %}
-        <div class="info-card payment-warning" style="margin-top: 1.5rem;">
-    <div style="flex-direction: column; align-items: flex-start; gap: 0.75rem; width: 100%;">
-        <h3 style="margin-bottom: 0.5rem; text-align: left;">Pay via GPay / UPI / Bank Transfer:</h3>
-        <ul style="text-align: left;">
-            <li><strong>GPay Number:</strong> +91 6383750156</li>
-            <li><strong>UPI ID:</strong> suriyamoorthi8920@oksbi</li>
-            <li><strong>Bank Name:</strong> BOI Bank</li>
-            <li><strong>Account No:</strong> 815210110031645</li>
-            <li><strong>IFSC:</strong> BKID0008152</li>
-        </ul>
-        <a href="upi://pay?pa=suriyamoorthi8920@oksbi&pn=Suriyamoorthi&cu=INR" target="_blank" style="margin-top: 0.5rem; font-weight: bold; color: green; text-decoration: underline;">
-            💸 Click here to pay directly via GPay / UPI
-        </a>
-        <p style="margin-top: 0.75rem; font-size: 0.875rem; text-align: left;">
-            <strong>⚠️ Important: Upload your payment proof after paying.</strong>
-        </p>
-    </div>
-</div>
-<a href="https://forms.gle/BH8c5QNN48cTKgB3A" target="_blank" class="btn btn-pay" style="margin-top: 1rem;">
-            📤 Fill Google Form & Upload Payment Proof
-        </a>
-        <p class="welcome-subtitle" style="margin-top: 0.75rem; font-size: 0.9rem;">
-            We'll activate your account after verifying your uploaded proof from the form.
-        </p>
+    <!-- Fee & Payment Info -->
+    <div class="info-card">
+      <div class="info-item">
+        <strong>Current Monthly Fee:</strong>
+        <span class="fee">₹{{ total_fee }}</span>
+      </div>
+      <div class="info-item">
+        <strong>Payment Status:</strong>
+        {% if school.payment_status == 'active' %}
+          <span class="status status-active">Active till {{ school.next_due_date }}</span>
+        {% else %}
+          <span class="status status-inactive">Pending / Expired</span>
         {% endif %}
-
-        <div class="button-grid">
-            <a href="/school_admin/students" class="btn btn-secondary">Manage Students</a>
-            <a href="/school_admin/performance" class="btn">View Performance</a>
-        </div>
+      </div>
     </div>
 
-    <div class="welcome-card add-teacher-card">
-        <h2>👩‍🏫 Add a Teacher to tutor {{ school.name }}</h2>
-        <p class="welcome-subtitle">Create teacher profiles, set subjects, and earn.</p>
-        <a href="/become-a-tutor"
-           class="btn add-teacher-btn">
-            ➕ Add a New Teacher
-        </a>
-        <p class="welcome-subtitle" style="margin-top: 0.75rem; font-size: 0.9rem;">
-            Encourage quality teaching by onboarding skilled tutors.
-        </p>
+    <!-- Payment Instructions if Inactive -->
+    {% if school.payment_status != 'active' %}
+    <div class="info-card payment-warning mt-6">
+      <h3>💳 Pay via GPay / UPI / Bank:</h3>
+      <ul>
+        <li><strong>GPay:</strong> +91 6383750156</li>
+        <li><strong>UPI ID:</strong> suriyamoorthi8920@oksbi</li>
+        <li><strong>Bank:</strong> BOI Bank</li>
+        <li><strong>Acc No:</strong> 815210110031645</li>
+        <li><strong>IFSC:</strong> BKID0008152</li>
+      </ul>
+      <a href="upi://pay?pa=suriyamoorthi8920@oksbi&pn=Suriyamoorthi&cu=INR" target="_blank" class="text-green-700 font-semibold underline mt-2">
+        💸 Click to Pay via UPI / GPay
+      </a>
+      <p><strong>⚠️ Upload payment proof after paying</strong></p>
     </div>
 
-    <div class="ad-placement">
-        <p>Advertisement Space - Bottom Banner</p>
+    <a href="https://forms.gle/BH8c5QNN48cTKgB3A" target="_blank" class="btn btn-pay mt-4">
+      📤 Upload Payment Proof via Google Form
+    </a>
+    <p class="welcome-subtitle mt-2 text-sm">
+      Your account will be activated after verification.
+    </p>
+    {% endif %}
+
+    <!-- Grid for School Admin Actions -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+      <a href="/school_admin/students" class="btn btn-secondary">
+        🎓 Manage Students
+      </a>
+      <a href="/school_admin/performance" class="btn">
+        📊 View Performance
+      </a>
     </div>
+  </div>
+
+  <!-- Teacher Panel -->
+  <div class="bg-white p-6 rounded-lg shadow-md border max-w-3xl mx-auto mt-8">
+    <h2 class="text-2xl font-bold text-blue-800 mb-2">👩‍🏫 Teachers Panel for {{ school.name }}</h2>
+    <p class="text-gray-600 mb-4">Add teachers, assign subjects, and manage your teaching staff.</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <a href="{{ url_for('add_teacher') }}"
+         class="btn add-teacher-btn">
+        ➕ Add New Teacher
+      </a>
+      <a href="{{ url_for('school_list_teachers') }}"
+         class="btn bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+        📋 Manage Teachers
+      </a>
+    </div>
+  </div>
+
+  <!-- Ad space -->
+  <div class="ad-placement mt-8">
+    <p>Advertisement Space - Bottom Banner</p>
+  </div>
 </div>
 
 <footer>

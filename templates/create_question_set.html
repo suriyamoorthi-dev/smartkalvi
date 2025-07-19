@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Create AI Question Paper</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-lg p-8">
+    <h2 class="text-2xl font-bold text-blue-700 mb-6">📘 Create AI-Based Question Paper</h2>
+
+    <form method="POST" class="space-y-4">
+      <!-- General Info -->
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-semibold">Board</label>
+          <select name="board" class="w-full border rounded px-3 py-2">
+            <option value="stateboard">Stateboard</option>
+
+            <option value="cbse">CBSE</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold">Class</label>
+          <input type="text" name="class" required class="w-full border rounded px-3 py-2" placeholder="e.g. 10" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold">Subject</label>
+          <input type="text" name="subject" required class="w-full border rounded px-3 py-2" placeholder="e.g. Science" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold">Chapter</label>
+          <input type="text" name="chapter" required class="w-full border rounded px-3 py-2" placeholder="e.g. Matter" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold">Difficulty</label>
+          <select name="difficulty" class="w-full border rounded px-3 py-2">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold">Total Marks</label>
+          <input type="number" name="total_marks" required class="w-full border rounded px-3 py-2" placeholder="e.g. 50" />
+        </div>
+      </div>
+
+      <hr class="my-4 border-gray-300" />
+
+      <!-- Question Types -->
+      <h3 class="text-lg font-semibold text-gray-800">🎯 Question Types & Counts</h3>
+
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <label class="flex flex-col">
+          Choose the Correct Answer (1 mark):
+          <input type="number" name="choose_count" min="0" class="border rounded px-2 py-1" />
+        </label>
+
+        <label class="flex flex-col">
+          Fill in the Blanks (1 mark):
+          <input type="number" name="fillups_count" min="0" class="border rounded px-2 py-1" />
+        </label>
+
+        <label class="flex flex-col">
+          Match the Following (1 mark):
+          <input type="number" name="match_count" min="0" class="border rounded px-2 py-1" />
+        </label>
+
+        <label class="flex flex-col">
+          2 Mark Questions:
+          <input type="number" name="2m_count" min="0" class="border rounded px-2 py-1" />
+        </label>
+
+        <label class="flex flex-col">
+          5 Mark Questions:
+          <input type="number" name="5m_count" min="0" class="border rounded px-2 py-1" />
+        </label>
+
+        <label class="flex flex-col">
+          10 Mark Essay:
+          <input type="number" name="10m_count" min="0" class="border rounded px-2 py-1" />
+        </label>
+      </div>
+
+      <!-- Optional Extras -->
+      <div class="mt-4">
+        <label class="block font-semibold text-gray-700 mb-2">🧩 Include Special Sections:</label>
+        <div class="flex flex-wrap gap-4 text-sm">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" name="grammar" value="yes"> Grammar (English)
+          </label>
+          <label class="flex items-center gap-2">
+            <input type="checkbox" name="map" value="yes"> Map-based Question
+          </label>
+          <label class="flex items-center gap-2">
+            <input type="checkbox" name="diagram" value="yes"> Diagram Question
+          </label>
+          <label class="flex items-center gap-2">
+            <input type="checkbox" name="graph" value="yes"> Graph Question
+          </label>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="mt-6">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow">
+          ➕ Generate Question Paper
+        </button>
+      </div>
+    </form>
+
+    <!-- Results -->
+    {% if questions %}
+      <div class="mt-10">
+        <h3 class="text-xl font-semibold text-green-700 mb-4">✅ Generated Question Paper</h3>
+        <div class="bg-gray-50 border rounded p-4 whitespace-pre-wrap text-sm leading-relaxed space-y-2">
+          {% for line in questions %}
+            <div>{{ line }}</div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>

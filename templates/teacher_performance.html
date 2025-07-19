@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>📊 Teacher Performance - SmartKalvi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <!-- Navbar -->
+    <nav class="bg-white shadow sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="text-xl font-bold text-pink-600">SmartKalvi</div>
+            <div class="flex gap-4 text-sm">
+                <a href="{{ url_for('teacher_dashboard') }}" class="text-gray-700 hover:text-pink-600">🏠 Dashboard</a>
+                <a href="{{ url_for('teacher_subject_performance') }}" class="text-gray-700 hover:text-pink-600">📈 My Subject</a>
+                <a href="{{ url_for('logout') }}" class="text-gray-700 hover:text-pink-600">🚪 Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto p-4">
+        <!-- Subject Header -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h1 class="text-2xl font-bold text-pink-600 mb-2">Subject: {{ session.subject }}</h1>
+            <p class="text-gray-500 text-sm">This report shows class-wise student performance for your subject.</p>
+        </div>
+
+        <!-- Class Filter -->
+        <div class="bg-white p-4 rounded shadow mb-6">
+            <form method="get" action="{{ url_for('teacher_subject_performance') }}" class="flex flex-col sm:flex-row gap-4 items-center">
+                <label for="class" class="text-sm text-gray-600">Filter by Class:</label>
+                <select name="class" class="p-2 border rounded w-full sm:w-60 text-sm">
+                    <option value="">All Classes</option>
+                    {% for cls in all_classes %}
+                        <option value="{{ cls }}" {% if cls == selected_class %}selected{% endif %}>Class {{ cls }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="bg-pink-600 text-white px-6 py-2 rounded hover:bg-pink-700 transition text-sm">
+                    Apply Filter
+                </button>
+            </form>
+        </div>
+
+        <!-- Performance Table -->
+        <div class="bg-white p-4 rounded shadow overflow-x-auto">
+            <h2 class="text-lg font-semibold text-gray-700 mb-4">📊 Student Performance</h2>
+            <table class="min-w-full text-sm text-left">
+                <thead>
+                    <tr class="border-b bg-pink-50 text-pink-700">
+                        <th class="p-2">👤 Student</th>
+                        <th class="p-2">🏫 Class</th>
+                        <th class="p-2">📝 Exams</th>
+                        <th class="p-2">🎯 Score</th>
+                        <th class="p-2">📉 Percentage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student_name, class_level, exams, score, percent in performance %}
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-2">{{ student_name }}</td>
+                            <td class="p-2">{{ class_level }}</td>
+                            <td class="p-2">{{ exams }}</td>
+                            <td class="p-2">{{ score }}</td>
+                            <td class="p-2">{{ percent }}%</td>
+                        </tr>
+                    {% endfor %}
+                    {% if performance|length == 0 %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-gray-500">No performance data available.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Weak Students -->
+        {% if weak_students %}
+        <div class="bg-white p-4 rounded shadow mt-6">
+            <h2 class="text-lg font-semibold text-red-600 mb-4">⚠️ Weak Students (Below 50%)</h2>
+            <ul class="list-disc ml-6 text-sm text-gray-700 space-y-1">
+                {% for name, cls, pct in weak_students %}
+                    <li>{{ name }} - Class {{ cls }} ({{ pct }}%)</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
