@@ -1,26 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Chalkboard Notes Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-green-50 p-6">
-  <div class="max-w-2xl mx-auto bg-white rounded shadow p-6">
-    <h2 class="text-2xl font-bold text-green-700 mb-4">🧑‍🏫 Chalkboard Notes Generator</h2>
-    <form method="post" class="space-y-4">
-      <input type="text" name="class" placeholder="Class (e.g., 10)" value="{{ class_value }}" class="w-full border p-2 rounded" required>
-      <input type="text" name="subject" placeholder="Subject (e.g., Science)" value="{{ subject }}" class="w-full border p-2 rounded" required>
-      <input type="text" name="topic" placeholder="Topic (e.g., Friction)" value="{{ topic }}" class="w-full border p-2 rounded" required>
-      <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded">Generate Notes</button>
+<body class="bg-green-50 min-h-screen flex items-center justify-center p-4">
+
+  <div class="w-full max-w-3xl bg-white rounded-xl shadow-md p-6 md:p-8 space-y-6">
+
+    <div class="flex items-center justify-between flex-wrap gap-2">
+      <h2 class="text-xl md:text-2xl font-bold text-green-700">🧑‍🏫 Chalkboard Notes Generator</h2>
+      <a href="/school_teacher/dashboard" class="text-sm text-green-600 hover:underline">← Back to Dashboard</a>
+    </div>
+
+    <form method="post" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <input type="text" name="class" placeholder="Class (e.g., 10)" value="{{ class_value }}"
+             class="border p-3 rounded w-full text-sm" required>
+      <input type="text" name="subject" placeholder="Subject (e.g., Science)" value="{{ subject }}"
+             class="border p-3 rounded w-full text-sm" required>
+      <input type="text" name="topic" placeholder="Topic (e.g., Friction)" value="{{ topic }}"
+             class="border p-3 rounded w-full text-sm" required>
+      <div class="sm:col-span-2 md:col-span-3 text-right">
+        <button type="submit"
+                class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded w-full sm:w-auto">
+          ✨ Generate Notes
+        </button>
+      </div>
     </form>
 
     {% if notes %}
-      <div class="mt-6 p-4 bg-gray-100 rounded whitespace-pre-line">
-        <h3 class="text-lg font-semibold mb-2 text-gray-800">📝 Chalkboard Notes:</h3>
-        <p>{{ notes }}</p>
-      </div>
+    <div class="bg-gray-100 p-5 rounded border border-gray-300">
+      <h3 class="text-lg font-semibold text-gray-800 mb-2">📝 Chalkboard Notes:</h3>
+      <pre class="whitespace-pre-wrap text-sm text-gray-700">{{ notes }}</pre>
+    </div>
     {% endif %}
+
   </div>
+
 </body>
 </html>
