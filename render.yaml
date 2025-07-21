@@ -7,6 +7,3 @@ services:
       pip install -r requirements.txt
     startCommand: gunicorn app:app
     plan: free
-    envVars:
-      - key: PORT
-        value: 10000
