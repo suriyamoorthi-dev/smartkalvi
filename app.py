@@ -66,12 +66,22 @@ from google.oauth2 import service_account
 credentials = None
 
 # Try to load from environment (for Render)
+import os
+import json
+from google.oauth2 import service_account
+from google.cloud import storage, vision
+
 credentials_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
 
 if credentials_json:
     credentials_dict = json.loads(credentials_json)
+    
+    # 🔥 Fix newline issue in private key
+    if "private_key" in credentials_dict:
+        credentials_dict["private_key"] = credentials_dict["private_key"].replace("\\n", "\n")
+
     credentials = service_account.Credentials.from_service_account_info(credentials_dict)
-# Fallback to local file for your laptop
+
 elif os.path.exists(r"C:\Users\welcome\Downloads\cosmic-abbey-457305-n2-7f39e257180a.json"):
     credentials = service_account.Credentials.from_service_account_file(
         r"C:\Users\welcome\Downloads\cosmic-abbey-457305-n2-7f39e257180a.json"
@@ -82,6 +92,7 @@ else:
 GCS_BUCKET_NAME = "suriyan"
 storage_client = storage.Client(credentials=credentials)
 vision_client = vision.ImageAnnotatorClient(credentials=credentials)
+
 
 # === Load Syllabus ===
 with open('syllabus.json', 'r', encoding='utf-8') as f:
