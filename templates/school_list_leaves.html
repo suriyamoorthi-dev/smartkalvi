@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leave Requests - SmartKalvi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="container mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-4 text-center">Leave Requests</h1>
+
+    <div class="overflow-x-auto bg-white rounded shadow-md">
+      <table class="min-w-full text-sm text-left text-gray-700">
+        <thead class="bg-gray-200 text-xs uppercase">
+          <tr>
+            <th class="py-3 px-4">Name</th>
+            <th class="py-3 px-4">From</th>
+            <th class="py-3 px-4">To</th>
+            <th class="py-3 px-4">Reason</th>
+            <th class="py-3 px-4">Status</th>
+            <th class="py-3 px-4 text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for leave in leaves %}
+          <tr class="border-t">
+            <td class="py-2 px-4">
+              {% if leave.school_teacher %}
+                {{ leave.school_teacher.name }}
+              {% elif leave.student %}
+                {{ leave.student.name }}
+              {% else %}
+                Unknown
+              {% endif %}
+            </td>
+            <td class="py-2 px-4">{{ leave.from_date }}</td>
+            <td class="py-2 px-4">{{ leave.to_date }}</td>
+            <td class="py-2 px-4">{{ leave.reason }}</td>
+            <td class="py-2 px-4">
+              {% if leave.status == "pending" %}
+                <span class="text-yellow-600 font-semibold">Pending</span>
+              {% elif leave.status == "approved" %}
+                <span class="text-green-600 font-semibold">Approved</span>
+              {% elif leave.status == "rejected" %}
+                <span class="text-red-600 font-semibold">Rejected</span>
+              {% else %}
+                {{ leave.status }}
+              {% endif %}
+            </td>
+            <td class="py-2 px-4 text-center space-x-2">
+              {% if leave.status == "pending" %}
+                <a href="/school/approve_leave/{{ leave.id }}" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs sm:text-sm">Approve</a>
+                <a href="/school/reject_leave/{{ leave.id }}" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs sm:text-sm">Reject</a>
+              {% else %}
+                <span class="text-gray-500 text-sm italic">No action</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" class="py-4 px-4 text-center text-gray-500">No leave requests found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

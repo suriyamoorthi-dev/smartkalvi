@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Review Leave Requests - SmartKalvi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+
+  <div class="container mx-auto px-4 py-6">
+    <h1 class="text-2xl font-bold mb-6 text-center">Leave Requests - Your Class</h1>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+        <thead class="bg-blue-600 text-white">
+          <tr>
+            <th class="py-3 px-4 text-left">Student ID</th>
+            <th class="py-3 px-4 text-left">From Date</th>
+            <th class="py-3 px-4 text-left">To Date</th>
+            <th class="py-3 px-4 text-left">Reason</th>
+            <th class="py-3 px-4 text-left">Status</th>
+            <th class="py-3 px-4 text-left">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for leave in leaves %}
+          <tr class="border-b hover:bg-gray-50">
+            <td class="py-3 px-4">{{ leave.student_id }}</td>
+            <td class="py-3 px-4">{{ leave.from_date }}</td>
+            <td class="py-3 px-4">{{ leave.to_date }}</td>
+            <td class="py-3 px-4">{{ leave.reason }}</td>
+            <td class="py-3 px-4">
+              <span class="px-2 py-1 text-xs rounded-full
+                {% if leave.status == 'pending' %}
+                  bg-yellow-100 text-yellow-800
+                {% elif leave.status == 'approved' %}
+                  bg-green-100 text-green-800
+                {% elif leave.status == 'rejected' %}
+                  bg-red-100 text-red-800
+                {% endif %}">
+                {{ leave.status | capitalize }}
+              </span>
+            </td>
+            <td class="py-3 px-4">
+              {% if leave.status == 'pending' %}
+              <div class="flex space-x-2">
+                <form method="post" action="/school_teacher/update_leave/{{ leave.id }}/approved">
+                  <button type="submit" class="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1 rounded">Approve</button>
+                </form>
+                <form method="post" action="/school_teacher/update_leave/{{ leave.id }}/rejected">
+                  <button type="submit" class="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-1 rounded">Reject</button>
+                </form>
+              </div>
+              {% else %}
+              <span class="text-gray-500 text-sm italic">No Action</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</body>
+</html>

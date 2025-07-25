@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add Class - SmartKalvi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+  <!-- Topbar -->
+  <header class="bg-white shadow-md py-4 px-6 flex justify-between items-center">
+    <h1 class="text-xl font-bold text-blue-600">SmartKalvi Dashboard</h1>
+    <div>
+      <span class="text-gray-600 text-sm">Welcome, Admin</span>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main class="flex-1 p-4 sm:p-6 max-w-xl mx-auto">
+    <div class="bg-white p-6 rounded-xl shadow-md">
+      <h2 class="text-2xl font-bold text-blue-700 mb-4 text-center">➕ Add New Class</h2>
+
+      <form method="POST" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">📘 Class Name</label>
+          <input type="text" name="class_name" required
+                 class="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 placeholder="Ex: 10A">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">🎓 Class Level</label>
+          <input type="number" name="class_level" required
+                 class="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 placeholder="Ex: 10">
+        </div>
+
+        <button type="submit"
+                class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition">
+          ➕ Add Class
+        </button>
+      </form>
+
+      <hr class="my-6">
+
+      <h3 class="text-lg font-semibold text-gray-800 mb-3">📋 Existing Classes</h3>
+      <ul class="space-y-2">
+        {% for c in classes %}
+          <li class="bg-gray-100 p-2 rounded-lg text-sm text-gray-800">
+            {{ c.class_name }} (Level {{ c.class_level }})
+          </li>
+        {% endfor %}
+      </ul>
+
+      <div class="mt-6 flex flex-col sm:flex-row gap-3">
+        <a href="{{ url_for('assign_class') }}"
+           class="w-full text-center bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition">
+          🧑‍🏫 Go to Assign Class
+        </a>
+<a href="{{ url_for('school_admin_dashboard') }}"
+   class="w-full text-center bg-gray-300 text-gray-800 py-2 rounded-lg hover:bg-gray-400 transition">
+  🔙 Back to Dashboard
+</a>
+
+      </div>
+    </div>
+  </main>
+
+</body>
+</html>

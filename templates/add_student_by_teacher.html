@@ -1,0 +1,23 @@
+<!-- templates/add_student_by_teacher.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Add Student</title>
+  <link rel="stylesheet" href="https://cdn.tailwindcss.com" />
+</head>
+<body class="p-8 bg-gray-50 text-gray-800">
+  <h1 class="text-2xl font-bold mb-4">Add New Student</h1>
+  <form method="POST">
+  <input name="name" placeholder="Student Name" required>
+  <select name="gender">
+    <option value="Male">Male</option>
+    <option value="Female">Female</option>
+  </select>
+  <input name="roll_no" placeholder="Roll Number" required>
+  <input name="password" placeholder="Password" type="password" required>
+  <button type="submit">Add Student</button>
+</form>
+
+
+</body>
+</html>

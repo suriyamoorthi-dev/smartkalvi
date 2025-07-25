@@ -1,29 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Subscribe to {{ teacher.name }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-orange-50 min-h-screen flex flex-col items-center p-6">
 
     <div class="bg-white p-6 rounded-lg shadow max-w-md w-full space-y-4">
-        <h2 class="text-2xl font-bold text-center text-orange-700">📚 Subscribe to {{ teacher.name }}</h2>
+        <h2 class="text-2xl font-bold text-center text-orange-700">
+            📚 Subscribe to {{ teacher.name }}
+        </h2>
 
-        <p><strong>Subject:</strong> {{ teacher.subject }}</p>
-        <p><strong>Monthly Fee:</strong> ₹{{ teacher.monthly_fee }}</p>
+        <p><strong>📘 Subject:</strong> {{ teacher.subject }}</p>
+        <p><strong>💰 Monthly Fee:</strong> ₹{{ teacher.monthly_fee }}</p>
 
-        <hr>
+        <hr class="border-orange-200">
 
         <form method="POST" class="space-y-4">
             <!-- UPI Section -->
             <div class="bg-green-50 border border-green-200 p-4 rounded-lg">
                 <p class="font-medium text-green-700">Pay to:</p>
-                <p class="text-sm">UPI ID: <strong>suriyamoorthi8920@oksbi</strong></p>
-                <p class="text-sm">UPI Number: <strong>6383750156</strong></p>
+                <p class="text-sm">🔢 UPI ID: <strong>suriyamoorthi8920@oksbi</strong></p>
+                <p class="text-sm">📱 UPI Number: <strong>6383750156</strong></p>
 
-                <div class="my-3 flex justify-center">
-                <img src="{{ url_for('static', filename='qrgpay/gpay_qr.png') }}" ...>
-</div>
+                <div class="my-4 flex justify-center">
+                    <img src="{{ url_for('static', filename='qrgpay/gpay_qr.png') }}" alt="GPay QR" class="w-40 h-40 object-contain">
+                </div>
 
                 <p class="text-center">
                     <a href="upi://pay?pa=suriyamoorthi8920@oksbi&pn=Suriyamoorthi&am={{ teacher.monthly_fee }}&cu=INR"
@@ -34,11 +37,11 @@
                 </p>
 
                 <label class="block mt-4 font-medium text-gray-700">🧾 UPI Transaction Ref ID</label>
-                <input type="text" name="payment_ref_id" class="w-full border p-3 rounded-lg" required>
+                <input type="text" name="payment_ref_id" class="w-full border p-3 rounded-lg" placeholder="e.g. 1234567890" required>
                 <p class="text-xs text-gray-500 mt-1">Paste your UPI reference ID after payment.</p>
             </div>
 
-            <button type="submit" class="w-full bg-orange-600 text-white py-3 rounded-lg hover:bg-orange-700">
+            <button type="submit" class="w-full bg-orange-600 text-white py-3 rounded-lg hover:bg-orange-700 font-semibold">
                 ✅ Submit & Request Approval
             </button>
         </form>

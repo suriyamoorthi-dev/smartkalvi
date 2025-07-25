@@ -12,10 +12,9 @@
         <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="text-xl font-bold text-pink-600">SmartKalvi</div>
             <div class="flex gap-4 text-sm">
-                <a href="{{ url_for('teacher_dashboard') }}" class="text-gray-700 hover:text-pink-600">🏠 Dashboard</a>
-                <a href="{{ url_for('teacher_subject_performance') }}" class="text-gray-700 hover:text-pink-600">📈 My Subject</a>
-                <a href="{{ url_for('logout') }}" class="text-gray-700 hover:text-pink-600">🚪 Logout</a>
-            </div>
+                <a href="{{ url_for('school_teacher_dashboard') }}" class="text-gray-700 hover:text-pink-600">🏠 Dashboard</a>
+                <a href="{{ url_for('teacher_performance') }}" class="text-gray-700 hover:text-pink-600">📈 My Subject</a>
+                </div>
         </div>
     </nav>
 
@@ -28,7 +27,7 @@
 
         <!-- Class Filter -->
         <div class="bg-white p-4 rounded shadow mb-6">
-            <form method="get" action="{{ url_for('teacher_subject_performance') }}" class="flex flex-col sm:flex-row gap-4 items-center">
+            <form method="get" action="{{ url_for('teacher_performance') }}" class="flex flex-col sm:flex-row gap-4 items-center">
                 <label for="class" class="text-sm text-gray-600">Filter by Class:</label>
                 <select name="class" class="p-2 border rounded w-full sm:w-60 text-sm">
                     <option value="">All Classes</option>
