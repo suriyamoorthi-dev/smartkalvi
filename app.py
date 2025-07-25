@@ -108,169 +108,6 @@ QUESTIONS_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsIn
 supabase_questions = create_client(QUESTIONS_URL, QUESTIONS_KEY)
 
 
-# === Utils ===
-def parse_exam_output(text):
-    lines = text.split("\n")
-    qna_2m, qna_5m = [], []
-    current = None
-
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-
-        lower_line = line.lower()
-
-        # Detect the section
-        if "2-mark questions" in lower_line or "2 mark questions" in lower_line:
-            current = qna_2m
-            continue
-        elif "5-mark questions" in lower_line or "5 mark questions" in lower_line:
-            current = qna_5m
-            continue
-
-        # Extract questions like "Q1: What is...?"
-        if line.startswith("Q") and ":" in line and current is not None:
-            question = line.split(":", 1)[1].strip()
-            if question:
-                current.append({"question": question})
-
-    return qna_2m, qna_5m
-
-TOGETHER_API_KEY = "3041964b24957ccdabbb5678a13f8e5bcb895a98c508c1c0469dfb9ad5e0bfce"
-TOGETHER_MODEL = "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"
-import random
-import uuid
-
-def generate_exam_qna(class_level, subject, topic, exam_mode="topic", board="state", force=False):
-    import random, json, uuid, requests
-
-    mode_settings = {"topic": (5, 3), "unit": (8, 5), "full": (12, 8)}
-    total_2m, total_5m = mode_settings.get(exam_mode, (4, 2))
-
-    db_2m, db_5m = [], []
-
-    try:
-        if not force:
-            response = supabase_questions.table("questions").select("qna_2m, qna_5m").match({
-                "class_level": class_level,
-                "subject": subject,
-                "topic": topic,
-                "exam_mode": exam_mode,
-                "board": board
-            }).limit(1).execute()
-
-            if response.data:
-                try:
-                    db_2m = json.loads(response.data[0].get('qna_2m', '[]'))
-                    db_5m = json.loads(response.data[0].get('qna_5m', '[]'))
-                    print(f"✅ Fetched {len(db_2m)} two-mark and {len(db_5m)} five-mark from Supabase ({board.upper()}).")
-                except:
-                    print("⚠️ Corrupted cached record, regenerating...")
-    except Exception as e:
-        print(f"⚠️ Supabase fetch error: {e}")
-
-    # Calculate how many more needed from AI
-    remaining_2m = max(total_2m - len(db_2m), 0)
-    remaining_5m = max(total_5m - len(db_5m), 0)
-
-    ai_2m, ai_5m = [], []
-
-    if remaining_2m > 0 or remaining_5m > 0:
-        print(f"⚡ Generating {remaining_2m} two-mark and {remaining_5m} five-mark questions from AI ({board.upper()})...")
-
-        syllabus_text = "Tamil Nadu Samacheer Kalvi" if board == "state" else "CBSE"
-
-        prompt = f"""
-You are an expert {syllabus_text} question setter.
-
-Generate {remaining_2m} two-mark questions and {remaining_5m} five-mark questions ONLY — do not provide answers.
-
-Exam Mode: {exam_mode.title()} Wise
-Class: {class_level}
-Subject: {subject}
-Topic/Unit/Chapter: {topic}
-
-Strictly follow {syllabus_text} syllabus. Questions should be textbook-style, simple, real-time relatable, and suitable for practice and exams.
-
-Format:
-2-Mark Questions:
-Q1: ...
-Q2: ...
-...
-5-Mark Questions:
-Q1: ...
-Q2: ...
-...
-"""
-
-        try:
-            response = requests.post(
-                "https://api.together.xyz/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {TOGETHER_API_KEY}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": TOGETHER_MODEL,
-                    "messages": [
-                        {"role": "system", "content": "You are an expert in Indian school exam patterns."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    "temperature": 0.4
-                },
-                timeout=30
-            )
-            response.raise_for_status()
-            content = response.json()['choices'][0]['message']['content']
-            print("📝 Raw AI Output:\n", content)
-
-            # Parse Questions
-            lines = content.splitlines()
-            is_2m, is_5m = False, False
-
-            for line in lines:
-                line = line.strip()
-                if line.lower().startswith("2-mark questions"):
-                    is_2m, is_5m = True, False
-                elif line.lower().startswith("5-mark questions"):
-                    is_2m, is_5m = False, True
-                elif line.startswith("Q") and ":" in line:
-                    question_text = line.split(":", 1)[1].strip()
-                    if is_2m and len(ai_2m) < remaining_2m:
-                        ai_2m.append({"question": question_text})
-                    elif is_5m and len(ai_5m) < remaining_5m:
-                        ai_5m.append({"question": question_text})
-
-        except Exception as e:
-            print(f"❌ AI API Error: {e}")
-            print("⚠️ Continuing with available DB questions...")
-
-    final_2m = db_2m + ai_2m
-    final_5m = db_5m + ai_5m
-    random.shuffle(final_2m)
-    random.shuffle(final_5m)
-
-    try:
-        # Save to Supabase only if nothing existed initially and AI generated something
-        if not db_2m and not db_5m and (final_2m or final_5m):
-            supabase_questions.table("questions").insert({
-                "id": str(uuid.uuid4()),
-                "class_level": class_level,
-                "subject": subject,
-                "topic": topic,
-                "exam_mode": exam_mode,
-                "board": board,
-                "qna_2m": json.dumps(final_2m),
-                "qna_5m": json.dumps(final_5m)
-            }).execute()
-            print(f"✅ New mixed question set saved to Supabase ({board.upper()}).")
-    except Exception as e:
-        print(f"⚠️ Supabase save error: {e}")
-
-    print(f"🎯 Final 2-mark: {len(final_2m)}, Final 5-mark: {len(final_5m)}")
-    return final_2m, final_5m
-
 # === Routes ===
 @app.route('/')
 def homepage():
@@ -329,269 +166,71 @@ def events():
 def pricing():
     return render_template('pricing.html')
 
-
 @app.route('/dashboard')
 def dashboard():
     if 'student_id' not in session:
         return redirect(url_for('student_login'))
 
-    syllabus_res = supabase.table("syllabus").select("*").execute()
-    teachers_res = supabase.table("teachers").select("*").eq("verified", True).execute()
+    student_id = session['student_id']
 
+    # ✅ 1. Get student data
+    student_res = supabase.table("students").select("*, classes(*)").eq("id", student_id).single().execute()
+
+    student = student_res.data if student_res.data else {}
+
+    # ✅ 2. Get student coins
+    coin_response = supabase.table('student_coins').select("total_coins").eq("student_id", student_id).limit(1).execute()
+    coin_data = coin_response.data[0] if coin_response.data else None
+    total_coins = coin_data['total_coins'] if coin_data else 0
+
+    # ✅ 3. Get syllabus
+    syllabus_res = supabase.table("syllabus").select("*").execute()
     syllabus_data = syllabus_res.data if syllabus_res.data else []
 
     formatted_syllabus = []
     for item in syllabus_data:
         topics = item.get("topics")
-
-        # Parse JSON string if needed
         if isinstance(topics, str):
             try:
                 topics = json.loads(topics)
             except:
                 topics = []
-
         formatted_syllabus.append({
-            "class_level": item.get("class_level"),  # Match DB field
+            "class_level": item.get("class_level"),
             "subject": item.get("subject"),
             "topics": topics
         })
 
-    return render_template('index.html', syllabus=formatted_syllabus, teachers=teachers_res.data)
+    # ✅ 4. Get verified teachers
+    teachers_res = supabase.table("teachers").select("*").eq("verified", True).execute()
+    teachers_list = teachers_res.data if teachers_res.data else []
 
-@app.route('/exam', methods=['POST'])
-def exam():
-    class_level = request.form['class']
-    subject = request.form['subject']
-    topic = request.form['topic']
-    exam_mode = request.form.get('exam_mode', 'topic')
-    board = request.form.get('board', 'state')  # Default 'state' if not provided
+    # Map teacher_id to teacher details
+    teacher_map = {str(t['id']): t for t in teachers_list}
 
-    qna_1m, qna_2m, qna_5m = [], [], []
+    # ✅ 5. Get booked teachers
+    booking_res = supabase.table("bookings").select("*").eq("student_id", student_id).limit(5).execute()
+    booked_rows = booking_res.data if booking_res.data else []
 
-    try:
-        # Fetch from Supabase
-        response = supabase.table("question_sets").select("question_json").match({
-            "class": class_level,
-            "subject": subject,
-            "chapter": topic,
-            "board": board
-        }).order("created_at", desc=True).limit(1).execute()
+    booked_teachers = []
+    for booking in booked_rows:
+        teacher_id = str(booking.get("teacher_id"))
+        teacher = teacher_map.get(teacher_id)
+        if teacher:
+            booked_teachers.append({
+                "booking": booking,
+                "teacher": teacher
+            })
 
-        if response.data:
-            raw = response.data[0].get("question_json", {})
-
-            if isinstance(raw, str):
-                # Handle free-text format (like your example)
-                lines = raw.split("\n")
-                current_section = None
-
-                for line in lines:
-                    clean_line = line.strip()
-
-                    if "5 Mark" in clean_line:
-                        current_section = "5m"
-                        continue
-                    elif "2 Mark" in clean_line:
-                        current_section = "2m"
-                        continue
-                    elif "1 Mark" in clean_line or "choose" in clean_line.lower() or "fillups" in clean_line.lower() or "match" in clean_line.lower():
-                        current_section = "1m"
-                        continue
-
-                    if current_section == "1m":
-                        if clean_line and not clean_line.lower().startswith("in the blanks") and "____" in clean_line:
-                            qna_1m.append(clean_line)
-                    elif current_section == "2m":
-                        if clean_line:
-                            qna_2m.append(clean_line)
-                    elif current_section == "5m":
-                        if clean_line and (clean_line.startswith("1.") or clean_line.startswith("2.") or clean_line[0].isdigit()):
-                            qna_5m.append(clean_line)
-
-            elif isinstance(raw, dict):
-                # Handle structured JSON format
-                if "choose" in raw and raw["choose"]:
-                    qna_1m += [line.strip() for line in raw["choose"].split("\n") if line.strip()]
-
-                if "fillups" in raw and raw["fillups"]:
-                    qna_1m += [
-                        line.strip()
-                        for line in raw["fillups"].split("\n")
-                        if line.strip() and not line.strip().startswith("**") and not line.strip().lower().startswith("in the blanks")
-                        and "____" in line
-                    ]
-
-                if "match" in raw and raw["match"]:
-                    qna_1m += [line.strip() for line in raw["match"].split("\n") if line.strip()]
-
-                qna_2m = raw.get("2m", "").split("\n") if raw.get("2m") else []
-                qna_5m = raw.get("5m", "").split("\n") if raw.get("5m") else []
-
-            print("✅ Loaded question set from Supabase.")
-
-        else:
-            print("⚠️ No matching questions found. Generating new...")
-            generated = generate_exam_qna(class_level, subject, topic, exam_mode, board=board, force=True)
-
-            if isinstance(generated, dict):
-                qna_1m = generated.get("1m", [])
-                qna_2m = generated.get("2m", [])
-                qna_5m = generated.get("5m", [])
-            else:
-                qna_2m, qna_5m = generated
-
-    except Exception as e:
-        print(f"❌ Supabase fetch error: {e}")
-
-    total_marks = 25 if exam_mode == "topic" else 40 if exam_mode == "unit" else 100
-
-    correct_answer_text = json.dumps({
-        "1m": qna_1m,
-        "2m": qna_2m,
-        "5m": qna_5m
-    }, ensure_ascii=False)
-
+    # ✅ Final render (removed posts and badges)
     return render_template(
-        'exam.html',
-        class_level=class_level,
-        subject=subject,
-        topic=topic,
-        exam_mode=exam_mode,
-        board=board,
-        qna_1m=qna_1m,
-        qna_2m=qna_2m,
-        qna_5m=qna_5m,
-        total_marks=total_marks,
-        correct_answer_text=correct_answer_text
+        'index.html',
+        student=student,
+        total_coins=total_coins,
+        syllabus=formatted_syllabus,
+        teachers=teachers_list,
+        booked_teachers=booked_teachers
     )
-
-
-@app.route('/upload_exam', methods=['POST'])
-def upload_exam():
-    if 'file' not in request.files or 'correct_answer' not in request.form:
-        return jsonify({"error": "Missing required parameters."}), 400
-
-    pdf_file = request.files['file']
-    correct_answer = request.form['correct_answer']
-    student_id = str(uuid.uuid4())
-
-    pdf_filename = f"uploads/{student_id}_answer.pdf"
-    ocr_output_prefix = f"ocr_results/{student_id}/"
-
-    bucket = storage_client.bucket(GCS_BUCKET_NAME)
-    pdf_blob = bucket.blob(pdf_filename)
-    pdf_blob.upload_from_file(pdf_file)
-
-    gcs_pdf_path = f"gs://{GCS_BUCKET_NAME}/{pdf_filename}"
-    gcs_output_path = f"gs://{GCS_BUCKET_NAME}/{ocr_output_prefix}"
-
-    feature = vision.Feature(type_=vision.Feature.Type.DOCUMENT_TEXT_DETECTION)
-    gcs_source = vision.GcsSource(uri=gcs_pdf_path)
-    input_config = vision.InputConfig(gcs_source=gcs_source, mime_type="application/pdf")
-    gcs_destination = vision.GcsDestination(uri=gcs_output_path)
-    output_config = vision.OutputConfig(gcs_destination=gcs_destination)
-
-    async_request = vision.AsyncAnnotateFileRequest(
-        features=[feature],
-        input_config=input_config,
-        output_config=output_config
-    )
-
-    operation = vision_client.async_batch_annotate_files(requests=[async_request])
-    operation.result(timeout=60)
-
-    blobs = list(storage_client.list_blobs(GCS_BUCKET_NAME, prefix=ocr_output_prefix))
-    extracted_text = ""
-
-    import json
-    import tempfile
-    import os
-
-    for ocr_blob in blobs:
-        if ocr_blob.name.endswith(".json"):
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as temp_file:
-                temp_path = temp_file.name
-
-            ocr_blob.download_to_filename(temp_path)
-
-            with open(temp_path, "r", encoding="utf-8") as f:
-                ocr_data = json.load(f)
-
-            os.remove(temp_path)
-
-            for response in ocr_data.get('responses', []):
-                extracted_text += response.get('fullTextAnnotation', {}).get('text', '')
-
-    # We still use AI evaluation, but we only care about final score
-    _, score = evaluate_answer_with_ai(correct_answer, extracted_text)
-
-    # Cleanup
-    pdf_blob.delete()
-    for ocr_blob in blobs:
-        ocr_blob.delete()
-
-    total_marks = 25
-
-    return render_template(
-        'result.html',
-        score=score,
-        total_marks=total_marks
-    )
-
-import re
-import requests
-
-def evaluate_answer_with_ai(correct_answer, student_answer, exam_mode="topic", board="state"):
-    total_marks = 25 if exam_mode == "topic" else 40 if exam_mode == "unit" else 100
-    board_text = "Tamil Nadu Samacheer Kalvi" if board == "state" else "CBSE"
-
-    prompt = f"""
-You are an experienced {board_text} school teacher evaluating answers.
-
-Please evaluate the student's answer strictly based on textbook standards.
-
-Correct Answer:
-{correct_answer}
-
-Student's Answer:
-{student_answer}
-
-Provide only the final score in this format:
-
-Score: X/{total_marks}
-"""
-
-    try:
-        response = requests.post(  
-            "https://api.together.xyz/v1/chat/completions",
-            headers={"Authorization": f"Bearer {TOGETHER_API_KEY}", "Content-Type": "application/json"},
-            json={
-                "model": TOGETHER_MODEL,
-                "messages": [
-                    {"role": "system", "content": "You are an experienced Indian school teacher evaluating student answers."},
-                    {"role": "user", "content": prompt}
-                ],
-                "temperature": 0.4
-            },
-            timeout=30
-        )
-        response.raise_for_status()
-        content = response.json()['choices'][0]['message']['content']
-        print("📝 AI Raw Evaluation:\n", content)
-
-        score_match = re.search(r'Score:\s*(\d+)\s*/\s*(\d+)', content)
-        score = int(score_match.group(1)) if score_match else 0
-        return content, score
-
-    except Exception as e:
-        print(f"❌ AI Evaluation Error: {e}")
-        return "AI Evaluation Failed", 0
-
-
-@app.errorhandler(RequestEntityTooLarge)
-def handle_large_file(e):
-    return "❌ File too large.", 413
 
 # === Super Admin Routes - Clean and Organized ===
 
@@ -643,6 +282,7 @@ def school_admin_login():
             if check_password_hash(school['admin_password'], password):
                 session['school_admin_id'] = school['id']
                 session['school_id'] = school['id']
+                session['role'] = 'school_admin'
                 return redirect(url_for('school_admin_dashboard'))
 
         return render_template('school_admin_login.html', error="❌ Invalid username or password")
@@ -769,12 +409,41 @@ def school_teacher_dashboard():
     if 'school_teacher_id' not in session:
         return redirect(url_for('school_teacher_login'))
 
+    school_teacher_id = session['school_teacher_id']
 
-    teacher_id = session['school_teacher_id']
-    teacher_resp = supabase.table('school_teachers').select("*").eq('id', teacher_id).single().execute()
-    teacher = teacher_resp.data
+    # Get teacher details
+    teacher_result = supabase.table("school_teachers").select("*").eq("id", school_teacher_id).execute()
+    teacher = teacher_result.data[0] if teacher_result.data else None
+    print("DEBUG - Teacher:", teacher)
 
-    return render_template('school_teacher_dashboard.html', teacher=teacher)
+    subject = teacher['subject'] if teacher else "N/A"
+
+    # Check school ID and fetch school
+    school_name = "N/A"
+    if teacher and teacher.get('school_id'):
+        school_id = teacher['school_id']
+        print("DEBUG - School ID from teacher:", school_id)
+
+        school_result = supabase.table("schools").select("name").eq("id", school_id).execute()
+        print("DEBUG - School Query Result:", school_result.data)
+
+        if school_result.data:
+            school_name = school_result.data[0]['name']
+
+    # Class logic as before
+    assigned_class = "Not Assigned"
+    mapping_result = supabase.table("class_teacher_mappings") \
+        .select("class_id") \
+        .eq("teacher_id", school_teacher_id) \
+        .execute()
+
+    if mapping_result.data:
+        class_id = mapping_result.data[0]['class_id']
+        class_result = supabase.table("classes").select("class_name").eq("id", class_id).execute()
+        if class_result.data:
+            assigned_class = class_result.data[0]['class_name']
+
+    return render_template("school_teacher_dashboard.html", teacher=teacher, school_name=school_name, subject=subject, assigned_class=assigned_class)
 
 @app.route('/school_admin/teachers')
 def school_list_teachers():
@@ -1155,18 +824,84 @@ def delete_question_set(set_id):
     supabase.table("question_sets").delete().eq("id", set_id).execute()
     return redirect(url_for('my_question_sets'))
 
-@app.route('/school_teacher/assigned_work')
-def assigned_work():
+@app.route("/school_admin/assign_class", methods=["GET", "POST"])
+def assign_class():
+    if request.method == "POST":
+        school_id = session.get("school_id")
+        teacher_id = request.form.get("teacher_id")
+        class_id = request.form.get("class_id")  # Changed from class_name
+
+        if not (school_id and teacher_id and class_id):
+            return "Missing data", 400
+
+        supabase.table("class_teacher_mappings").insert({
+            "school_id": school_id,
+            "teacher_id": teacher_id,
+            "class_id": class_id  # changed here
+        }).execute()
+
+        return redirect(url_for("view_class_teachers"))
+
+    
+    # Show teacher and class list
+    teachers = supabase.table("school_teachers").select("*").eq("school_id", session.get("school_id")).execute().data
+    classes = supabase.table("classes").select("id, class_name").eq("school_id", session.get("school_id")).execute().data
+    return render_template("class_teacher_mapping.html", teachers=teachers, classes=classes)
+
+@app.route("/school_admin/add_class", methods=["GET", "POST"])
+def add_class():
+    if request.method == "POST":
+        class_name = request.form.get("class_name")
+        class_level = request.form.get("class_level")
+        school_id = session.get("school_id")
+
+        if not (class_name and class_level and school_id):
+            return "Missing data", 400
+
+        supabase.table("classes").insert({
+            "class_name": class_name,
+            "class_level": class_level,
+            "school_id": school_id
+        }).execute()
+
+        return redirect(url_for("add_class"))
+
+    classes = supabase.table("classes").select("*").eq("school_id", session.get("school_id")).execute().data
+    return render_template("add_class.html", classes=classes)
+
+
+@app.route("/school_admin/view_class_teachers")
+def view_class_teachers():
+    class_teachers = supabase.table("class_teacher_mappings") \
+        .select("id, classes(class_name), school_teachers(name)") \
+        .execute().data
+    return render_template("view_class_teachers.html", mappings=class_teachers)
+
+@app.route('/teacher/edit_profile', methods=['GET', 'POST'])
+def edit_teacher_profile():
     if 'school_teacher_id' not in session:
         return redirect(url_for('school_teacher_login'))
 
     teacher_id = session['school_teacher_id']
 
-    # Fetch assigned work (customize based on your table)
-    response = supabase.table('assigned_work').select('*').eq('teacher_id', teacher_id).execute()
-    work_items = response.data
+    # Fetch existing teacher details
+    teacher = supabase.table('school_teachers').select("*").eq("id", teacher_id).single().execute().data
 
-    return render_template('assigned_work.html', work_items=work_items)
+    if request.method == 'POST':
+        name = request.form.get('name')
+        subject = request.form.get('subject')
+        profile_pic_url = request.form.get('profile_pic')  # Save image URL here
+
+        # Update teacher profile
+        update_response = supabase.table('school_teachers').update({
+            'name': name,
+            'subject': subject,
+            'profile_pic': profile_pic_url
+        }).eq("id", teacher_id).execute()
+
+        return redirect(url_for('school_teacher_dashboard'))
+
+    return render_template("editt_teacher_profile.html", teacher=teacher)
 
 @app.route('/teacher/performance')
 def teacher_performance():
@@ -1248,32 +983,217 @@ def manage_students():
 
     if request.method == 'POST':
         name = request.form['name']
-        class_level = request.form['class_level']
+        class_id = request.form['class_id']
         username = request.form['username']
-        password = generate_password_hash(request.form['password'])
+        raw_password = request.form['password']
+        password_hash = generate_password_hash(raw_password)
 
-        # Use .execute() safely and check if any row exists
+        # Check if username already exists
         existing = supabase.table('students').select('id').eq('username', username).execute()
-
         if existing.data and len(existing.data) > 0:
             flash("⚠️ Username already exists.", "error")
         else:
             supabase.table('students').insert({
                 "name": name,
-                "class_level": class_level,
+                "class_id": class_id,
                 "username": username,
-                "password": password,
+                "password": raw_password,          # optional: for internal use
+                "password_hash": password_hash,    # secure login
                 "school_id": school_id
             }).execute()
             flash("✅ Student added successfully.", "success")
 
         return redirect('/school_admin/students')
 
-    # Fetch student list safely
-    response = supabase.table('students').select('id, name, class_level, username').eq('school_id', school_id).execute()
-    students = response.data if response.data else []
+    # ✅ Fetch students with joined class info
+    students = supabase.table('students').select(
+        'id, name, username, class_id, classes(class_name, class_level)'
+    ).eq('school_id', school_id).execute().data
 
-    return render_template('manage_students.html', students=students)
+    # ✅ Fetch only this school's classes
+    classes = supabase.table('classes').select("id, class_name, class_level").eq("school_id", school_id).execute().data
+
+    return render_template('manage_students.html', students=students, classes=classes)
+
+@app.route('/school_teacher/view_students')
+def view_students_by_class_teacher():
+    if 'school_teacher_id' not in session:
+        return redirect('/school_teacher/login')
+
+    teacher_id = session['school_teacher_id']
+
+    # ✅ Get teacher data
+    teacher_result = supabase.table("school_teachers").select("*").eq("id", teacher_id).single().execute()
+    teacher = teacher_result.data
+
+    if not teacher:
+        return "Teacher not found", 404
+
+    school_id = teacher.get("school_id")
+
+    # ✅ Get assigned class_id from class_teacher_mappings table
+    mapping_result = supabase.table("class_teacher_mappings") \
+        .select("class_id, class_level") \
+        .eq("teacher_id", teacher_id) \
+        .eq("school_id", school_id) \
+        .single() \
+        .execute()
+
+    if not mapping_result.data:
+        return "No class mapping found for this teacher", 404
+
+    class_id = mapping_result.data["class_id"]
+    class_level = mapping_result.data["class_level"]
+
+    # ✅ Fetch students using UUID class_id and school_id
+    students_result = supabase.table("students") \
+        .select("*") \
+        .eq("class_id", class_id) \
+        .eq("school_id", school_id) \
+        .execute()
+    students_data = students_result.data
+
+    # ✅ Fetch coin totals for all students
+    coin_result = supabase.table("student_coins").select("*").execute()
+    coin_data = coin_result.data
+    coin_map = {item['student_id']: item['total_coins'] for item in coin_data}
+
+    # ✅ Merge coin totals into student list
+    for s in students_data:
+        s['total_coins'] = coin_map.get(s['id'], 0)
+
+    # ✅ Render the view with coin-enriched students
+    return render_template(
+        "school_teacher/view_students.html",
+        students=students_data,
+        class_name=class_level  # instead of assigned_class
+    )
+
+@app.route('/school_teacher/leave_requests')
+def school_teacher_leave_requests():
+    if 'school_teacher_id' not in session:
+        return redirect(url_for('school_teacher_login'))
+
+    teacher_id = session['school_teacher_id']
+
+    # Step 1: Get class assigned to this teacher
+    mapping = supabase.table("class_teacher_mappings") \
+        .select("class_id") \
+        .eq("teacher_id", teacher_id) \
+        .single().execute().data
+
+    if not mapping:
+        return "No class assigned to this teacher.", 403
+
+    class_id = mapping['class_id']
+
+    # Step 2: Get students in that class
+    students = supabase.table("students").select("id").eq("class_id", class_id).execute().data
+    student_ids = [s["id"] for s in students]
+
+    # Step 3: Get leave requests
+    if student_ids:
+        leave_requests = supabase.table("leave_requests") \
+            .select("*") \
+            .in_("requester_id", student_ids) \
+            .eq("role", "student") \
+            .order("created_at", desc=True) \
+            .execute().data
+    else:
+        leave_requests = []
+
+    return render_template("school_teacher_leave_requests.html", leave_requests=leave_requests)
+
+@app.route('/school_teacher/leave_requests')
+def view_leave_requests():
+    if 'school_teacher_id' not in session:
+        return redirect(url_for('school_teacher_login'))
+
+    teacher_id = session['school_teacher_id']
+
+    # ✅ Step 1: Get class ID from class_teacher_mappings
+    mapping = supabase.table("class_teacher_mappings") \
+        .select("class_id") \
+        .eq("school_teacher_id", teacher_id) \
+        .single().execute().data
+
+    if not mapping:
+        return "No class assigned to this teacher.", 403
+
+    class_id = mapping['class_id']
+
+    # ✅ Step 2: Get students in that class
+    students = supabase.table("students").select("id").eq("class_id", class_id).execute().data
+    student_ids = [s["id"] for s in students]
+
+    # ✅ Step 3: Get leave requests by those students
+    if student_ids:
+        leave_requests = supabase.table("leave_requests") \
+            .select("*") \
+            .in_("requester_id", student_ids) \
+            .eq("role", "student") \
+            .order("created_at", desc=True) \
+            .execute().data
+    else:
+        leave_requests = []
+
+    return render_template("teacher_leave_requests.html", leave_requests=leave_requests)
+
+@app.route('/class_teacher/update_leave/<leave_id>', methods=['POST'])
+def update_leave_status(leave_id):
+    if 'school_teacher_id' not in session:
+        return redirect(url_for('school_teacher_login'))
+
+    status = request.form['status']
+    remarks = request.form.get('remarks', '')
+
+    supabase.table("leave_requests").update({
+        'status': status,
+        'remarks': remarks
+    }).eq("id", leave_id).execute()
+
+    return redirect(url_for('class_teacher_leave_requests'))
+
+@app.route('/school_teacher/give_reward', methods=['POST'])
+def give_reward():
+    if 'school_teacher_id' not in session:
+        return redirect(url_for('school_teacher_login'))
+
+    teacher_id = session['school_teacher_id']
+    teacher = supabase.table('school_teachers').select("*").eq('id', teacher_id).single().execute().data
+    assigned_class = teacher['assigned_class']
+    school_id = teacher['school_id']
+
+    student_id = request.form['student_id']
+    coins = int(request.form['coins'])
+    reason = request.form['reason']
+
+    # Step 1: Insert coin reward
+    supabase.table('coin_rewards').insert({
+        'student_id': student_id,
+        'teacher_id': teacher_id,
+        'amount': coins,
+        'reason': reason
+    }).execute()
+
+    # Step 2: Update or Insert student total coins
+    existing = supabase.table('student_coins').select("*").eq('student_id', student_id).execute().data
+
+    if existing:
+        current = existing[0]['total_coins']
+        new_total = current + coins
+
+        supabase.table('student_coins').update({
+            'total_coins': new_total
+        }).eq('student_id', student_id).execute()
+    else:
+        supabase.table('student_coins').insert({
+            'student_id': student_id,
+            'total_coins': coins
+        }).execute()
+
+    # ✅ After reward, redirect back to view_students
+    return redirect(url_for('view_students_by_class_teacher'))
 
 # === Super Admin Login ===
 @app.route('/superadmin/login', methods=['GET', 'POST'])
@@ -1479,133 +1399,183 @@ def superadmin_school_performance():
 
     return render_template("superadmin_school_performance.html", schools=schools)
 
-# === Regenerate Questions (AI or Manual) ===
-@app.route('/superadmin/regenerate', methods=['GET', 'POST'])
-def superadmin_regenerate():
-    if not session.get('superadmin_logged_in'):
-        return redirect(url_for('superadmin_login'))
-
-    qna_2m = "[]"
-    qna_5m = "[]"
-    class_level = ""
-    subject = ""
-    topic = ""
-    exam_mode = "topic"
-    count_2m = 0
-    count_5m = 0
-
-    if request.method == "POST":
-        class_level = request.form.get("class", "")
-        subject = request.form.get("subject", "")
-        topic = request.form.get("topic", "")
-        exam_mode = request.form.get("exam_mode", "topic")
-
-        try:
-            qna_2m = request.form.get("qna_2m", "[]")
-            qna_5m = request.form.get("qna_5m", "[]")
-            two_mark_list = json.loads(qna_2m)
-            five_mark_list = json.loads(qna_5m)
-            count_2m = len(two_mark_list)
-            count_5m = len(five_mark_list)
-        except:
-            flash("⚠️ Invalid JSON format", "error")
-            return redirect(url_for("superadmin_regenerate"))
-
-        try:
-            # Delete existing question set
-            supabase_questions.table("questions").delete().match({
-                "class_level": class_level,
-                "subject": subject,
-                "topic": topic,
-                "exam_mode": exam_mode
-            }).execute()
-
-            # Insert new question set
-            supabase_questions.table("questions").insert({
-                "id": str(uuid.uuid4()),
-                "class_level": class_level,
-                "subject": subject,
-                "topic": topic,
-                "exam_mode": exam_mode,
-                "qna_2m": qna_2m,
-                "qna_5m": qna_5m
-            }).execute()
-
-            flash(f"✅ Manual questions saved. {count_2m} two-mark and {count_5m} five-mark questions stored.", "success")
-
-        except Exception as e:
-            flash(f"⚠️ Supabase error: {str(e)}", "error")
-            return redirect(url_for("superadmin_regenerate"))
-
-    return render_template(
-        "superadmin_regenerate.html",
-        qna_2m=qna_2m,
-        qna_5m=qna_5m,
-        class_level=class_level,
-        subject=subject,
-        topic=topic,
-        exam_mode=exam_mode,
-        count_2m=count_2m,
-        count_5m=count_5m
-    )
-@app.route('/superadmin/manage_questions')
-def superadmin_manage_questions():
-    if not session.get('superadmin_logged_in'):
-        return redirect(url_for('superadmin_login'))
-
-    response = supabase_questions.table('questions').select('*').order('class_level').execute()
-    questions = response.data if response.data else []
-
-    return render_template("superadmin_manage_questions.html", questions=questions)
-
-@app.route('/superadmin/delete_question/<string:question_id>')
-def superadmin_delete_question(question_id):
-    if not session.get('superadmin_logged_in'):
-        return redirect(url_for('superadmin_login'))
-
-    supabase_questions.table("questions").delete().eq("id", question_id).execute()
-
-    flash("✅ Question deleted successfully", "success")
-    return redirect(url_for('superadmin_manage_questions'))
 @app.route('/student_login', methods=['GET', 'POST'])
 def student_login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
 
+        # Step 1: Find student by username
         response = supabase.table('students').select('*').eq('username', username).limit(1).execute()
+        student_data = response.data
 
-        if not response.data:
-            return "❌ Invalid username or password", 401
+        if not student_data or len(student_data) == 0:
+            return render_template('student_login.html', error="❌ Invalid username or password")
 
-        student = response.data[0]
+        student = student_data[0]
 
-        # School check
-        school_response = supabase.table('schools').select('*').eq('id', student['school_id']).limit(1).execute()
-        if not school_response.data:
-            return "❌ School info not found", 500
+        # Step 2: Check school exists
+        school_response = supabase.table('schools').select('*').eq('id', student.get('school_id')).limit(1).execute()
+        school_data = school_response.data
 
-        school = school_response.data[0]
+        if not school_data or len(school_data) == 0:
+            return render_template('student_login.html', error="❌ School info not found")
+
+        school = school_data[0]
         today = datetime.date.today()
 
+        # Step 3: Validate school payment
         if school.get('payment_status') != 'active':
-            return "❌ Access Denied. Your school has not paid."
+            return render_template('student_login.html', error="❌ Access Denied. School has not paid.")
 
-        if school.get('next_due_date') and today > datetime.datetime.strptime(school['next_due_date'], '%Y-%m-%d').date():
-            return "❌ School subscription expired.", 403
+        if school.get('next_due_date'):
+            try:
+                due_date = datetime.datetime.strptime(school['next_due_date'], '%Y-%m-%d').date()
+                if today > due_date:
+                    return render_template('student_login.html', error="❌ School subscription expired.")
+            except ValueError:
+                return render_template('student_login.html', error="❌ Invalid school due date format.")
 
-        # Password match
-        if check_password_hash(student['password'], password):
+        # Step 4: Match plain-text password (no hashing)
+        if student.get('password') == password:
             session['student_id'] = student['id']
-            session['student_name'] = student['name']
-            session['student_class'] = student['class_level']
-            session['school_name'] = school['name']
+            session['school_id'] = student['school_id']
+            session['student_name'] = student.get('name', 'Student')
+            session['student_class'] = student.get('class_level', 'N/A')
+            session['school_name'] = school.get('name', 'Your School')
+            session['role'] = 'student'
             return redirect(url_for('dashboard'))
 
-        return "❌ Invalid credentials", 401
+        return render_template('student_login.html', error="❌ Invalid credentials")
 
     return render_template('student_login.html')
 
+@app.route('/student/submit_leave', methods=['GET', 'POST'])
+def student_submit_leave():
+    if 'student_id' not in session:
+        return redirect(url_for('student_login'))
+
+    student_id = session['student_id']
+
+    # Fetch student data
+    response = supabase.table("students").select("*").eq("id", student_id).single().execute()
+    student_data = response.data
+
+    # Safety checks
+    if not student_data:
+        return "❌ Student record not found in database.", 404
+    if not student_data.get("class_id"):
+        return "❌ Your class is not assigned. Contact your school to update it.", 400
+    if not student_data.get("school_id"):
+        return "❌ Your school is not assigned. Contact your school to update it.", 400
+
+    class_id = student_data['class_id']
+    school_id = student_data['school_id']
+
+    if request.method == 'POST':
+        from_date = request.form.get('from_date')
+        to_date = request.form.get('to_date')
+        reason = request.form.get('reason')
+
+        # Basic validation
+        if not from_date or not to_date or not reason:
+            return "❌ All fields are required.", 400
+
+        leave_data = {
+            'student_id': student_id,
+            'class_id': class_id,
+            'school_id': school_id,
+            'from_date': from_date,
+            'to_date': to_date,
+            'reason': reason,
+            'status': 'pending'
+        }
+
+        supabase.table("leave_requests").insert(leave_data).execute()
+        return redirect(url_for('student_dashboard'))
+
+    return render_template('student/submit_leave.html', student=student_data)
+
+@app.route('/student/leave_status')
+def student_leave_status():
+    if 'student_id' not in session:
+        return redirect('/student/login')
+
+    student_id = session['student_id']
+
+    leaves = supabase.table("leave_requests")\
+        .select("*")\
+        .eq("student_id", student_id)\
+        .order("submitted_at", desc=True)\
+        .execute()
+
+    return render_template("student_leave_status.html", leaves=leaves.data)
+
+@app.route('/redeem', methods=['GET', 'POST'])
+def redeem_coins():
+    if 'student_id' not in session:
+        return redirect(url_for('student_login'))
+
+    student_id = session['student_id']
+    
+    # Get current total coins
+    coin_response = supabase.table('student_coins').select("total_coins").eq("student_id", student_id).limit(1).execute()
+    coin_data = coin_response.data[0] if coin_response.data else None
+    total_coins = coin_data['total_coins'] if coin_data else 0
+    message = None
+
+    if request.method == 'POST':
+        try:
+            amount = int(request.form.get('amount'))
+        except (ValueError, TypeError):
+            amount = 0
+
+        if amount <= 0:
+            message = "Please enter a valid number of coins."
+        elif amount > total_coins:
+            message = "You do not have enough coins."
+        else:
+            # Deduct coins
+            new_total = total_coins - amount
+            supabase.table('student_coins').update({"total_coins": new_total}).eq("student_id", student_id).execute()
+            message = f"You have successfully redeemed {amount} coins!"
+
+            # Optional: log the redemption (e.g., in a `redemptions` table)
+
+            total_coins = new_total  # Update for re-rendering
+
+    return render_template('redeem.html', total_coins=total_coins, message=message)
+
+# This shows the edit profile page (GET)
+@app.route('/edit_student_profile', methods=['GET'])
+def show_edit_student_profile():
+    if 'student_id' not in session:
+        return redirect(url_for('student_login'))
+
+    student_id = session['student_id']
+
+    # Get the current student data
+    student = supabase.table('students').select("*").eq("id", student_id).single().execute().data
+
+    return render_template('edit_student_profile.html', student=student)
+
+@app.route('/edit_student_profile', methods=['POST'])
+def edit_student_profile():
+    if 'student_id' not in session:
+        return redirect(url_for('student_login'))
+
+    student_id = session['student_id']
+    new_image_url = request.form.get('image_url', '').strip()
+
+    # Update profile picture in Supabase
+    try:
+        supabase.table("students").update({"profile_pic": new_image_url}).eq("id", student_id).execute()
+        flash("Profile picture updated successfully!", "success")
+    except Exception as e:
+        flash("Failed to update profile picture.", "error")
+        print("Error updating profile:", e)
+
+    return redirect(url_for('dashboard'))
 
 # Your Together AI details
 DOUBT_SOLVER_API_KEY = "dbfb5267b3c4062b3f8b51a4999dfc27579a11f59bd3354378d14baa3a50e5aa"
@@ -1613,8 +1583,6 @@ DOUBT_SOLVER_MODEL = "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"
 
 # Initialize Together AI
 together.api_key = DOUBT_SOLVER_API_KEY
-
-
 
 @app.route("/doubt_solver", methods=["GET", "POST"])
 def doubt_solver():
@@ -1666,12 +1634,17 @@ def doubt_solver():
 
     return render_template("doubt_solver.html", question=question, answer=answer)
 
+from flask import render_template, request
+import requests
+
 @app.route("/chalkboard_notes", methods=["GET", "POST"])
 def chalkboard_notes():
     notes = None
     topic = ""
     subject = ""
     class_value = ""
+    chalkboard_notes = ""
+    explanation_notes = ""
 
     if request.method == "POST":
         topic = request.form.get("topic", "").strip()
@@ -1681,6 +1654,7 @@ def chalkboard_notes():
         if topic and subject and class_value:
             prompt = f"""
 You are a helpful teacher preparing chalkboard notes for Tamil Nadu or CBSE board.
+
 - Topic: {topic}
 - Class: {class_value}
 - Subject: {subject}
@@ -1693,6 +1667,15 @@ Write the explanation like it should be written on a classroom blackboard:
 - Keep it clean and board-friendly.
 
 ✏️ Chalkboard Notes:
+
+---
+
+Now, help the teacher explain this topic better to weak students.
+
+🧠 Better Explanation Guide:
+- Use a simplified explanation in Tamil-English
+- Add a real-life example
+- Mention a common misunderstanding and how to correct it
 """
 
             headers = {
@@ -1721,7 +1704,22 @@ Write the explanation like it should be written on a classroom blackboard:
             except Exception as e:
                 notes = f"⚠️ Error: {str(e)}"
 
-    return render_template("chalkboard_notes.html", notes=notes, topic=topic, subject=subject, class_value=class_value)
+        # Split into chalkboard and explanation notes
+        if notes and "---" in notes:
+            chalkboard_notes, explanation_notes = notes.split("---", 1)
+        else:
+            chalkboard_notes = notes
+            explanation_notes = ""
+
+    return render_template(
+        "chalkboard_notes.html",
+        notes=notes,
+        topic=topic,
+        subject=subject,
+        class_value=class_value,
+        chalkboard_notes=chalkboard_notes.strip() if chalkboard_notes else "",
+        explanation_notes=explanation_notes.strip() if explanation_notes else ""
+    )
 
 from supabase import create_client, Client
 
@@ -2070,16 +2068,14 @@ def teacher_edit_profile():
     teacher_id = session['teacher_id']
 
     if request.method == 'POST':
-        image_url = request.form['image_url']
-        bio = request.form['bio']
-        experience = request.form['experience']
-        rating = request.form['rating']
+        image_url = request.form.get('image_url', '').strip()
+        bio = request.form.get('bio', '').strip()
+        experience = request.form.get('experience', '').strip()
 
         supabase.table("teachers").update({
             "image_url": image_url,
             "bio": bio,
-            "experience": experience,
-            "rating": rating
+            "experience": experience
         }).eq("id", teacher_id).execute()
 
         return redirect(url_for('teacher_dashboard'))
@@ -2262,7 +2258,7 @@ Your teacher account has been approved and your login details are as follows:
 🔐 Username: {username}  
 🔑 Password: {password}  
 
-You can log in here: https://smartkalvi.onrender.com/teacher/login
+You can log in here: https://testifyy.online/school_teacher/login
 
 Please log in to your account and start using the platform.
 We encourage you to log in and start exploring the platform. If you face any issues or need assistance, feel free to contact our support team.
@@ -2337,60 +2333,26 @@ def admin_bookings():
     if not session.get('superadmin_logged_in'):
         return redirect(url_for('superadmin_login'))
 
+    # 🔹 Fetch all bookings
     bookings_res = supabase.table("bookings").select("*").order("created_at", desc=True).execute()
-
     bookings_data = bookings_res.data
 
-    # Slots
-    slot_ids = list({b["slot_id"] for b in bookings_data})
-    slots_map = {}
-    if slot_ids:
-        slots_res = supabase.table("slots").select("*").in_("id", slot_ids).execute()
-        slots_map = {s["id"]: s for s in slots_res.data}
-
-    # Teachers
-    teacher_ids = list({b["teacher_id"] for b in bookings_data})
+    # 🔹 Fetch only teachers used in bookings
+    teacher_ids = list({b["teacher_id"] for b in bookings_data if b.get("teacher_id")})
     teachers_map = {}
     if teacher_ids:
-        teachers_res = supabase.table("teachers").select("*").in_("id", teacher_ids).execute()
+        teachers_res = supabase.table("teachers").select("id, name, subject").in_("id", teacher_ids).execute()
         teachers_map = {t["id"]: t for t in teachers_res.data}
 
-    # Students
-    student_ids = list({b["student_id"] for b in bookings_data if "student_id" in b})
-    students_map = {}
-    if student_ids:
-        students_res = supabase.table("students").select("*").in_("id", student_ids).execute()
-        students_map = {s["id"]: s for s in students_res.data}
-
-    # ✅ Subscriptions
-    subs_map = {}
-    if student_ids:
-        subs_res = supabase.table("subscriptions").select("*").in_("student_id", student_ids).execute()
-        for sub in subs_res.data:
-            key = (sub["student_id"], sub["teacher_id"])
-            subs_map[key] = sub
-
-    print("🔎 Subscriptions Loaded:", subs_map.keys())
-
-    # Attach all info
+    # 🔹 Attach only teacher info
     for b in bookings_data:
-        slot = slots_map.get(b["slot_id"], {})
-        teacher = teachers_map.get(b["teacher_id"], {})
-        student = students_map.get(b.get("student_id"), {})
-
-        b["slot_time"] = f"{slot.get('date', '')} {slot.get('start_time', '')} - {slot.get('end_time', '')}"
+        teacher = teachers_map.get(b.get("teacher_id"), {})
         b["teacher_name"] = teacher.get("name", "Unknown")
         b["subject"] = teacher.get("subject", "Unknown")
-        b["student_name"] = student.get("name", "Unknown")
-        b["student_email"] = student.get("email", "Unknown")
-
-        sub_key = (b.get("student_id"), b.get("teacher_id"))
-        subscription = subs_map.get(sub_key)
-        b["subscription_status"] = subscription["status"] if subscription else "❌ Not Subscribed"
-
-        print("📦 Booking ID:", b["id"], "| Sub Key:", sub_key, "| Sub Status:", b["subscription_status"])
+        b["booked_at"] = b.get("created_at", "")[:16]  # optional datetime display
 
     return render_template('admin_bookings.html', bookings=bookings_data)
+
 
 @app.route('/admin/payments')
 def admin_payments():
@@ -2454,9 +2416,15 @@ def review_teacher(teacher_id):
         return "Teacher not found", 404
 
     if request.method == 'POST':
-        student_name = request.form['student_name']
-        rating = int(request.form['rating'])
-        comment = request.form['comment']
+        student_name = request.form.get('student_name', '').strip()
+        rating_str = request.form.get('rating', '').strip()
+        comment = request.form.get('comment', '').strip()
+
+        # Validate rating
+        if not rating_str.isdigit():
+            return render_template('review_form.html', teacher=teacher_data, error="❌ Please select a valid rating.")
+
+        rating = int(rating_str)
 
         # Insert review
         supabase.table("reviews").insert({
@@ -2471,8 +2439,8 @@ def review_teacher(teacher_id):
         reviews = reviews_res.data
 
         total_reviews = len(reviews)
-        total_rating = sum([r['rating'] for r in reviews])
-        average_rating = round(total_rating / total_reviews, 2)
+        total_rating = sum([r.get('rating', 0) for r in reviews])
+        average_rating = round(total_rating / total_reviews, 2) if total_reviews > 0 else 0.0
 
         # Update teacher record
         supabase.table("teachers").update({
@@ -2483,6 +2451,7 @@ def review_teacher(teacher_id):
         return redirect(url_for('teacher_profile', teacher_id=teacher_id))
 
     return render_template('review_form.html', teacher=teacher_data)
+
 import datetime
 from datetime import timedelta
 
@@ -2518,7 +2487,7 @@ def subscribe_teacher(teacher_id):
         }).execute()
 
         flash("✅ Subscription submitted for approval.")
-        return redirect(url_for('booking_success.html'))
+        return redirect(url_for('booking_success'))
 
     teacher_data["monthly_fee"] = plan["price"]
     return render_template('subscribe_plan.html', teacher=teacher_data)
