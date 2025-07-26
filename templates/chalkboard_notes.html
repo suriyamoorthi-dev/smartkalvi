@@ -5,39 +5,116 @@
   <title>Chalkboard Notes Generator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.6s ease-in-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
 </head>
-<body class="bg-green-50 min-h-screen flex items-center justify-center p-4">
+<body class="bg-gradient-to-br from-green-50 via-white to-green-100 min-h-screen flex items-center justify-center p-4">
 
-  <div class="w-full max-w-3xl bg-white rounded-xl shadow-md p-6 md:p-8 space-y-6">
+  <div class="w-full max-w-3xl bg-white shadow-xl rounded-2xl p-6 md:p-8 space-y-6 fade-in">
 
-    <div class="flex items-center justify-between flex-wrap gap-2">
-      <h2 class="text-xl md:text-2xl font-bold text-green-700">🧑‍🏫 Chalkboard Notes Generator</h2>
-      <a href="/school_teacher/dashboard" class="text-sm text-green-600 hover:underline">← Back to Dashboard</a>
+    <!-- Header -->
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <h2 class="text-2xl md:text-3xl font-bold text-green-700 tracking-tight">🧑‍🏫 Chalkboard Notes Generator</h2>
+      <a href="/school_teacher/dashboard" class="text-sm text-green-600 hover:text-green-800 transition underline">
+        ← Back to Dashboard
+      </a>
     </div>
 
-    <form method="post" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-      <input type="text" name="class" placeholder="Class (e.g., 10)" value="{{ class_value }}"
-             class="border p-3 rounded w-full text-sm" required>
-      <input type="text" name="subject" placeholder="Subject (e.g., Science)" value="{{ subject }}"
-             class="border p-3 rounded w-full text-sm" required>
-      <input type="text" name="topic" placeholder="Topic (e.g., Friction)" value="{{ topic }}"
-             class="border p-3 rounded w-full text-sm" required>
+    <!-- Form -->
+    <form method="POST" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" onsubmit="showLoading()">
+      <input
+        type="text"
+        name="class"
+        placeholder="Class (e.g., 10)"
+        value="{{ class_value }}"
+        class="border border-gray-300 focus:border-green-500 focus:ring-green-500 p-3 rounded-lg w-full text-sm shadow-sm"
+        required
+      />
+
+      <input
+        type="text"
+        name="subject"
+        placeholder="Subject (e.g., Science)"
+        value="{{ subject }}"
+        class="border border-gray-300 focus:border-green-500 focus:ring-green-500 p-3 rounded-lg w-full text-sm shadow-sm"
+        required
+      />
+
+      <input
+        type="text"
+        name="topic"
+        placeholder="Topic (e.g., Friction)"
+        value="{{ topic }}"
+        class="border border-gray-300 focus:border-green-500 focus:ring-green-500 p-3 rounded-lg w-full text-sm shadow-sm"
+        required
+      />
+
       <div class="sm:col-span-2 md:col-span-3 text-right">
-        <button type="submit"
-                class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded w-full sm:w-auto">
-          ✨ Generate Notes
+        <button
+          id="submitBtn"
+          type="submit"
+          class="bg-green-600 hover:bg-green-700 text-white font-medium px-6 py-3 rounded-lg w-full sm:w-auto transition-all duration-200 shadow hover:shadow-md flex items-center justify-center gap-2"
+        >
+          <span id="btnText">✨ Generate Notes</span>
+          <svg id="spinner" class="animate-spin hidden h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z">
+            </path>
+          </svg>
         </button>
       </div>
     </form>
 
-    {% if notes %}
-    <div class="bg-gray-100 p-5 rounded border border-gray-300">
-      <h3 class="text-lg font-semibold text-gray-800 mb-2">📝 Chalkboard Notes:</h3>
-      <pre class="whitespace-pre-wrap text-sm text-gray-700">{{ notes }}</pre>
+    <!-- Results -->
+    {% if chalkboard_notes %}
+    <div class="bg-gray-50 border border-gray-300 rounded-xl p-5 fade-in space-y-6">
+      
+      <div>
+        <h3 class="text-lg font-semibold text-gray-800 mb-2">📝 Chalkboard Notes:</h3>
+        <pre class="whitespace-pre-wrap text-sm text-gray-700">{{ chalkboard_notes }}</pre>
+      </div>
+
+      {% if explanation_notes %}
+      <hr class="border-gray-300" />
+
+      <div>
+        <h3 class="text-lg font-semibold text-green-800 mb-2">🧠 How to Explain Better to Slow Learners:</h3>
+        <pre class="whitespace-pre-wrap text-sm text-gray-700">{{ explanation_notes }}</pre>
+      </div>
+      {% endif %}
+
     </div>
     {% endif %}
 
   </div>
+
+  <script>
+    function showLoading() {
+      document.getElementById("btnText").textContent = "Generating...";
+      document.getElementById("spinner").classList.remove("hidden");
+    }
+  </script>
 
 </body>
 </html>

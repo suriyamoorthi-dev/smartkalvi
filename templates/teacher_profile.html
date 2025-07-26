@@ -5,24 +5,20 @@
     <title>{{ teacher.name }} - Profile</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <style>
-        .transition-all {
-            transition: all 0.3s ease-in-out;
-        }
-    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-slate-100 font-sans min-h-screen p-4">
 
-<div class="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+<div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
 
     <!-- Back Button -->
-    <div class="p-4 bg-white sticky top-0 z-10 border-b border-slate-200">
+    <div class="p-4 sticky top-0 z-10 bg-white border-b border-slate-200">
         <a href="{{ url_for('dashboard') }}" class="inline-flex items-center text-sm text-indigo-700 font-medium hover:underline">
             <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
         </a>
     </div>
 
+    <!-- Header -->
     <div class="relative">
         <div class="h-32 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
         {% if teacher.image_url %}
@@ -33,11 +29,14 @@
         {% endif %}
     </div>
 
+    <!-- Info -->
     <div class="pt-16 px-6 pb-6 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">{{ teacher.name }}</h1>
-                <p class="text-md text-gray-600 flex items-center gap-2"><i class="fas fa-book text-indigo-500"></i>{{ teacher.subject }}</p>
+                <p class="text-md text-gray-600 flex items-center gap-2">
+                    <i class="fas fa-book text-indigo-500"></i>{{ teacher.subject }}
+                </p>
             </div>
             {% if is_active_subscriber %}
             <span class="mt-2 sm:mt-0 bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">Subscribed</span>
@@ -48,7 +47,11 @@
             {% if teacher.rating %}
             <div class="flex items-center text-yellow-500 space-x-1">
                 {% for i in range(1, 6) %}
-                    {% if i <= teacher.rating|int %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star text-gray-300"></i>{% endif %}
+                    {% if i <= teacher.rating|int %}
+                        <i class="fas fa-star"></i>
+                    {% else %}
+                        <i class="far fa-star text-gray-300"></i>
+                    {% endif %}
                 {% endfor %}
                 <span class="text-gray-500 ml-1 font-medium">({{ teacher.rating }}/5)</span>
             </div>
@@ -63,7 +66,9 @@
         </div>
 
         {% if active_subscription %}
-        <p class="text-xs text-gray-400 font-medium">Subscription valid until: {{ active_subscription.end_date }}</p>
+        <p class="text-xs text-gray-400 font-medium">
+            Subscription valid until: <strong>{{ active_subscription.end_date }}</strong>
+        </p>
         {% endif %}
     </div>
 
@@ -71,25 +76,29 @@
 
         <!-- Study Materials -->
         <div class="bg-slate-50 p-4 rounded-lg shadow-sm">
-            <h2 class="text-lg font-semibold text-purple-800 flex items-center gap-3 mb-3"><i class="fas fa-book-open"></i>Study Materials</h2>
+            <h2 class="text-lg font-semibold text-purple-800 flex items-center gap-3 mb-3">
+                <i class="fas fa-book-open"></i>Posts
+            </h2>
             {% if materials %}
             <ul class="space-y-2 text-sm">
                 {% for mat in materials %}
                 <li class="p-2 rounded-md hover:bg-slate-200 transition-all">
-                    <a href="{{ mat.link }}" class="text-blue-600 hover:underline font-medium" target="_blank">
+                    <a href="{{ mat.file_url }}" class="text-blue-600 hover:underline font-medium" target="_blank">
                         <i class="fas fa-link mr-2 text-gray-400"></i>{{ mat.title }}
                     </a>
                 </li>
                 {% endfor %}
             </ul>
             {% else %}
-            <p class="text-sm text-gray-500">No materials have been uploaded yet.</p>
+            <p class="text-sm text-gray-500">No Posts have been uploaded yet.</p>
             {% endif %}
         </div>
 
-        <!-- Slots -->
+        <!-- Available Slots -->
         <div class="bg-slate-50 p-4 rounded-lg shadow-sm">
-            <h2 class="text-lg font-semibold text-green-800 flex items-center gap-3 mb-3"><i class="fas fa-calendar-check"></i>Available Slots</h2>
+            <h2 class="text-lg font-semibold text-green-800 flex items-center gap-3 mb-3">
+                <i class="fas fa-calendar-check"></i>Available Slots
+            </h2>
             {% if is_active_subscriber %}
                 {% if slots %}
                 <ul class="space-y-2 text-sm">
@@ -97,7 +106,7 @@
                     <li class="flex items-center justify-between p-2 rounded-md hover:bg-slate-200 transition-all">
                         <span class="font-mono text-gray-700">{{ slot.date }} | {{ slot.start_time }} - {{ slot.end_time }}</span>
                         {% if not slot.is_booked %}
-                        <a href="/book-slot/{{ slot.id }}" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-full font-semibold hover:bg-blue-700 transition-all">
+                        <a href="/book-slot/{{ slot.id }}" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-full font-semibold hover:bg-blue-700">
                             Book Now
                         </a>
                         {% else %}
@@ -107,13 +116,13 @@
                     {% endfor %}
                 </ul>
                 {% else %}
-                <p class="text-sm text-gray-500">No new slots are available right now. Please check back later.</p>
+                <p class="text-sm text-gray-500">No new slots are available right now.</p>
                 {% endif %}
             {% else %}
             <div class="bg-indigo-100 text-center text-indigo-900 p-4 rounded-lg">
                 <i class="fas fa-lock text-2xl mb-2"></i>
                 <p class="font-semibold mb-3">Unlock Available Slots</p>
-                <p class="text-sm mb-4">You need to subscribe to view and book available time slots with this teacher.</p>
+                <p class="text-sm mb-4">Subscribe to view and book this teacher’s slots.</p>
                 <a href="/subscribe/{{ teacher.id }}" class="inline-block bg-indigo-600 text-white px-6 py-2 rounded-full font-bold hover:bg-indigo-700 transition-all shadow-md">
                     Subscribe Now
                 </a>
@@ -123,7 +132,9 @@
 
         <!-- Reviews -->
         <div class="bg-slate-50 p-4 rounded-lg shadow-sm">
-            <h2 class="text-lg font-semibold text-pink-700 flex items-center gap-3 mb-3"><i class="fas fa-comments"></i>Reviews</h2>
+            <h2 class="text-lg font-semibold text-pink-700 flex items-center gap-3 mb-3">
+                <i class="fas fa-comments"></i>Reviews
+            </h2>
             {% if reviews %}
             <ul class="space-y-4 text-sm">
                 {% for r in reviews %}
@@ -131,8 +142,12 @@
                     <div class="flex items-center justify-between mb-1">
                         <p class="font-bold text-gray-800">{{ r.student_name }}</p>
                         <div class="text-yellow-500 text-xs">
-                            {% for i in range(1, 5+1) %}
-                                {% if i <= r.rating|int %}<i class="fas fa-star text-yellow-400"></i>{% else %}<i class="far fa-star text-gray-300"></i>{% endif %}
+                            {% for i in range(1, 6) %}
+                                {% if i <= r.rating|int %}
+                                <i class="fas fa-star text-yellow-400"></i>
+                                {% else %}
+                                <i class="far fa-star text-gray-300"></i>
+                                {% endif %}
                             {% endfor %}
                         </div>
                     </div>
@@ -146,13 +161,25 @@
 
             {% if is_active_subscriber %}
             <div class="mt-4 text-center">
-                <a href="/review/{{ teacher.id }}" class="inline-block bg-pink-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-pink-700 transition-all shadow-md">
+                <a href="/review/{{ teacher.id }}" class="inline-block bg-pink-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-pink-700 shadow-md">
                     <i class="fas fa-pencil-alt mr-2"></i>Write a Review
                 </a>
             </div>
             {% endif %}
         </div>
     </div>
+</div>
+<!-- Bottom Nav for Mobile -->
+<div class="fixed bottom-0 w-full bg-white border-t flex justify-around items-center py-2 sm:hidden shadow z-50 text-base">
+  <a href="/dashboard" class="text-sm text-center text-gray-700 hover:text-indigo-600">
+    🏠<br><span class="text-xs">Home</span>
+  </a>
+  <a href="/teachers" class="text-sm text-center text-gray-700 hover:text-indigo-600">
+    👩‍🏫<br><span class="text-xs">Tutors</span>
+  </a>
+  <a href="{{ url_for('edit_student_profile') }}" class="text-sm text-blue-600 hover:underline text-center">
+    ✏️<br><span class="text-xs">Edit</span>
+  </a>
 </div>
 
 </body>

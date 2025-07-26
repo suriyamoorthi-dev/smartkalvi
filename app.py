@@ -1398,6 +1398,7 @@ def superadmin_school_performance():
             ))
 
     return render_template("superadmin_school_performance.html", schools=schools)
+from datetime import datetime  # Make sure this import is at the top
 
 @app.route('/student_login', methods=['GET', 'POST'])
 def student_login():
@@ -1422,7 +1423,7 @@ def student_login():
             return render_template('student_login.html', error="❌ School info not found")
 
         school = school_data[0]
-        today = datetime.date.today()
+        today = datetime.now().date()  # ✅ Corrected line
 
         # Step 3: Validate school payment
         if school.get('payment_status') != 'active':
@@ -1430,7 +1431,7 @@ def student_login():
 
         if school.get('next_due_date'):
             try:
-                due_date = datetime.datetime.strptime(school['next_due_date'], '%Y-%m-%d').date()
+                due_date = datetime.strptime(school['next_due_date'], '%Y-%m-%d').date()
                 if today > due_date:
                     return render_template('student_login.html', error="❌ School subscription expired.")
             except ValueError:
@@ -1449,6 +1450,7 @@ def student_login():
         return render_template('student_login.html', error="❌ Invalid credentials")
 
     return render_template('student_login.html')
+
 
 @app.route('/student/submit_leave', methods=['GET', 'POST'])
 def student_submit_leave():
@@ -1776,6 +1778,8 @@ def find_tutors():
 
     return render_template("find_tutors.html", teachers=teachers, selected_subject=subject_filter)
 
+from datetime import datetime
+
 @app.route('/teacher/dashboard')
 def teacher_dashboard():
     if 'teacher_id' not in session:
@@ -1783,48 +1787,43 @@ def teacher_dashboard():
 
     teacher_id = session['teacher_id']
 
-    # ✅ Safe fetch teacher
+    # Get teacher data
     teacher_res = supabase.table("teachers").select("*").eq("id", teacher_id).limit(1).execute()
     teacher_data = teacher_res.data
-
     if not teacher_data:
         session.pop('teacher_id', None)
         return redirect(url_for('teacher_login'))
 
     teacher = teacher_data[0]
 
-    # Fetch slots
-    slots_res = supabase.table("available_slots").select("*").eq("teacher_id", teacher_id).execute()
-    slots = slots_res.data
+    # Fetch resources
+    slots = supabase.table("available_slots").select("*").eq("teacher_id", teacher_id).execute().data
+    materials = supabase.table("teacher_materials").select("*").eq("teacher_id", teacher_id).execute().data
 
-    # Fetch materials
-    materials_res = supabase.table("teacher_materials").select("*").eq("teacher_id", teacher_id).execute()
-    materials = materials_res.data
-
-    # Fetch monthly plan
+    # Get monthly plan
     plan_res = supabase.table("teacher_monthly_plans").select("*").eq("teacher_id", teacher_id).execute()
     plans = plan_res.data if plan_res.data else []
     price = plans[0]['price'] if plans else 0
 
-    # Commission split based on rating
-    rating = teacher['rating'] or 0
-    if rating >= 4.5:
-        teacher_percentage = 70
-    elif rating >= 4.0:
-        teacher_percentage = 60
-    else:
-        teacher_percentage = 50
-
+    # Commission calculation
+    rating = teacher.get('rating', 0)
+    teacher_percentage = 70 if rating >= 4.5 else 60 if rating >= 4.0 else 50
     your_percentage = 100 - teacher_percentage
 
     teacher_earning = round((price * teacher_percentage) / 100, 2)
     your_earning = round((price * your_percentage) / 100, 2)
 
-    # Fetch total paid students from subscriptions
     paid_res = supabase.table("subscriptions").select("id").eq("teacher_id", teacher_id).eq("status", "paid").execute()
     total_students = len(paid_res.data) if paid_res.data else 0
 
     total_monthly_earning = round(teacher_earning * total_students, 2)
+
+    # ✅ Update earnings in DB
+    supabase.table("teacher_earnings").upsert({
+        "teacher_id": teacher_id,
+        "month": datetime.now().strftime("%Y-%m"),
+        "total_earning": total_monthly_earning
+        }, on_conflict="teacher_id, month").execute()
 
     return render_template('teacher_dashboard.html',
                            teacher=teacher,
@@ -1869,58 +1868,67 @@ def list_teachers():
 
     return render_template('teachers.html', teachers=teachers_data, selected_category=category)
 
+from flask import render_template, redirect, url_for, session
+from datetime import datetime  # ✅ Clean import
+
 @app.route('/teacher/profile/<int:teacher_id>')
 def teacher_profile(teacher_id):
+    # ✅ Get Teacher
     teacher_res = supabase.table("teachers").select("*").eq("id", teacher_id).single().execute()
     teacher = teacher_res.data
     if not teacher:
         return "Teacher not found", 404
 
-    # Monthly Plan
+    # ✅ Monthly Plan
     plan_res = supabase.table("teacher_monthly_plans").select("*").eq("teacher_id", teacher_id).eq("active", True).limit(1).execute()
-    plans = plan_res.data
-    monthly_plan = plans[0] if plans else None
+    monthly_plan = plan_res.data[0] if plan_res.data else None
 
-    # Slots
+    # ✅ Slots
     slots_res = supabase.table("available_slots").select("*").eq("teacher_id", teacher_id).execute()
-    slots = slots_res.data if slots_res.data else []
+    slots = slots_res.data or []
 
-    # Materials
+    # ✅ Materials
     materials_res = supabase.table("teacher_materials").select("*").eq("teacher_id", teacher_id).execute()
-    materials = materials_res.data if materials_res.data else []
+    materials = materials_res.data or []
 
-    # Reviews
+    # ✅ Reviews
     reviews_res = supabase.table("reviews").select("*").eq("teacher_id", teacher_id).execute()
-    reviews = reviews_res.data if reviews_res.data else []
+    reviews = reviews_res.data or []
 
-    # ✅ Subscription check (corrected to use student_id)
+    # ✅ Subscription Check
     student_id = session.get("student_id")
     is_active_subscriber = False
+    active_subscription = None
 
     if student_id:
-        sub_res = supabase.table("subscriptions")\
-            .select("*")\
+        sub_res = supabase.table("subscriptions").select("*")\
             .eq("teacher_id", teacher_id)\
             .eq("student_id", student_id)\
             .eq("status", "paid")\
             .execute()
 
-        from datetime import datetime
-        today = datetime.today().date()
+        today = datetime.today().date()  # ✅ Clean usage
         for sub in sub_res.data:
-            end_date = datetime.strptime(sub["end_date"], "%Y-%m-%d").date()
-            if end_date >= today:
-                is_active_subscriber = True
-                break
+            try:
+                end_date = datetime.strptime(sub["end_date"], "%Y-%m-%d").date()
+                if end_date >= today:
+                    is_active_subscriber = True
+                    active_subscription = sub
+                    break
+            except Exception as e:
+                print("Subscription date error:", e)
 
+    # ✅ Render Page
     return render_template("teacher_profile.html", 
         teacher=teacher, 
         slots=slots, 
         materials=materials, 
         reviews=reviews, 
         monthly_plan=monthly_plan,
-        is_active_subscriber=is_active_subscriber
+        is_active_subscriber=is_active_subscriber,
+        active_subscription=active_subscription
     )
+
 @app.route('/book-slot/<int:slot_id>', methods=['GET', 'POST'])
 def book_slot(slot_id):
     slot_res = supabase.table("available_slots").select("*").eq("id", slot_id).single().execute()
@@ -2153,21 +2161,34 @@ def edit_slot(slot_id):
 
 
 # === Upload Study Material ===
+from datetime import datetime
+
 @app.route('/teacher/add-material', methods=['GET', 'POST'])
 def teacher_add_material():
     if 'teacher_id' not in session:
         return redirect(url_for('teacher_login'))
 
+    def convert_drive_link(link):
+        if "drive.google.com/file/d/" in link:
+            try:
+                file_id = link.split("/d/")[1].split("/")[0]
+                return f"https://drive.google.com/uc?export=download&id={file_id}"
+            except:
+                return link
+        return link
+
     if request.method == 'POST':
         title = request.form['title']
         description = request.form['description']
-        file_url = request.form['file_url']
+        file_url_raw = request.form['file_url']
+        file_url = convert_drive_link(file_url_raw)
 
         supabase.table("teacher_materials").insert({
             "teacher_id": session['teacher_id'],
             "title": title,
             "description": description,
-            "file_url": file_url
+            "file_url": file_url,
+            "uploaded_at": datetime.now().isoformat()  # Optional: Track upload time
         }).execute()
 
         return redirect(url_for('teacher_dashboard'))
@@ -2333,44 +2354,93 @@ def admin_bookings():
     if not session.get('superadmin_logged_in'):
         return redirect(url_for('superadmin_login'))
 
-    # 🔹 Fetch all bookings
-    bookings_res = supabase.table("bookings").select("*").order("created_at", desc=True).execute()
-    bookings_data = bookings_res.data
+    # Fetch all bookings
+    bookings_res = supabase.table("bookings").select("id, student_id, teacher_id").execute()
+    bookings = bookings_res.data
 
-    # 🔹 Fetch only teachers used in bookings
-    teacher_ids = list({b["teacher_id"] for b in bookings_data if b.get("teacher_id")})
+    # Group bookings by teacher_id
+    booking_counts = {}
+    for b in bookings:
+        tid = b.get("teacher_id")
+        if tid:
+            booking_counts[tid] = booking_counts.get(tid, 0) + 1
+
+    # Fetch teacher details
+    teacher_ids = list(booking_counts.keys())
     teachers_map = {}
     if teacher_ids:
         teachers_res = supabase.table("teachers").select("id, name, subject").in_("id", teacher_ids).execute()
         teachers_map = {t["id"]: t for t in teachers_res.data}
 
-    # 🔹 Attach only teacher info
-    for b in bookings_data:
-        teacher = teachers_map.get(b.get("teacher_id"), {})
-        b["teacher_name"] = teacher.get("name", "Unknown")
-        b["subject"] = teacher.get("subject", "Unknown")
-        b["booked_at"] = b.get("created_at", "")[:16]  # optional datetime display
+    # Build list of teachers with booking count
+    teachers_with_counts = []
+    for tid, count in booking_counts.items():
+        t = teachers_map.get(tid)
+        if t:
+            teachers_with_counts.append({
+                "id": tid,
+                "name": t["name"],
+                "subject": t["subject"],
+                "bookings": count
+            })
 
-    return render_template('admin_bookings.html', bookings=bookings_data)
+    return render_template('admin_bookings_summary.html', teachers=teachers_with_counts)
 
-
-@app.route('/admin/payments')
-def admin_payments():
+@app.route('/admin/teacher_bookings/<int:teacher_id>')
+def admin_teacher_bookings(teacher_id):
     if not session.get('superadmin_logged_in'):
         return redirect(url_for('superadmin_login'))
 
-    # Fetch subscriptions with teacher name
-    query = """
-    SELECT ss.id, ss.student_email, ss.amount, ss.start_date, ss.end_date, 
-           t.name AS teacher_name, t.subject 
-    FROM student_subscriptions ss
-    JOIN teachers t ON ss.teacher_id = t.id
-    ORDER BY ss.start_date DESC
-    """
-    res = supabase.rpc('execute_sql', {'sql': query}).execute()
-    payments = res.data if res.data else []
+    # Get bookings for this teacher
+    bookings_res = supabase.table("bookings").select("id, student_id, created_at").eq("teacher_id", teacher_id).order("created_at", desc=True).execute()
+    bookings = bookings_res.data
 
-    return render_template('admin_payments.html', payments=payments, current_date=date.today().isoformat())
+    # Get teacher info
+    teacher_res = supabase.table("teachers").select("name, subject").eq("id", teacher_id).single().execute()
+    teacher = teacher_res.data or {}
+
+    # Get all student_ids used in bookings
+    student_ids = list({b["student_id"] for b in bookings if b.get("student_id")})
+    students_map = {}
+
+    if student_ids:
+        students_res = supabase.table("students").select("id, name").in_("id", student_ids).execute()
+        students_map = {s["id"]: s["name"] for s in students_res.data}
+
+    # Attach student names to each booking
+    for b in bookings:
+        sid = b.get("student_id")
+        b["student_name"] = students_map.get(sid, f"ID: {sid}" if sid else "Unknown")
+
+    return render_template("admin_teacher_bookings.html", teacher=teacher, bookings=bookings)
+
+@app.route('/admin/withdrawal_requests')
+def admin_withdrawals():
+    if not session.get('superadmin_logged_in'):
+        return redirect(url_for('superadmin_login'))
+
+    withdrawal_res = supabase.table("withdrawal_requests").select("*").order("created_at", desc=True).execute()
+    withdrawal_data = withdrawal_res.data if withdrawal_res.data else []
+
+    return render_template('admin_withdrawals.html', withdrawals=withdrawal_data)
+
+
+from datetime import datetime
+
+@app.route('/admin/withdrawals/mark_paid/<int:request_id>', methods=['POST'])
+def mark_withdrawal_paid(request_id):
+    if not session.get('superadmin_logged_in'):
+        return redirect(url_for('superadmin_login'))
+
+    payment_reference = request.form.get('payment_reference')
+
+    supabase.table("withdrawal_requests").update({
+        "paid": True,
+        "paid_at": datetime.now().isoformat(),
+        "payment_reference": payment_reference
+    }).eq("id", request_id).execute()
+
+    return redirect(url_for('admin_withdrawals'))
 
 @app.route('/teacher/bookings')
 def teacher_bookings():
@@ -2452,8 +2522,7 @@ def review_teacher(teacher_id):
 
     return render_template('review_form.html', teacher=teacher_data)
 
-import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta  # ✅ Correct imports
 
 @app.route('/subscribe/<int:teacher_id>', methods=['GET', 'POST'])
 def subscribe_teacher(teacher_id):
@@ -2461,21 +2530,25 @@ def subscribe_teacher(teacher_id):
     if not student_id:
         return redirect(url_for('student_login'))
 
+    # ✅ Fetch teacher info
     teacher_res = supabase.table("teachers").select("*").eq("id", teacher_id).single().execute()
     teacher_data = teacher_res.data
     if not teacher_data:
         return "Teacher not found", 404
 
+    # ✅ Fetch active plan for teacher
     plan_res = supabase.table("teacher_monthly_plans").select("*").eq("teacher_id", teacher_id).eq("active", True).limit(1).execute()
     plan = plan_res.data[0] if plan_res.data else None
 
     if not plan:
         return "No active plan for this teacher", 400
 
+    # ✅ Handle form submission
     if request.method == 'POST':
         payment_ref_id = request.form['payment_ref_id']
-        now = datetime.datetime.now()
+        now = datetime.now()  # ✅ Correct way to get current time
 
+        # ✅ Insert subscription into DB
         supabase.table("subscriptions").insert({
             "student_id": student_id,
             "teacher_id": teacher_id,
@@ -2489,6 +2562,7 @@ def subscribe_teacher(teacher_id):
         flash("✅ Subscription submitted for approval.")
         return redirect(url_for('booking_success'))
 
+    # ✅ Attach plan price to teacher info for display
     teacher_data["monthly_fee"] = plan["price"]
     return render_template('subscribe_plan.html', teacher=teacher_data)
 
@@ -2539,6 +2613,10 @@ def update_subscription_status(sub_id):
     flash(f"Subscription marked as {status.upper()}")
     return redirect(url_for('admin_subscriptions'))
 
+
+from datetime import datetime
+from flask import request, redirect, url_for, render_template, session, flash
+
 @app.route('/teacher/request_withdrawal', methods=['GET', 'POST'])
 def request_withdrawal():
     if 'teacher_id' not in session:
@@ -2549,20 +2627,40 @@ def request_withdrawal():
     if request.method == 'POST':
         remarks = request.form.get('remarks', '')
 
+        # Fetch earnings
+        earnings_res = supabase.table("teacher_earnings").select("*").eq("teacher_id", teacher_id).limit(1).execute()
+        earnings_data = earnings_res.data[0] if earnings_res.data else {}
+
+        # Fetch commission
+        commission_res = supabase.table("commissions").select("*").eq("teacher_id", teacher_id).limit(1).execute()
+        commission_data = commission_res.data[0] if commission_res.data else {}
+
+        teacher_earning = float(earnings_data.get("total_earning", 0) or 0)
+        commission = float(commission_data.get("total", 0) or 0)
+        amount = round(teacher_earning - commission, 2)
+
+        if amount <= 0:
+            flash("No withdrawable balance available.", "warning")
+            return redirect(url_for('request_withdrawal'))
+
+        # ✅ Insert withdrawal request
         supabase.table("withdrawal_requests").insert({
             "teacher_id": teacher_id,
+            "amount": amount,
             "status": "pending",
             "remarks": remarks,
-            "created_at": datetime.now().isoformat()
+            "requested_at": datetime.now().isoformat()
         }).execute()
 
-        return redirect(url_for('dashboard'))
+        flash("Withdrawal request submitted successfully.", "success")
+        return redirect(url_for('teacher_dashboard'))
 
-    # If GET request, show form
-    teacher_res = supabase.table("teachers").select("*").eq("id", teacher_id).single().execute()
-    teacher_data = teacher_res.data
+    # Show teacher details
+    teacher_res = supabase.table("teachers").select("*").eq("id", teacher_id).limit(1).execute()
+    teacher_data = teacher_res.data[0] if teacher_res.data else {}
 
     return render_template('request_withdrawal.html', teacher=teacher_data)
+
 
 from flask import Flask, render_template, request
 from supabase_client import supabase  # your Supabase client setup
@@ -2591,3 +2689,16 @@ def smartlab():
 @app.route('/health')
 def health():
     return "OK"
+
+from datetime import datetime, timedelta
+
+@app.route('/admin/cleanup_old_bookings')
+def cleanup_old_bookings():
+    if not session.get('superadmin_logged_in'):
+        return redirect(url_for('superadmin_login'))
+
+    cutoff_date = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
+
+    response = supabase.table("bookings").delete().lt("created_at", cutoff_date).execute()
+
+    return f"{len(response.data)} old bookings deleted ✅"

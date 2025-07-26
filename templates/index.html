@@ -133,14 +133,18 @@
   </div>
 </div>
 
-  <!-- Bottom Nav for Mobile -->
-  <div class="fixed bottom-0 w-full bg-white border-t flex justify-around items-center py-2 sm:hidden shadow z-50">
-    <a href="/dashboard" class="text-xs text-center text-gray-600 hover:text-indigo-600">🏠<br>Home</a>
-    <a href="/teachers" class="text-xs text-center text-gray-600 hover:text-indigo-600">👩‍🏫<br>Tutors</a>
-    <!-- Edit Profile Button -->
-<a href="{{ url_for('edit_student_profile') }}" class="text-sm text-blue-600 hover:underline">
-    ✏️ Edit Profile
-</a>
+<!-- Bottom Nav for Mobile -->
+<div class="fixed bottom-0 w-full bg-white border-t flex justify-around items-center py-2 sm:hidden shadow z-50 text-base">
+  <a href="/dashboard" class="text-sm text-center text-gray-700 hover:text-indigo-600">
+    🏠<br><span class="text-xs">Home</span>
+  </a>
+  <a href="/teachers" class="text-sm text-center text-gray-700 hover:text-indigo-600">
+    👩‍🏫<br><span class="text-xs">Tutors</span>
+  </a>
+  <a href="{{ url_for('edit_student_profile') }}" class="text-sm text-blue-600 hover:underline text-center">
+    ✏️<br><span class="text-xs">Edit</span>
+  </a>
+</div>
 
   </div>
 

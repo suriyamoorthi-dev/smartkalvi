@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Withdrawal Requests</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="max-w-6xl mx-auto py-10 px-4">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold">💸 Withdrawal Requests</h1>
+      <a href="{{ url_for('superadmin_dashboard') }}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        ← Back to Dashboard
+      </a>
+    </div>
+
+    {% if withdrawals %}
+      <div class="overflow-x-auto bg-white rounded shadow">
+        <table class="min-w-full border">
+          <thead class="bg-gray-200">
+            <tr>
+              <th class="p-3 text-left">ID</th>
+              <th class="p-3 text-left">Teacher ID</th>
+              <th class="p-3 text-left">Amount</th>
+              <th class="p-3 text-left">Status</th>
+              <th class="p-3 text-left">Remarks</th>
+              <th class="p-3 text-left">Created At</th>
+              <th class="p-3 text-left">Paid</th>
+              <th class="p-3 text-left">Paid At</th>
+              <th class="p-3 text-left">Payment Ref</th>
+              <th class="p-3 text-left">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for req in withdrawals %}
+              <tr class="border-b">
+                <td class="p-3">{{ req.id }}</td>
+                <td class="p-3">{{ req.teacher_id }}</td>
+                <td class="p-3">₹{{ req.amount if req.amount is not none else 'N/A' }}</td>
+                <td class="p-3">{{ req.status }}</td>
+                <td class="p-3">{{ req.remarks or "-" }}</td>
+                <td class="p-3">{{ req.created_at[:19] }}</td>
+                <td class="p-3">
+                  {% if req.paid %}
+                    ✅
+                  {% else %}
+                    ❌
+                  {% endif %}
+                </td>
+                <td class="p-3">
+                  {{ req.paid_at[:19] if req.paid_at else "-" }}
+                </td>
+                <td class="p-3">
+                  {{ req.payment_reference or "-" }}
+                </td>
+                <td class="p-3">
+                  {% if not req.paid and req.status.lower() in ["pending", "approved"] %}
+                    <form action="{{ url_for('mark_withdrawal_paid', request_id=req.id) }}" method="POST" class="space-y-2">
+                      <input type="text" name="payment_reference" placeholder="GPay Ref ID" required class="border px-2 py-1 w-full text-sm">
+                      <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded w-full hover:bg-green-700">Mark as Paid</button>
+                    </form>
+                  {% else %}
+                    <span class="text-sm text-gray-500">No Action</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="bg-yellow-100 text-yellow-700 p-4 rounded shadow mt-6">
+        No withdrawal requests found.
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>
