@@ -40,6 +40,35 @@
         <a href="/admin/subscriptions" class="flex items-center space-x-2 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition">
             <i class="fas fa-sign-out-alt"></i><span>Review subscription</span>
         </a>
+        <!-- Add this section AFTER your existing cards and BEFORE withdrawal section -->
+
+<div class="bg-white p-6 rounded-xl shadow-custom mt-10">
+  <h2 class="text-2xl font-bold text-indigo-700 mb-5 flex items-center space-x-2">
+    <i class="fas fa-school"></i><span>Manage Schools</span>
+  </h2>
+<div class="bg-indigo-50 border border-indigo-200 rounded p-3 mb-4 text-indigo-700 font-medium">
+  👨‍🎓 Total Students: {{ student_count }}
+</div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+    {% for school in schools %}
+      <div class="bg-gray-50 border rounded-lg p-4 shadow hover:shadow-md transition">
+        <h3 class="text-lg font-semibold text-indigo-800">{{ school.name }}</h3>
+        <p class="text-sm text-gray-600">Board: {{ school.board }}</p>
+        <p class="text-sm text-gray-600 mb-2">Fee: ₹{{ school.total_fee }}</p>
+        <a href="{{ url_for('manage_school_uuid', school_id=school.id) }}"
+           class="inline-block mt-2 text-sm text-white bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">
+          ⚙️ Manage
+        </a>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if schools|length == 0 %}
+    <p class="text-gray-500 text-center mt-4">No schools found.</p>
+  {% endif %}
+</div>
+
     </div>
 <a href="{{ url_for('admin_withdrawals') }}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
   🔁 View Withdrawal Requests

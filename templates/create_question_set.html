@@ -10,30 +10,45 @@
   <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-2xl p-6 sm:p-10">
     <h2 class="text-2xl sm:text-3xl font-bold text-blue-700 mb-6 text-center">📘SmartKalvi</h2>
 
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <h2 class="text-2xl md:text-3xl font-bold text-green-700 tracking-tight"></h2>
+      <a href="/school_teacher/dashboard" class="text-sm text-green-600 hover:text-green-800 transition underline">
+        ← Back to Dashboard
+      </a>
+    </div>
+
     <form method="POST" class="space-y-6">
       <!-- General Info -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div>
           <label class="block text-sm font-medium mb-1">Board</label>
           <select name="board" class="w-full border rounded px-3 py-2">
-            <option value="stateboard">State Board</option>
-            <option value="cbse">CBSE</option>
+            <option value="stateboard" {% if board == 'stateboard' %}selected{% endif %}>Stateboard</option>
+            <option value="cbse" {% if board == 'cbse' %}selected{% endif %}>CBSE</option>
           </select>
         </div>
 
         <div>
           <label class="block text-sm font-medium mb-1">Class</label>
-          <input type="text" name="class" required class="w-full border rounded px-3 py-2" placeholder="e.g. 10" />
+          <input type="text" name="class" value="{{ class_name }}" required class="w-full border rounded px-3 py-2" placeholder="e.g. 10" />
         </div>
 
         <div>
           <label class="block text-sm font-medium mb-1">Subject</label>
-          <input type="text" name="subject" required class="w-full border rounded px-3 py-2" placeholder="e.g. Science" />
+          <input type="text" name="subject" value="{{ subject }}" required class="w-full border rounded px-3 py-2" placeholder="e.g. Science" />
         </div>
 
         <div>
           <label class="block text-sm font-medium mb-1">Chapter</label>
-          <input type="text" name="chapter" required class="w-full border rounded px-3 py-2" placeholder="e.g. Matter" />
+          <input type="text" name="chapter" value="{{ chapter }}" required class="w-full border rounded px-3 py-2" placeholder="e.g. Motion" />
+        </div>
+
+        <div class="col-span-full" id="topics-wrapper">
+          <label class="block text-sm font-medium mb-1">Topics</label>
+          <p class="text-sm text-gray-500 italic">ℹ️ Select board, class, subject, and chapter to load topics.</p>
+          <div id="topics-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
+            <!-- Topics will appear here -->
+          </div>
         </div>
 
         <div>
@@ -91,7 +106,7 @@
 
       <!-- Optional Extras -->
       <div>
-        <h3 class="text-lg font-semibold text-gray-800 mt-6 mb-2">🧩 Include Special Sections</h3>
+        <h3 class="text-lg font-semibold text-gray-800 mt-6 mb-2">🦩 Include Special Sections</h3>
         <div class="flex flex-wrap gap-4 text-sm">
           <label class="flex items-center space-x-2">
             <input type="checkbox" name="grammar" value="yes" />
@@ -132,5 +147,69 @@
     </div>
     {% endif %}
   </div>
+
+  <script>
+    const boardEl = document.querySelector('select[name="board"]');
+    const classEl = document.querySelector('input[name="class"]');
+    const subjectEl = document.querySelector('input[name="subject"]');
+    const chapterEl = document.querySelector('input[name="chapter"]');
+    const topicsContainer = document.getElementById("topics-container");
+
+    function loadTopics() {
+      const board = boardEl.value;
+      const className = classEl.value;
+      const subject = subjectEl.value;
+      const chapter = chapterEl.value;
+
+      if (!board || !className || !subject || !chapter) return;
+
+      fetch("/school_teacher/get_topics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ board, class: className, subject, chapter }),
+      })
+      .then(res => res.json())
+      .then(data => {
+        topicsContainer.innerHTML = "";
+
+        if (!data.topics || data.topics.length === 0) {
+          topicsContainer.innerHTML = "<p class='text-sm text-red-500'>⚠️ No topics found.</p>";
+          return;
+        }
+
+        data.topics.forEach(topic => {
+          const label = document.createElement("label");
+          label.className = "flex items-center space-x-2";
+
+          const input = document.createElement("input");
+          input.type = "checkbox";
+          input.name = "topics";
+          input.value = topic;
+
+          if (data.selected_topics?.includes(topic)) {
+            input.checked = true;
+          }
+
+          const span = document.createElement("span");
+          span.textContent = topic;
+
+          label.appendChild(input);
+          label.appendChild(span);
+          topicsContainer.appendChild(label);
+        });
+      });
+    }
+
+    [boardEl, classEl, subjectEl, chapterEl].forEach(el => {
+      el.addEventListener("change", loadTopics);
+      el.addEventListener("blur", loadTopics);
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if (boardEl.value && classEl.value && subjectEl.value && chapterEl.value) {
+        loadTopics();
+      }
+    });
+  </script>
 </body>
 </html>

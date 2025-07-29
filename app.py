@@ -504,36 +504,39 @@ import gdown
 import fitz  # PyMuPDF
 from flask import request, render_template, session, redirect, url_for
 import together
+from supabase import create_client
+import gdown
+import fitz  # PyMuPDF
+import os
 
 def get_or_extract_chapter_text(board, class_name, subject, chapter, gdrive_id):
-    from supabase import create_client
-    import gdown
-    import fitz  # PyMuPDF
     import os
+    import fitz  # PyMuPDF
+    import gdown
 
-    # ✅ Step 0: Ensure supabase client is ready
-    # (Assuming `supabase` is globally initialized)
+    class_str = str(class_name)
 
     # ✅ Step 1: Check Supabase for existing chapter content
     try:
         res = supabase.table("chapter_contents").select("*")\
             .eq("board", board)\
-            .eq("class", int(class_name))\
+            .eq("class", class_str)\
             .eq("subject", subject)\
             .eq("chapter", chapter)\
+            .single()\
             .execute()
 
-        if res.data and len(res.data) > 0:
+        if res.data:
             print("📦 Fetched chapter from Supabase cache")
-            return res.data[0]['content']
+            return res.data['content']
     except Exception as e:
-        print("❌ Supabase fetch error:", str(e))
+        print("❌ Supabase fetch error (likely no match or multiple entries):", str(e))
 
     # ✅ Step 2: Get page range from Supabase
     try:
         page_info = supabase.table("chapter_ranges").select("*")\
             .eq("board", board)\
-            .eq("class", int(class_name))\
+            .eq("class", class_str)\
             .eq("subject", subject)\
             .eq("chapter", chapter)\
             .single()\
@@ -546,13 +549,21 @@ def get_or_extract_chapter_text(board, class_name, subject, chapter, gdrive_id):
         print("⚠️ Chapter page range not found in Supabase:", str(e))
         return "⚠️ Chapter page range not found in Supabase."
 
-    # ✅ Step 3: Download the PDF from Google Drive
-    local_pdf = "temp_chapter.pdf"
-    try:
-        gdown.download(f"https://drive.google.com/uc?id={gdrive_id}", local_pdf, quiet=False)
-    except Exception as e:
-        print("❌ PDF download failed:", str(e))
-        return "❌ Failed to download textbook PDF."
+    # ✅ Step 3: Download the PDF from Google Drive (if not already cached)
+    pdf_folder = "pdf_cache"
+    os.makedirs(pdf_folder, exist_ok=True)
+    local_pdf = os.path.join(pdf_folder, f"{gdrive_id}.pdf")
+
+    if not os.path.exists(local_pdf):
+        try:
+            print("⬇️ Downloading PDF from Google Drive...")
+            gdown.download(f"https://drive.google.com/uc?id={gdrive_id}", local_pdf, quiet=False)
+            print("✅ PDF downloaded and cached locally")
+        except Exception as e:
+            print("❌ PDF download failed:", str(e))
+            return "❌ Failed to download textbook PDF."
+    else:
+        print("✅ PDF already cached, reusing it")
 
     # ✅ Step 4: Extract specific pages
     try:
@@ -561,25 +572,33 @@ def get_or_extract_chapter_text(board, class_name, subject, chapter, gdrive_id):
         for i in range(start_page - 1, end_page):
             extracted_text += doc[i].get_text()
         doc.close()
-        os.remove(local_pdf)  # clean up
+        print("✅ Text extracted from PDF")
     except Exception as e:
         print("❌ PDF extraction error:", str(e))
         return "❌ Failed to extract pages from PDF."
 
     chapter_text = extracted_text.strip()
+    print("📏 Extracted text size (chars):", len(chapter_text))
 
-    # ✅ Step 5: Save to Supabase for caching
+    if not chapter_text:
+        print("⚠️ No text extracted. Check the PDF page range or content format.")
+
+    # ✅ Step 5: Save to Supabase using upsert
     try:
-        supabase.table("chapter_contents").insert({
+        response = supabase.table("chapter_contents").upsert({
             "board": board,
-            "class": int(class_name),
+            "class": class_str,
             "subject": subject,
             "chapter": chapter,
             "content": chapter_text
         }).execute()
-        print("✅ Chapter content saved to Supabase")
+
+        print("✅ Chapter content upserted to Supabase.")
+        print("🔍 Supabase response:", response)
+        if hasattr(response, 'error') and response.error:
+            print("⚠️ Supabase upsert error:", response.error)
     except Exception as e:
-        print("⚠️ Failed to insert chapter content into Supabase:", str(e))
+        print("⚠️ Failed to upsert chapter content into Supabase:", str(e))
 
     return chapter_text
 
@@ -594,11 +613,39 @@ def create_question_set():
         except (ValueError, TypeError):
             return 0
 
+    # Set default values
+    topics = []
+    selected_topics = []
+    board = class_name = subject = chapter = ""
+    questions = []
+
+    # 🟡 Handle GET request — fetch available topics from Supabase
+    if request.method == 'GET':
+        board = request.args.get("board", "")
+        class_name = request.args.get("class", "")
+        subject = request.args.get("subject", "")
+        chapter = request.args.get("chapter", "")
+
+        topics = []
+        if board and class_name and subject and chapter:
+            result = supabase.table("chapter_topics").select("topic") \
+                .eq("board", board) \
+                .eq("class", int(class_name)) \
+                .eq("subject", subject) \
+                .eq("chapter", chapter).execute()
+
+            if result.data:
+                topics = [row["topic"] for row in result.data]
+
+        return render_template("create_question_set.html", topics=topics, selected_topics=[], board=board, class_name=class_name, subject=subject, chapter=chapter)
+
+    # 🟢 Handle POST request
     if request.method == 'POST':
         board = request.form['board']
         class_name = request.form['class']
         subject = request.form['subject']
         chapter = request.form['chapter']
+        selected_topics = request.form.getlist('topics')
         difficulty = request.form['difficulty']
 
         total_marks = safe_int(request.form.get('total_marks'))
@@ -615,47 +662,49 @@ def create_question_set():
         if 'diagram' in request.form: extras.append("diagram-based")
         if 'graph' in request.form: extras.append("graph-based")
 
+        result = supabase.table("chapter_topics").select("topic") \
+            .eq("board", board) \
+            .eq("class", int(class_name)) \
+            .eq("subject", subject) \
+            .eq("chapter", chapter).execute()
+
+        if result.data:
+            topics = [row["topic"] for row in result.data]
+
         if total_marks == 0:
-            return render_template('create_question_set.html', questions=["⚠️ Please enter a valid number for Total Marks."])
+            return render_template('create_question_set.html', questions=["⚠️ Please enter a valid number for Total Marks."], topics=topics, selected_topics=selected_topics, board=board, class_name=class_name, subject=subject, chapter=chapter)
 
-        print("🎯 INPUTS →", board, class_name, subject, chapter)
-
-        # Get book PDF info
         book_result = supabase.table("book_files").select("*") \
             .ilike("board", board) \
-                .eq("class", int(class_name)) \
-                    .ilike("subject", subject).execute()
-
+            .eq("class", int(class_name)) \
+            .ilike("subject", subject).execute()
 
         if not book_result.data:
-            return render_template('create_question_set.html', questions=["⚠️ Book PDF not found in Supabase."])
+            return render_template('create_question_set.html', questions=["⚠️ Book PDF not found in Supabase."], topics=topics, selected_topics=selected_topics, board=board, class_name=class_name, subject=subject, chapter=chapter)
 
         gdrive_id = book_result.data[0].get("gdrive_id")
 
-        # Get chapter page range
         chapter_result = supabase.table("chapter_ranges").select("*") \
             .eq("class", int(class_name)) \
-                .ilike("subject", subject) \
-                    .ilike("chapter", chapter).execute()
+            .ilike("subject", subject) \
+            .ilike("chapter", chapter).execute()
 
         if not chapter_result.data:
-            return render_template('create_question_set.html', questions=["⚠️ Chapter page range not found in Supabase."])
+            return render_template('create_question_set.html', questions=["⚠️ Chapter page range not found in Supabase."], topics=topics, selected_topics=selected_topics, board=board, class_name=class_name, subject=subject, chapter=chapter)
 
         start_page = chapter_result.data[0].get("start_page")
         end_page = chapter_result.data[0].get("end_page")
 
         if not gdrive_id or not start_page or not end_page:
-            return render_template('create_question_set.html', questions=["⚠️ Missing book or chapter page info."])
+            return render_template('create_question_set.html', questions=["⚠️ Missing book or chapter page info."], topics=topics, selected_topics=selected_topics, board=board, class_name=class_name, subject=subject, chapter=chapter)
 
-        # Extract text from PDF
-        chapter_text = get_or_extract_chapter_text(board, class_name, subject, chapter, gdrive_id, )
+        chapter_text = get_or_extract_chapter_text(board, class_name, subject, chapter, gdrive_id)
 
         def trim_chapter_text(text, max_tokens=4000):
             return text[:max_tokens] + "\n\n[...trimmed for length...]" if len(text) > max_tokens else text
 
         chapter_text = trim_chapter_text(chapter_text)
 
-        # Build section prompts
         section_prompt = ""
         if choose_count > 0:
             section_prompt += f"- Section A: Choose the Correct Answer (1 mark each) — {choose_count} questions\n"
@@ -675,6 +724,7 @@ def create_question_set():
             section_prompt += f"- Include at least one {' / '.join(extras)} question.\n"
 
         full_board_name = "Central Board of Secondary Education" if board.lower() == "cbse" else "Tamil Nadu State Board"
+        topic_str = ', '.join(selected_topics) if selected_topics else "General"
 
         prompt = f"""
 You are an expert question paper setter for the {full_board_name} ({board} syllabus) in India.
@@ -685,13 +735,14 @@ You are an expert question paper setter for the {full_board_name} ({board} sylla
 Class: {class_name}
 Subject: {subject}
 Chapter: {chapter}
+Topics: {topic_str}
 Board: {full_board_name.upper()}
 Total Marks: {total_marks}
 Time: 2½ Hours
 -------------------------------------
 
 📘 Use the following official chapter content for question generation:
-\"\"\"{chapter_text}\"\"\"
+{chapter_text}
 
 {section_prompt}
 
@@ -731,8 +782,7 @@ Time: 2½ Hours
                 "graph": extract_section("graph")
             }
 
-            # ✅ Save to Supabase
-            save_result = supabase.table("question_sets").insert({
+            supabase.table("question_sets").insert({
                 "school_teacher_id": session['school_teacher_id'],
                 "board": board,
                 "class_number": safe_int(class_name),
@@ -740,20 +790,47 @@ Time: 2½ Hours
                 "chapter": chapter,
                 "difficulty": difficulty,
                 "total_marks": total_marks,
-                "question_types": [],  # Manual split, so empty
+                "topics": selected_topics,  # ✅ only if added to DB
+                "question_types": [],       # maybe populate this too
                 "questions": full_text,
                 "question_json": question_json
-            }).execute()
+                }).execute()
 
-            print("✅ Inserted Question Set:", save_result.data)
-            return render_template('create_question_set.html', questions=full_text.splitlines())
+            return render_template('create_question_set.html', questions=full_text.splitlines(), topics=topics, selected_topics=selected_topics, board=board, class_name=class_name, subject=subject, chapter=chapter)
 
         except Exception as e:
             print("❌ AI Generation Error:", str(e))
-            return render_template('create_question_set.html', questions=[f"⚠️ AI error: {str(e)}"])
+            return render_template('create_question_set.html', questions=[f"⚠️ AI error: {str(e)}"], topics=topics, selected_topics=selected_topics, board=board, class_name=class_name, subject=subject, chapter=chapter)
 
-    return render_template('create_question_set.html')
+@app.route('/school_teacher/get_topics', methods=['POST'])
+def get_topics():
+    data = request.get_json()
+    board = data.get('board', '').strip()
+    class_name = data.get('class', '').strip()
+    subject = data.get('subject', '').strip()
+    chapter = data.get('chapter', '').strip()
 
+    print("📥 Request received:", board, class_name, subject, chapter)
+
+    topics = []
+
+    try:
+        result = supabase.table("chapter_topics").select("topic") \
+            .ilike("board", board) \
+            .eq("class", int(class_name)) \
+            .ilike("subject", subject) \
+            .ilike("chapter", chapter) \
+            .execute()
+
+        print("🎯 Supabase result:", result.data)
+
+        if result.data:
+            topics = [row["topic"] for row in result.data]
+
+    except Exception as e:
+        print("❌ Error fetching topics:", e)
+
+    return jsonify({"topics": topics})
 
 @app.route('/school_teacher/question_sets')
 def my_question_sets():
@@ -1338,6 +1415,42 @@ def superadmin_add_school():
         return redirect(url_for('superadmin_dashboard'))
 
     return render_template("superadmin_add_school.html")
+
+@app.route('/superadmin/manage_school/<school_id>', methods=['GET', 'POST'])
+def manage_school_uuid(school_id):
+    if not session.get('superadmin_logged_in'):
+        return redirect(url_for('superadmin_login'))
+
+    try:
+        # Fetch the school
+        school = supabase.table('schools').select("*").eq('id', school_id).single().execute().data
+
+        if not school:
+            flash("School not found", "error")
+            return redirect(url_for('superadmin_dashboard'))
+
+        # Count students in the same school
+        students = supabase.table('students').select("id").eq('school_id', school_id).execute().data
+        student_count = len(students) if students else 0
+
+        # Handle POST update
+        if request.method == 'POST':
+            name = request.form.get('name')
+            board = request.form.get('board')
+            supabase.table('schools').update({
+                'name': name,
+                'board': board
+            }).eq('id', school_id).execute()
+
+            flash('School updated successfully!', 'success')
+            return redirect(url_for('superadmin_dashboard'))
+
+    except Exception as e:
+        print("Error managing school:", e)
+        flash('Something went wrong!', 'error')
+        return redirect(url_for('superadmin_dashboard'))
+
+    return render_template('manage_school.html', school=school, student_count=student_count)
 
 from werkzeug.security import generate_password_hash
 
@@ -2702,3 +2815,5 @@ def cleanup_old_bookings():
     response = supabase.table("bookings").delete().lt("created_at", cutoff_date).execute()
 
     return f"{len(response.data)} old bookings deleted ✅"
+if __name__ == '__main__':
+    app.run(debug=True)
