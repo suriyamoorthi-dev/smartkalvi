@@ -1,191 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Super Admin Dashboard - AI Exam Platform</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        h1, h2, h3 { font-family: 'Poppins', sans-serif; }
-        ::-webkit-scrollbar { width: 10px; }
-        ::-webkit-scrollbar-track { background: #e0e7ff; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb { background: #a78bfa; border-radius: 10px; border: 2px solid #e0e7ff; }
-        ::-webkit-scrollbar-thumb:hover { background: #8b5cf6; }
-        .shadow-custom { box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Super Admin Dashboard - AI Exam Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    h1, h2, h3 { font-family: 'Poppins', sans-serif; }
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: #e0e7ff; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: #a78bfa; border-radius: 10px; border: 2px solid #e0e7ff; }
+    ::-webkit-scrollbar-thumb:hover { background: #8b5cf6; }
+    .shadow-custom { box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); }
+  </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 p-6 sm:p-8 lg:p-10">
+  <div class="max-w-7xl mx-auto space-y-10">
 
-<div class="max-w-7xl mx-auto space-y-10">
-
+    <!-- Header -->
     <header class="text-center mb-8">
-        <h1 class="text-4xl sm:text-5xl font-extrabold text-indigo-800 mb-3">
-            <i class="fas fa-crown text-amber-500 mr-3"></i>Super Admin Dashboard
-        </h1>
-        <p class="text-indigo-600 text-lg sm:text-xl">AI Exam Platform Management</p>
+      <h1 class="text-4xl sm:text-5xl font-extrabold text-indigo-800 mb-3">
+        <i class="fas fa-crown text-amber-500 mr-3"></i>Super Admin Dashboard
+      </h1>
+      <p class="text-indigo-600 text-lg sm:text-xl">AI Exam Platform Management</p>
     </header>
 
+    <!-- Top Buttons -->
     <div class="bg-white p-5 rounded-xl shadow-custom flex flex-wrap justify-center gap-5">
-        <a href="/superadmin/regenerate" class="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
-            <i class="fas fa-sync-alt"></i><span>Question Regenerative</span>
-        </a>
-        <a href="/superadmin/performance" class="flex items-center space-x-2 px-6 py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition">
-            <i class="fas fa-chart-line"></i><span>School Performance</span>
-        </a>
-        <a href="/superadmin/add_school" class="flex items-center space-x-2 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">
-            <i class="fas fa-plus-circle"></i><span>Add School</span>
-        </a>
-        <a href="/admin/subscriptions" class="flex items-center space-x-2 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition">
-            <i class="fas fa-sign-out-alt"></i><span>Review subscription</span>
-        </a>
-        <!-- Add this section AFTER your existing cards and BEFORE withdrawal section -->
-
-<div class="bg-white p-6 rounded-xl shadow-custom mt-10">
-  <h2 class="text-2xl font-bold text-indigo-700 mb-5 flex items-center space-x-2">
-    <i class="fas fa-school"></i><span>Manage Schools</span>
-  </h2>
-<div class="bg-indigo-50 border border-indigo-200 rounded p-3 mb-4 text-indigo-700 font-medium">
-  👨‍🎓 Total Students: {{ student_count }}
-</div>
-
-  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-    {% for school in schools %}
-      <div class="bg-gray-50 border rounded-lg p-4 shadow hover:shadow-md transition">
-        <h3 class="text-lg font-semibold text-indigo-800">{{ school.name }}</h3>
-        <p class="text-sm text-gray-600">Board: {{ school.board }}</p>
-        <p class="text-sm text-gray-600 mb-2">Fee: ₹{{ school.total_fee }}</p>
-        <a href="{{ url_for('manage_school_uuid', school_id=school.id) }}"
-           class="inline-block mt-2 text-sm text-white bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">
-          ⚙️ Manage
-        </a>
-      </div>
-    {% endfor %}
-  </div>
-
-  {% if schools|length == 0 %}
-    <p class="text-gray-500 text-center mt-4">No schools found.</p>
-  {% endif %}
-</div>
-
+      <a href="/superadmin/regenerate" class="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
+        <i class="fas fa-sync-alt"></i><span>Question Regenerative</span>
+      </a>
+      <a href="/superadmin/performance" class="flex items-center space-x-2 px-6 py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition">
+        <i class="fas fa-chart-line"></i><span>School Performance</span>
+      </a>
+      <a href="/superadmin/add_school" class="flex items-center space-x-2 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">
+        <i class="fas fa-plus-circle"></i><span>Add School</span>
+      </a>
+      <a href="/admin/subscriptions" class="flex items-center space-x-2 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition">
+        <i class="fas fa-sign-out-alt"></i><span>Review Subscription</span>
+      </a>
     </div>
-<a href="{{ url_for('admin_withdrawals') }}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-  🔁 View Withdrawal Requests
-</a>
 
+    <!-- Manage Schools -->
     <div class="bg-white p-6 rounded-xl shadow-custom">
-        <h2 class="text-2xl font-bold text-indigo-700 mb-5 flex items-center space-x-2">
-            <i class="fas fa-graduation-cap"></i><span>Tuition Management</span>
-        </h2>
-        <div class="flex flex-col sm:flex-row gap-4">
-            <a href="{{ url_for('admin_teachers') }}" class="flex-1 text-center bg-purple-500 text-white py-3 rounded-lg font-semibold hover:bg-purple-600 transition">Manage Teachers</a>
-            <a href="{{ url_for('admin_bookings') }}" class="flex-1 text-center bg-pink-500 text-white py-3 rounded-lg font-semibold hover:bg-pink-600 transition">Manage Bookings</a>
-            <a href="{{ url_for('admin_materials') }}" class="flex-1 text-center bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition">View All Materials</a>
+      <h2 class="text-2xl font-bold text-indigo-700 mb-5 flex items-center space-x-2">
+        <i class="fas fa-school"></i><span>Manage Schools</span>
+      </h2>
+      <div class="bg-indigo-50 border border-indigo-200 rounded p-3 mb-4 text-indigo-700 font-medium">
+        👨‍🎓 Total Students: {{ student_count }}
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {% for school in schools %}
+        <div class="bg-gray-50 border rounded-lg p-4 shadow hover:shadow-md transition">
+          <h3 class="text-lg font-semibold text-indigo-800">{{ school.name }}</h3>
+          <p class="text-sm text-gray-600">Board: {{ school.board }}</p>
+          <p class="text-sm text-gray-600 mb-2">Fee: ₹{{ school.total_fee }}</p>
+          <a href="{{ url_for('manage_school_uuid', school_id=school.id) }}" class="inline-block mt-2 text-sm text-white bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">
+            ⚙️ Manage
+          </a>
         </div>
+        {% endfor %}
+      </div>
+      {% if schools|length == 0 %}
+      <p class="text-gray-500 text-center mt-4">No schools found.</p>
+      {% endif %}
     </div>
 
-    <!-- Withdrawal Requests Section -->
+    <!-- View Withdrawals -->
+    <a href="{{ url_for('admin_withdrawals') }}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+      🔁 View Withdrawal Requests
+    </a>
+
+    <!-- Tuition Management -->
+    <div class="bg-white p-6 rounded-xl shadow-custom">
+      <h2 class="text-2xl font-bold text-indigo-700 mb-5 flex items-center space-x-2">
+        <i class="fas fa-graduation-cap"></i><span>Tuition Management</span>
+      </h2>
+      <div class="flex flex-col sm:flex-row gap-4">
+        <a href="{{ url_for('admin_teachers') }}" class="flex-1 text-center bg-purple-500 text-white py-3 rounded-lg font-semibold hover:bg-purple-600 transition">Manage Teachers</a>
+        <a href="{{ url_for('admin_bookings') }}" class="flex-1 text-center bg-pink-500 text-white py-3 rounded-lg font-semibold hover:bg-pink-600 transition">Manage Bookings</a>
+        <a href="{{ url_for('admin_materials') }}" class="flex-1 text-center bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition">View All Materials</a>
+      </div>
+    </div>
+
+    <!-- School Payment Submissions -->
     <div class="bg-white p-6 rounded-xl shadow-custom overflow-x-auto">
-        <h2 class="text-2xl font-bold text-indigo-700 mb-5 flex items-center space-x-2">
-            <i class="fas fa-wallet"></i><span>Withdrawal Requests</span>
-        </h2>
-        
-        {% if withdrawals %}
-        <table class="w-full text-left table-auto">
-            <thead class="bg-indigo-600 text-white">
-                <tr>
-                    <th class="p-3">ID</th>
-                    <th class="p-3">Teacher ID</th>
-                    <th class="p-3">Phone</th>
-                    <th class="p-3">Status</th>
-                    <th class="p-3">Requested At</th>
-                    <th class="p-3">Paid</th>
-                    <th class="p-3">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for req in withdrawals %}
-                <tr class="border-b">
-                    <td class="p-3">{{ req.id }}</td>
-                    <td class="p-3">{{ req.teacher_id }}</td>
-                    <td class="p-3">{{ req.teacher_phone }}</td>
-                    <td class="p-3">
-                        {% if req.status == 'pending' %}
-                            <span class="text-yellow-600 font-semibold">Pending</span>
-                        {% elif req.status == 'approved' %}
-                            <span class="text-green-600 font-semibold">Approved</span>
-                        {% elif req.status == 'rejected' %}
-                            <span class="text-red-600 font-semibold">Rejected</span>
-                        {% endif %}
-                    </td>
-                    <td class="p-3">{{ req.created_at }}</td>
-                    <td class="p-3">
-                        {% if req.paid %}
-                            ✅ Paid<br>{{ req.paid_at }}<br>{{ req.payment_reference }}
-                        {% else %}
-                            ❌ Not Paid
-                        {% endif %}
-                    </td>
-                    <td class="p-3 space-y-2">
-                        {% if req.status == 'pending' %}
-                            <a href="{{ url_for('update_withdrawal', request_id=req.id, action='approved') }}" class="bg-green-600 text-white px-3 py-1 rounded block text-center">Approve</a>
-                            <a href="{{ url_for('update_withdrawal', request_id=req.id, action='rejected') }}" class="bg-red-600 text-white px-3 py-1 rounded block text-center">Reject</a>
-                        {% elif req.status == 'approved' and not req.paid %}
-                            <form action="{{ url_for('mark_withdrawal_paid', request_id=req.id) }}" method="POST" class="space-y-2">
-                                <input type="text" name="payment_reference" placeholder="GPay Ref ID" required class="border px-2 py-1 w-full">
-                                <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded w-full">Mark as Paid</button>
-                            </form>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p class="text-gray-600 text-lg text-center">No withdrawal requests found.</p>
-        {% endif %}
-    </div>
-<!-- Place this BELOW your Withdrawal Requests Section -->
-<div class="bg-white p-6 rounded-xl shadow-custom overflow-x-auto">
-    <h2 class="text-2xl font-bold text-indigo-700 mb-5 flex items-center space-x-2">
+      <h2 class="text-2xl font-bold text-indigo-700 mb-5 flex items-center space-x-2">
         <i class="fas fa-file-invoice"></i><span>🧾 School Payment Submissions</span>
-    </h2>
-
-    <table class="w-full table-auto border border-gray-300">
+      </h2>
+      <table class="w-full table-auto border border-gray-300">
         <thead class="bg-gray-200">
-            <tr>
-                <th class="p-2 border">School Name</th>
-                <th class="p-2 border">Payment Proof</th>
-                <th class="p-2 border">Status</th>
-                <th class="p-2 border">Actions</th>
-            </tr>
+          <tr>
+            <th class="p-2 border">School Name</th>
+            <th class="p-2 border">Payment Proof</th>
+            <th class="p-2 border">Status</th>
+            <th class="p-2 border">Actions</th>
+          </tr>
         </thead>
         <tbody>
-            {% for school in schools %}
-            {% if school.payment_status == 'pending' and school.payment_proof %}
-            <tr class="text-center">
-                <td class="border p-2 font-semibold">{{ school.name }}</td>
-                <td class="border p-2">
-                    <a href="/static/payment_proofs/{{ school.payment_proof }}" target="_blank" class="text-blue-600 underline">📷 View</a>
-                </td>
-                <td class="border p-2 text-yellow-600 font-bold">Pending</td>
-                <td class="border p-2 space-y-2">
-                    <a href="/superadmin/mark_paid/{{ school.id }}" class="block bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">✅ Approve</a>
-                    <a href="/superadmin/reject_payment/{{ school.id }}" class="block bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">❌ Reject</a>
-                </td>
-            </tr>
-            {% endif %}
-            {% endfor %}
-        </tbody>
-    </table>
+  {% for school in schools %}
+    <tr class="text-center">
+      <td class="border p-2 font-semibold">{{ school.name }}</td>
+      <td class="border p-2">
+        {% if school.payment_proof %}
+          <a href="/static/payment_proofs/{{ school.payment_proof }}" target="_blank" class="text-blue-600 underline">📷 View</a>
+        {% else %}
+          <span class="text-gray-500">No proof submitted</span>
+        {% endif %}
+      </td>
+      <td class="border p-2">
+        {% if not school.payment_status %}
+          <span class="text-gray-600 italic">New</span>
+        {% elif school.payment_status == 'pending' %}
+          <span class="text-yellow-600 font-bold">Pending</span>
+        {% elif school.payment_status == 'approved' %}
+          <span class="text-green-600 font-bold">Approved</span>
+        {% elif school.payment_status == 'rejected' %}
+          <span class="text-red-600 font-bold">Rejected</span>
+        {% else %}
+          <span class="text-gray-600">{{ school.payment_status }}</span>
+        {% endif %}
+      </td>
+      <td class="border p-2 space-y-2">
+        {% if school.payment_status == 'pending' and school.payment_proof %}
+          <a href="/superadmin/mark_paid/{{ school.id }}" class="block bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">✅ Approve</a>
+          <a href="/superadmin/reject_payment/{{ school.id }}" class="block bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">❌ Reject</a>
+        {% else %}
+          <span class="text-gray-500">No actions</span>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+</tbody>
 
-    {% if not schools|selectattr('payment_status', 'equalto', 'pending')|selectattr('payment_proof')|list %}
-    <p class="text-gray-600 text-center mt-6">No new payment proofs submitted.</p>
-    {% endif %}
-</div>
+      </table>
 
-</div>
+      {% if not schools|selectattr('payment_proof')|list %}
+      <p class="text-gray-600 text-center mt-6">No payment proofs submitted.</p>
+      {% endif %}
+    </div>
 
+  </div>
 </body>
 </html>

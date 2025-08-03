@@ -1,56 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Edit Profile - SmartKalvi</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>Edit My Profile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    function previewAvatar() {
+      const url = document.getElementById('image_url').value;
+      document.getElementById('avatarPreview').src = url || "https://via.placeholder.com/100";
+    }
+  </script>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="min-h-screen bg-gradient-to-r from-blue-50 to-purple-100 flex items-center justify-center p-4">
+  <div class="w-full max-w-lg bg-white p-6 rounded-xl shadow-xl space-y-6">
+    <h1 class="text-2xl font-bold text-center text-blue-700">✏️ Edit My Profile</h1>
 
-  <div class="max-w-xl mx-auto mt-10 bg-white rounded-2xl shadow-xl p-6 sm:p-10">
-    <h2 class="text-2xl font-bold text-center text-blue-700 mb-6">👨‍🏫 Edit Teacher Profile</h2>
-
-    <form method="POST" class="space-y-6">
-      
-      <!-- Profile Image -->
-      <div class="text-center">
-        <img src="{{ teacher.profile_pic or 'https://ui-avatars.com/api/?name=Teacher' }}" 
-             alt="Profile Pic" 
-             class="mx-auto w-28 h-28 rounded-full object-cover shadow mb-3" 
-             id="profilePreview">
-        <input type="url" name="profile_pic" placeholder="Profile Picture URL"
-               value="{{ teacher.profile_pic }}" 
-               class="mt-2 w-full px-4 py-2 border rounded shadow-sm"
-               oninput="document.getElementById('profilePreview').src = this.value || 'https://ui-avatars.com/api/?name=Teacher'">
-      </div>
-
+    <form action="/teacher/edit-profile" method="POST" class="space-y-5">
       <!-- Name -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-        <input type="text" name="name" value="{{ teacher.name }}" 
-               class="w-full border px-4 py-2 rounded shadow-sm" required>
+        <label class="block mb-1 font-medium text-gray-700">Name</label>
+        <input type="text" name="name" value="{{ teacher.name }}" required class="w-full p-3 border rounded-lg focus:outline-blue-500">
       </div>
 
       <!-- Subject -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-        <input type="text" name="subject" value="{{ teacher.subject }}" 
-               class="w-full border px-4 py-2 rounded shadow-sm" required>
+        <label class="block mb-1 font-medium text-gray-700">Subject</label>
+        <input type="text" name="subject" value="{{ teacher.subject }}" required class="w-full p-3 border rounded-lg focus:outline-blue-500">
+      </div>
+
+      <!-- Bio -->
+      <div>
+        <label class="block mb-1 font-medium text-gray-700">Bio</label>
+        <textarea name="bio" rows="3" class="w-full p-3 border rounded-lg focus:outline-blue-500" required>{{ teacher.bio }}</textarea>
+      </div>
+
+      <!-- Experience -->
+      <div>
+        <label class="block mb-1 font-medium text-gray-700">Experience (in years)</label>
+        <input type="number" name="experience" min="0" value="{{ teacher.experience }}" required class="w-full p-3 border rounded-lg focus:outline-blue-500">
+      </div>
+
+      <!-- Profile Image URL -->
+      <div>
+        <label class="block mb-1 font-medium text-gray-700">Profile Image URL</label>
+        <input 
+          type="url" 
+          name="image_url" 
+          id="image_url" 
+          oninput="previewAvatar()" 
+          value="{{ teacher.image_url }}" 
+          placeholder="https://example.com/avatar.png" 
+          class="w-full p-3 border rounded-lg focus:outline-blue-500"
+        >
+      </div>
+
+      <!-- Avatar Help Text -->
+      <p class="text-sm text-gray-500 -mt-3">
+        Don’t have an image? 
+        <a href="https://artifyme-mcbd.onrender.com" target="_blank" class="text-indigo-600 underline">
+          Click here to generate your avatar
+        </a> → Right-click the image → “Copy image address” → Paste it above.
+      </p>
+
+      <!-- Avatar Preview -->
+      <div class="mt-4 text-center">
+        <label class="block text-sm font-medium text-gray-600 mb-1">Preview</label>
+        <img id="avatarPreview" src="{{ teacher.image_url }}" alt="Profile preview" class="w-24 h-24 rounded-full border mx-auto">
       </div>
 
       <!-- Submit -->
-      <div class="text-center">
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-full shadow transition">
-          💾 Save Changes
-        </button>
-      </div>
+      <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700">
+        Update Profile
+      </button>
     </form>
 
-    <div class="text-center mt-6">
-      <a href="{{ url_for('school_teacher_dashboard') }}" class="text-blue-600 hover:underline text-sm">⬅️ Back to Dashboard</a>
+    <!-- Back to Dashboard -->
+    <div class="text-center">
+      <a href="{{ url_for('teacher_dashboard') }}" class="text-blue-600 hover:underline">⬅️ Back to Dashboard</a>
     </div>
   </div>
-
 </body>
 </html>

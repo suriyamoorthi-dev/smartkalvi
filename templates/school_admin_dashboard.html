@@ -35,31 +35,43 @@
       <div class="bg-white rounded-xl shadow p-6">
         <h2 class="text-lg font-bold mb-2">💰 Current Monthly Fee</h2>
         <p class="text-gray-700 text-sm mb-3">Total Fee: ₹{{ total_fee }}</p>
-        {% if school.payment_status == 'active' %}
-          <span class="inline-block bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full">Active till {{ school.next_due_date }}</span>
+
+        {% if is_active %}
+          <span class="inline-block bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full">
+            Active till {{ due_date }}
+          </span>
         {% else %}
-          <span class="inline-block bg-red-100 text-red-800 text-xs px-3 py-1 rounded-full">Inactive / Payment Pending</span>
+          <span class="inline-block bg-red-100 text-red-800 text-xs px-3 py-1 rounded-full">
+            Inactive / Payment Pending
+          </span>
+          <div class="mt-4 bg-red-100 text-red-800 p-5 rounded-xl border-l-4 border-red-600">
+            <h3 class="font-semibold mb-2">🔔 Payment Instructions</h3>
+            <ul class="text-sm list-disc ml-5 space-y-1 mb-3">
+              <li><strong>GPay:</strong> +91 6383750156</li>
+              <li><strong>UPI ID:</strong> suriyamoorthi8920@oksbi</li>
+              <li><strong>Bank:</strong> BOI Bank</li>
+              <li><strong>Acc No:</strong> 815210110031645</li>
+              <li><strong>IFSC:</strong> BKID0008152</li>
+            </ul>
+            <a href="upi://pay?pa=suriyamoorthi8920@oksbi&pn=Suriyamoorthi&cu=INR"
+               class="inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm transition"
+               target="_blank">💸 Pay via UPI</a>
+            {% if payment_status == 'pending' %}
+  <p class="text-sm text-orange-600 mt-2">⏳ Payment under review by Superadmin</p>
+  <p class="text-sm text-gray-600">Uploaded Proof: <a href="{{ payment_proof_url }}" class="text-blue-600 underline" target="_blank">View</a></p>
+{% elif is_active %}
+  <span class="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full">✅ Active till {{ due_date }}</span>
+{% else %}
+  <!-- Show upload form only if no pending -->
+  <form action="{{ url_for('school_admin_payment_success') }}" method="post" enctype="multipart/form-data" class="space-y-2 mt-4">
+    <input type="file" name="payment_proof" accept="image/*,application/pdf" required class="block text-sm">
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm">📤 Upload Payment Proof</button>
+  </form>
+{% endif %}
+
+          </div>
         {% endif %}
       </div>
-
-      {% if school.payment_status != 'active' %}
-      <div class="bg-red-100 text-red-800 p-5 rounded-xl border-l-4 border-red-600">
-        <h3 class="font-semibold mb-2">🔔 Payment Instructions</h3>
-        <ul class="text-sm list-disc ml-5 space-y-1 mb-3">
-          <li><strong>GPay:</strong> +91 6383750156</li>
-          <li><strong>UPI ID:</strong> suriyamoorthi8920@oksbi</li>
-          <li><strong>Bank:</strong> BOI Bank</li>
-          <li><strong>Acc No:</strong> 815210110031645</li>
-          <li><strong>IFSC:</strong> BKID0008152</li>
-        </ul>
-        <a href="upi://pay?pa=suriyamoorthi8920@oksbi&pn=Suriyamoorthi&cu=INR"
-           class="inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm transition"
-           target="_blank">💸 Pay via UPI</a>
-        <a href="https://forms.gle/BH8c5QNN48cTKgB3A"
-           class="inline-block bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm ml-2 transition"
-           target="_blank">📤 Upload Payment Proof</a>
-      </div>
-      {% endif %}
 
       <!-- Class Management -->
       <div class="bg-white rounded-xl shadow p-6">

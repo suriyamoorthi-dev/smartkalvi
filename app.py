@@ -234,6 +234,8 @@ def dashboard():
 
 # === Super Admin Routes - Clean and Organized ===
 
+from datetime import datetime, date
+
 @app.route('/school_admin/dashboard')
 def school_admin_dashboard():
     if 'school_admin_id' not in session:
@@ -245,25 +247,64 @@ def school_admin_dashboard():
     school_resp = supabase.table('schools').select("*").eq('id', school_id).single().execute()
     school = school_resp.data
 
-    # Fetch teachers of this school
+    # Fetch teachers
     teachers_resp = supabase.table('school_teachers').select("*").eq('school_id', school_id).execute()
     teachers = teachers_resp.data
 
     total_fee = calculate_total_fee(school)
 
+    today = date.today()
+    next_due_date_raw = school.get('next_due_date')
+    payment_status = school.get('payment_status')
+    payment_proof_url = school.get('payment_proof')
+
+    is_active = False
+    due_date = None
+
+    # ✅ Fix: handle full datetime if present
+    if payment_status == 'active' and next_due_date_raw:
+        try:
+            due_date_dt = datetime.fromisoformat(next_due_date_raw)
+            due_date = due_date_dt.date()  # Extract just the date part
+            is_active = due_date >= today
+        except Exception as e:
+            print("❌ Error parsing next_due_date:", e)
+            due_date = None
+
     return render_template('school_admin_dashboard.html',
                            school=school,
                            teachers=teachers,
-                           total_fee=total_fee)
+                           total_fee=total_fee,
+                           is_active=is_active,
+                           due_date=due_date.strftime('%Y-%m-%d') if due_date else None,
+                           payment_status=payment_status,
+                           payment_proof_url=payment_proof_url)
 
+from werkzeug.utils import secure_filename
+import os
 
-import datetime  # Make sure this is present at the top of your file
-@app.route('/school_admin/pay_now')
-def school_admin_pay_now():
+@app.route('/school_admin/payment_success', methods=['POST'])
+def school_admin_payment_success():
     if 'school_admin_id' not in session:
         return redirect(url_for('school_admin_login'))
 
-    return render_template('school_pay_now.html')  # This should only have GForm button now
+    school_id = session['school_id']
+    file = request.files.get('payment_proof')
+
+    if file:
+        filename = secure_filename(file.filename)
+        filepath = os.path.join('static/payment_proofs', filename)
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        file.save(filepath)
+
+        supabase.table('schools').update({
+            'payment_status': 'pending',
+            'payment_proof': '/' + filepath
+        }).eq('id', school_id).execute()
+
+        flash("📤 Payment proof uploaded. Awaiting verification.", "info")
+
+    return redirect(url_for('school_admin_dashboard'))
 
 from werkzeug.security import check_password_hash
 
@@ -946,12 +987,18 @@ def add_class():
     classes = supabase.table("classes").select("*").eq("school_id", session.get("school_id")).execute().data
     return render_template("add_class.html", classes=classes)
 
-
 @app.route("/school_admin/view_class_teachers")
 def view_class_teachers():
+    if 'school_id' not in session:
+        return redirect(url_for('school_admin_login'))
+
+    school_id = session['school_id']
+
     class_teachers = supabase.table("class_teacher_mappings") \
         .select("id, classes(class_name), school_teachers(name)") \
+        .eq("school_id", school_id) \
         .execute().data
+
     return render_template("view_class_teachers.html", mappings=class_teachers)
 
 @app.route('/teacher/edit_profile', methods=['GET', 'POST'])
@@ -967,13 +1014,17 @@ def edit_teacher_profile():
     if request.method == 'POST':
         name = request.form.get('name')
         subject = request.form.get('subject')
-        profile_pic_url = request.form.get('profile_pic')  # Save image URL here
+        bio = request.form.get('bio')
+        experience = request.form.get('experience')
+        image_url = request.form.get('image_url')  # This must match input name in the form
 
         # Update teacher profile
-        update_response = supabase.table('school_teachers').update({
+        supabase.table('school_teachers').update({
             'name': name,
             'subject': subject,
-            'profile_pic': profile_pic_url
+            'bio': bio,
+            'experience': int(experience),
+            'image_url': image_url
         }).eq("id", teacher_id).execute()
 
         return redirect(url_for('school_teacher_dashboard'))
@@ -1295,9 +1346,8 @@ def superadmin_dashboard():
 
     try:
         response = supabase.table('schools').select("*").execute()
-        schools = response.data  # List of dictionaries
+        schools = response.data
 
-        # Add total_fee to each school
         for school in schools:
             school['total_fee'] = calculate_total_fee(school)
 
@@ -1360,17 +1410,16 @@ def superadmin_payments():
 
 @app.route('/superadmin/mark_paid/<school_id>')
 def mark_payment_received(school_id):
-    today = datetime.date.today()
-    next_due_date = (today + datetime.timedelta(days=30)).strftime('%Y-%m-%d')
+    today = date.today()
+    next_due_date = today + timedelta(days=30)
 
     supabase.table('schools').update({
         'payment_status': 'active',
-        'next_due_date': next_due_date,
-        'payment_marked_on': today.strftime('%Y-%m-%d')  # optional
+        'next_due_date': str(next_due_date),
+        'payment_marked_on': str(today)
     }).eq('id', school_id).execute()
 
     return redirect(url_for('superadmin_payments'))
-
 
 @app.route('/superadmin/get_admin_password/<int:school_id>')
 def get_admin_password(school_id):
