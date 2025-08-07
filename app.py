@@ -788,11 +788,16 @@ Time: 2½ Hours
 {section_prompt}
 
 📝 Guidelines:
-- Only output the question paper. Do NOT include any answers, hints, or explanations.
+- Output each question in **both English and Tamil**.
+- Use the format:  
+  1. [English version]  
+     [Tamil translation of the same question]
+- Do NOT include any answers, hints, or explanations.
 - Format questions in numbered order under each section heading.
 - Indicate marks at the end of each question, e.g., [2 marks].
-- Ensure clean formatting like a final printed exam paper.
+- Ensure neat and clean formatting like a final printed board exam paper.
 """
+
 
         try:
             response = together.Complete.create(
@@ -1755,42 +1760,46 @@ def doubt_solver():
 
     if request.method == "POST":
         question = request.form.get("question", "").strip()
-        
+
         if question:
             prompt = (
-    f"You are a friendly teacher helping an Indian school student (CBSE or Tamil Nadu board, class 6–12). "
-    f"Explain the answer in simple English only. Don't reply in Hindi. "
-    f"Use Tamil-English mix only if needed, but no Hindi. "
-    f"Break it step-by-step. Use real-life examples like school, autos, mobile recharge, etc. "
-    f"If it's math or science, give easy tips or memory tricks.\n\n"
-    f"📘 Question: {question}\n\n"
-    f"👨‍🏫 Answer (in simple English):"
-)
+                f"You are a friendly school teacher helping a student from Tamil Nadu or CBSE board (class 6–12).\n\n"
+                f"📘 Question: {question}\n\n"
+                f"👨‍🏫 Answer:\n"
+                f"- First, explain the answer in **simple English**.\n"
+                f"- Then, give the **same explanation in Tamil** (simple Tamil).\n"
+                f"- Use bullet points and short sentences for both.\n"
+                f"- Give a real-life example (in both English and Tamil).\n"
+                f"- If the topic is from Math or Science, give memory tricks or tips.\n"
+                f"- Avoid Hindi completely.\n"
+            )
 
-
-            
             headers = {
                 "Authorization": f"Bearer {DOUBT_SOLVER_API_KEY}",
                 "Content-Type": "application/json"
             }
-            
+
             payload = {
                 "model": DOUBT_SOLVER_MODEL,
                 "prompt": prompt,
-                "max_tokens": 150,
+                "max_tokens": 1000,  # Increased for bilingual response
                 "temperature": 0.7
             }
-            
+
             try:
                 response = requests.post(
                     "https://api.together.xyz/v1/completions",
                     headers=headers,
                     json=payload
                 )
-                
+
                 if response.status_code == 200:
                     data = response.json()
                     answer = data.get("choices", [{}])[0].get("text", "").strip()
+
+                    # Optional: Warn if incomplete
+                    if answer and not answer.endswith((".", "!", "?", "।")):
+                        answer += "\n\n⚠️ (Note: Response may be incomplete. Try reloading.)"
                 else:
                     answer = "⚠️ Sorry, AI service is temporarily unavailable."
             except Exception as e:
@@ -1800,7 +1809,6 @@ def doubt_solver():
 
 from flask import render_template, request
 import requests
-
 @app.route("/chalkboard_notes", methods=["GET", "POST"])
 def chalkboard_notes():
     notes = None
@@ -1817,29 +1825,31 @@ def chalkboard_notes():
 
         if topic and subject and class_value:
             prompt = f"""
-You are a helpful teacher preparing chalkboard notes for Tamil Nadu or CBSE board.
+You are a helpful teacher preparing chalkboard notes for Tamil Nadu or CBSE board students.
 
 - Topic: {topic}
 - Class: {class_value}
 - Subject: {subject}
 
-Write the explanation like it should be written on a classroom blackboard:
-- Bullet points or small sentences
-- Use simple English (Tamil-English if useful)
-- Include key formulas/definitions
-- Add 1 solved example (if applicable)
-- Keep it clean and board-friendly.
+🎯 Create notes in **both English and Tamil**:
+- Write in English first, then Tamil below it.
+- Use bullet points or short sentences
+- Use simple English + simple Tamil where possible
+- Include important formulas or definitions
+- Add one solved example if suitable
+- Keep the tone like it's written on a classroom blackboard
 
 ✏️ Chalkboard Notes:
+(English and Tamil version)
 
 ---
 
-Now, help the teacher explain this topic better to weak students.
-
 🧠 Better Explanation Guide:
-- Use a simplified explanation in Tamil-English
-- Add a real-life example
-- Mention a common misunderstanding and how to correct it
+- Explain the topic for weak students
+- Give a real-life example (in Tamil + English)
+- Mention common misunderstanding (Tamil + English)
+
+✋ Please make sure every sentence is **complete** in both languages.
 """
 
             headers = {
@@ -1850,8 +1860,9 @@ Now, help the teacher explain this topic better to weak students.
             payload = {
                 "model": DOUBT_SOLVER_MODEL,
                 "prompt": prompt,
-                "max_tokens": 300,
-                "temperature": 0.6
+                "max_tokens": 1000,  # 🆙 Increased to avoid cutting
+                "temperature": 0.6,
+                "stop": None  # ✅ Let it finish naturally
             }
 
             try:
@@ -1863,17 +1874,29 @@ Now, help the teacher explain this topic better to weak students.
                 if response.status_code == 200:
                     data = response.json()
                     notes = data.get("choices", [{}])[0].get("text", "").strip()
+
+                    # Log full response for debugging
+                    print("✅ AI Response:\n", notes)
+
+                    # Optional: Check if last line ends mid-word and warn
+                    if notes and not notes.endswith((".", "!", "?", "।")):
+                        notes += "\n\n⚠️ (Note: The response might be incomplete.)"
                 else:
-                    notes = "⚠️ AI is currently unavailable. Please try again."
+                    notes = f"⚠️ AI returned status code {response.status_code}. Please try again."
             except Exception as e:
                 notes = f"⚠️ Error: {str(e)}"
 
-        # Split into chalkboard and explanation notes
-        if notes and "---" in notes:
-            chalkboard_notes, explanation_notes = notes.split("---", 1)
-        else:
-            chalkboard_notes = notes
-            explanation_notes = ""
+        # ✅ Improved splitting logic
+        if notes:
+            if "---" in notes:
+                chalkboard_notes, explanation_notes = notes.split("---", 1)
+            elif "🧠 Better Explanation Guide:" in notes:
+                parts = notes.split("🧠 Better Explanation Guide:")
+                chalkboard_notes = parts[0]
+                explanation_notes = "🧠 Better Explanation Guide:" + parts[1]
+            else:
+                chalkboard_notes = notes
+                explanation_notes = ""
 
     return render_template(
         "chalkboard_notes.html",
@@ -1884,6 +1907,7 @@ Now, help the teacher explain this topic better to weak students.
         chalkboard_notes=chalkboard_notes.strip() if chalkboard_notes else "",
         explanation_notes=explanation_notes.strip() if explanation_notes else ""
     )
+
 
 from supabase import create_client, Client
 

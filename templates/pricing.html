@@ -1,145 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Pricing Structure</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background: #f8f9fa;
-        }
-        .pricing-table {
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-            overflow: hidden;
-        }
-        .pricing-header {
-            background: #007bff;
-            color: #fff;
-            padding: 20px;
-            text-align: center;
-            font-weight: bold;
-        }
-        .table th, .table td {
-            text-align: center;
-            vertical-align: middle;
-        }
-        .nav-tabs .nav-link.active {
-            background-color: #007bff;
-            color: white;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Donate | SmartKalvi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-yellow-50 min-h-screen px-4 py-6">
 
-<div class="container my-5">
-    <h1 class="text-center mb-4">Pricing Structure</h1>
+  <div class="bg-white max-w-md w-full mx-auto p-5 sm:p-6 rounded-2xl shadow-md space-y-5">
+    <h2 class="text-2xl font-bold text-center text-yellow-700">🙏 Support SmartKalvi</h2>
 
-    <!-- Tab Navigation -->
-    <ul class="nav nav-tabs justify-content-center mb-4" id="pricingTab" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="state-tab" data-bs-toggle="tab" data-bs-target="#state" type="button" role="tab">State Board</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="cbse-tab" data-bs-toggle="tab" data-bs-target="#cbse" type="button" role="tab">CBSE</button>
-        </li>
-    </ul>
+    <p class="text-center text-gray-600">Even ₹30 makes a big difference in empowering students and teachers! 💛</p>
 
-    <!-- Tab Content -->
-    <div class="tab-content">
+    <hr class="border-yellow-200">
 
-        <!-- State Board Pricing -->
-        <div class="tab-pane fade show active" id="state" role="tabpanel">
-            <div class="row">
+    <form method="POST" class="space-y-4">
+      <!-- UPI Section -->
+      <div class="bg-yellow-100 border border-yellow-200 p-4 rounded-lg">
+        <p class="font-medium text-yellow-700">Donate via UPI</p>
+        <p class="text-sm">🔢 UPI ID: <strong>suriyamoorthi8920@oksbi</strong></p>
+        <p class="text-sm">📱 UPI Number: <strong>6383750156</strong></p>
 
-                <div class="col-md-6 mb-4">
-                    <div class="pricing-table">
-                        <div class="pricing-header">Classes 6 to 8</div>
-                        <table class="table table-bordered mb-0">
-                            <tr><th>Students</th><th>Fee (₹)</th></tr>
-                            <tr><td>Up to 30</td><td>300</td></tr>
-                            <tr><td>31 to 40</td><td>500</td></tr>
-                            <tr><td>Above 40</td><td>700</td></tr>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="col-md-6 mb-4">
-                    <div class="pricing-table">
-                        <div class="pricing-header">Classes 9 to 10</div>
-                        <table class="table table-bordered mb-0">
-                            <tr><th>Students</th><th>Fee (₹)</th></tr>
-                            <tr><td>Up to 30</td><td>500</td></tr>
-                            <tr><td>31 to 40</td><td>800</td></tr>
-                            <tr><td>Above 40</td><td>1000</td></tr>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="col-md-6 mb-4">
-                    <div class="pricing-table">
-                        <div class="pricing-header">Classes 11 to 12</div>
-                        <table class="table table-bordered mb-0">
-                            <tr><th>Students</th><th>Fee (₹)</th></tr>
-                            <tr><td>Up to 30</td><td>700</td></tr>
-                            <tr><td>31 to 40</td><td>1100</td></tr>
-                            <tr><td>Above 40</td><td>1500</td></tr>
-                        </table>
-                    </div>
-                </div>
-
-            </div>
+        <div class="my-4 flex justify-center">
+          <img src="{{ url_for('static', filename='qrgpay/gpay_qr.png') }}" alt="Donate QR" class="w-40 h-40 object-contain rounded-lg shadow">
         </div>
 
-        <!-- CBSE Pricing -->
-        <div class="tab-pane fade" id="cbse" role="tabpanel">
-            <div class="row">
+        <p class="text-center">
+          <a href="upi://pay?pa=suriyamoorthi8920@oksbi&pn=SmartKalvi&am=30&cu=INR"
+             target="_blank"
+             class="text-yellow-700 underline font-medium hover:text-yellow-900">
+            💸 Tap to Donate ₹30 via GPay / PhonePe / UPI
+          </a>
+        </p>
 
-                <div class="col-md-6 mb-4">
-                    <div class="pricing-table">
-                        <div class="pricing-header bg-success">Classes 6 to 8</div>
-                        <table class="table table-bordered mb-0">
-                            <tr><th>Students</th><th>Fee (₹)</th></tr>
-                            <tr><td>Up to 30</td><td>500</td></tr>
-                            <tr><td>31 to 40</td><td>800</td></tr>
-                            <tr><td>Above 40</td><td>1100</td></tr>
-                        </table>
-                    </div>
-                </div>
+        <label class="block mt-4 font-medium text-gray-700">🧾 UPI Transaction Ref ID (optional)</label>
+        <input type="text" name="payment_ref_id" class="w-full border p-3 rounded-lg" placeholder="e.g. 1234567890">
+        <p class="text-xs text-gray-500 mt-1">Enter this if you'd like a thank-you note!</p>
+      </div>
 
-                <div class="col-md-6 mb-4">
-                    <div class="pricing-table">
-                        <div class="pricing-header bg-success">Classes 9 to 10</div>
-                        <table class="table table-bordered mb-0">
-                            <tr><th>Students</th><th>Fee (₹)</th></tr>
-                            <tr><td>Up to 30</td><td>700</td></tr>
-                            <tr><td>31 to 40</td><td>1100</td></tr>
-                            <tr><td>Above 40</td><td>1500</td></tr>
-                        </table>
-                    </div>
-                </div>
+      <button type="submit" class="w-full bg-yellow-600 text-white py-3 rounded-lg hover:bg-yellow-700 font-semibold">
+        ✅ Submit Donation Info
+      </button>
+    </form>
 
-                <div class="col-md-6 mb-4">
-                    <div class="pricing-table">
-                        <div class="pricing-header bg-success">Classes 11 to 12</div>
-                        <table class="table table-bordered mb-0">
-                            <tr><th>Students</th><th>Fee (₹)</th></tr>
-                            <tr><td>Up to 30</td><td>1000</td></tr>
-                            <tr><td>31 to 40</td><td>1500</td></tr>
-                            <tr><td>Above 40</td><td>2000</td></tr>
-                        </table>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <p class="text-center text-sm text-gray-600">
+      💌 Thank you for supporting education! Every bit helps.
+    </p>
+  </div>
 
 </body>
 </html>
