@@ -8,18 +8,28 @@
 </head>
 <body class="bg-gray-100 min-h-screen py-6 px-4 sm:px-6 lg:px-8">
   <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-2xl p-6 sm:p-10">
-    <h2 class="text-2xl sm:text-3xl font-bold text-blue-700 mb-6 text-center">📘SmartKalvi</h2>
+    
+    <!-- Page Title -->
+    <h2 class="text-2xl sm:text-3xl font-bold text-blue-700 mb-6 text-center">
+      📘 SmartKalvi
+    </h2>
 
+    <!-- Header -->
     <div class="flex items-center justify-between gap-3 flex-wrap">
-      <h2 class="text-2xl md:text-3xl font-bold text-green-700 tracking-tight"></h2>
+      <h2 class="text-xl md:text-2xl font-bold text-green-700 tracking-tight">
+        Generate Question Paper
+      </h2>
       <a href="/school_teacher/dashboard" class="text-sm text-green-600 hover:text-green-800 transition underline">
         ← Back to Dashboard
       </a>
     </div>
 
+    <!-- Form -->
     <form method="POST" class="space-y-6">
+      
       <!-- General Info -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        
         <div>
           <label class="block text-sm font-medium mb-1">Board</label>
           <select name="board" class="w-full border rounded px-3 py-2">
@@ -43,14 +53,18 @@
           <input type="text" name="chapter" value="{{ chapter }}" required class="w-full border rounded px-3 py-2" placeholder="e.g. Motion" />
         </div>
 
+        <!-- Topics -->
         <div class="col-span-full" id="topics-wrapper">
           <label class="block text-sm font-medium mb-1">Topics</label>
-          <p class="text-sm text-gray-500 italic">ℹ️ Select board, class, subject, and chapter to load topics.</p>
+          <p class="text-sm text-gray-500 italic">
+            ℹ️ Select board, class, subject, and chapter to load topics.
+          </p>
           <div id="topics-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
-            <!-- Topics will appear here -->
+            <!-- Topics will be loaded here -->
           </div>
         </div>
 
+        <!-- Difficulty -->
         <div>
           <label class="block text-sm font-medium mb-1">Difficulty</label>
           <select name="difficulty" class="w-full border rounded px-3 py-2">
@@ -60,10 +74,22 @@
           </select>
         </div>
 
+        <!-- Language Option -->
+        <div>
+          <label class="block text-sm font-medium mb-1">Language</label>
+          <select name="language" class="w-full border rounded px-3 py-2">
+            <option value="both" {% if language == 'both' %}selected{% endif %}>Both English & Tamil</option>
+            <option value="english" {% if language == 'english' %}selected{% endif %}>English Only</option>
+            <option value="tamil" {% if language == 'tamil' %}selected{% endif %}>Tamil Only</option>
+          </select>
+        </div>
+
+        <!-- Total Marks -->
         <div>
           <label class="block text-sm font-medium mb-1">Total Marks</label>
           <input type="number" name="total_marks" required class="w-full border rounded px-3 py-2" placeholder="e.g. 50" />
         </div>
+
       </div>
 
       <hr class="my-6 border-gray-300" />
@@ -76,27 +102,22 @@
             <span class="text-sm">Choose the Correct Answer (1 mark)</span>
             <input type="number" name="choose_count" min="0" class="mt-1 w-full border rounded px-3 py-2" />
           </label>
-
           <label class="block">
             <span class="text-sm">Fill in the Blanks (1 mark)</span>
             <input type="number" name="fillups_count" min="0" class="mt-1 w-full border rounded px-3 py-2" />
           </label>
-
           <label class="block">
             <span class="text-sm">Match the Following (1 mark)</span>
             <input type="number" name="match_count" min="0" class="mt-1 w-full border rounded px-3 py-2" />
           </label>
-
           <label class="block">
             <span class="text-sm">2 Mark Questions</span>
             <input type="number" name="2m_count" min="0" class="mt-1 w-full border rounded px-3 py-2" />
           </label>
-
           <label class="block">
             <span class="text-sm">5 Mark Questions</span>
             <input type="number" name="5m_count" min="0" class="mt-1 w-full border rounded px-3 py-2" />
           </label>
-
           <label class="block">
             <span class="text-sm">10 Mark Essay</span>
             <input type="number" name="10m_count" min="0" class="mt-1 w-full border rounded px-3 py-2" />
@@ -104,7 +125,7 @@
         </div>
       </div>
 
-      <!-- Optional Extras -->
+      <!-- Special Sections -->
       <div>
         <h3 class="text-lg font-semibold text-gray-800 mt-6 mb-2">🦩 Include Special Sections</h3>
         <div class="flex flex-wrap gap-4 text-sm">
@@ -133,9 +154,10 @@
           ➕ Generate Question Paper
         </button>
       </div>
+
     </form>
 
-    <!-- Results -->
+    <!-- Generated Questions -->
     {% if questions %}
     <div class="mt-10">
       <h3 class="text-xl font-semibold text-green-700 mb-4">✅ Generated Question Paper</h3>
@@ -146,8 +168,16 @@
       </div>
     </div>
     {% endif %}
+
   </div>
 
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center text-white text-lg hidden z-50">
+    <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-white mb-4"></div>
+    ⏳ Generating Question Paper... Please wait (about 2 minutes)
+  </div>
+
+  <!-- Scripts -->
   <script>
     const boardEl = document.querySelector('select[name="board"]');
     const classEl = document.querySelector('input[name="class"]');
@@ -197,6 +227,9 @@
           label.appendChild(span);
           topicsContainer.appendChild(label);
         });
+      })
+      .catch(() => {
+        topicsContainer.innerHTML = "<p class='text-sm text-red-500'>⚠️ Error loading topics.</p>";
       });
     }
 
@@ -209,6 +242,16 @@
       if (boardEl.value && classEl.value && subjectEl.value && chapterEl.value) {
         loadTopics();
       }
+    });
+
+    const form = document.querySelector("form");
+    const loadingOverlay = document.getElementById("loading-overlay");
+
+    form.addEventListener("submit", () => {
+      loadingOverlay.classList.remove("hidden");
+      setTimeout(() => {
+        loadingOverlay.classList.add("hidden");
+      }, 120000);
     });
   </script>
 </body>

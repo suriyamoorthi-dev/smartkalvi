@@ -803,7 +803,7 @@ Time: 2½ Hours
             response = together.Complete.create(
                 model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
                 prompt=prompt,
-                max_tokens=800,
+                max_tokens=3000,
                 temperature=0.7
             )
 
