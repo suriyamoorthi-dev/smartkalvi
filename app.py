@@ -643,6 +643,12 @@ def get_or_extract_chapter_text(board, class_name, subject, chapter, gdrive_id):
 
     return chapter_text
 
+import time
+
+COOLDOWN_SECONDS = 200  # ~3 minutes 20 seconds
+
+import re
+
 @app.route('/school_teacher/create_question_set', methods=['GET', 'POST'])
 def create_question_set():
     if 'school_teacher_id' not in session:
@@ -654,20 +660,18 @@ def create_question_set():
         except (ValueError, TypeError):
             return 0
 
-    # Set default values
     topics = []
     selected_topics = []
     board = class_name = subject = chapter = ""
     questions = []
 
-    # 🟡 Handle GET request — fetch available topics from Supabase
+    # 🟡 GET request - fetch topics
     if request.method == 'GET':
         board = request.args.get("board", "")
         class_name = request.args.get("class", "")
         subject = request.args.get("subject", "")
         chapter = request.args.get("chapter", "")
 
-        topics = []
         if board and class_name and subject and chapter:
             result = supabase.table("chapter_topics").select("topic") \
                 .eq("board", board) \
@@ -678,16 +682,33 @@ def create_question_set():
             if result.data:
                 topics = [row["topic"] for row in result.data]
 
-        return render_template("create_question_set.html", topics=topics, selected_topics=[], board=board, class_name=class_name, subject=subject, chapter=chapter)
+        return render_template("create_question_set.html", topics=topics, selected_topics=[],
+                               board=board, class_name=class_name, subject=subject, chapter=chapter)
 
-    # 🟢 Handle POST request
+    # 🟢 POST request
     if request.method == 'POST':
+        # Cooldown check
+        last_request_time = session.get("last_ai_request", 0)
+        now = time.time()
+        if now - last_request_time < COOLDOWN_SECONDS:
+            wait_left = int(COOLDOWN_SECONDS - (now - last_request_time))
+            return render_template(
+                'create_question_set.html',
+                questions=[f"⚠️ Please wait {wait_left} seconds before generating again."],
+                topics=topics, selected_topics=selected_topics,
+                board=board, class_name=class_name, subject=subject, chapter=chapter
+            )
+
+        session["last_ai_request"] = now
+
+        # Form data
         board = request.form['board']
         class_name = request.form['class']
         subject = request.form['subject']
         chapter = request.form['chapter']
         selected_topics = request.form.getlist('topics')
         difficulty = request.form['difficulty']
+        language = request.form.get('language', 'both').lower()  # NEW
 
         total_marks = safe_int(request.form.get('total_marks'))
         choose_count = safe_int(request.form.get('choose_count'))
@@ -696,6 +717,7 @@ def create_question_set():
         count_2m = safe_int(request.form.get('2m_count'))
         count_5m = safe_int(request.form.get('5m_count'))
         count_10m = safe_int(request.form.get('10m_count'))
+        comprehension_count = safe_int(request.form.get('comprehension_count', 0))  # NEW
 
         grammar = 'grammar' in request.form
         extras = []
@@ -703,6 +725,7 @@ def create_question_set():
         if 'diagram' in request.form: extras.append("diagram-based")
         if 'graph' in request.form: extras.append("graph-based")
 
+        # Fetch topics
         result = supabase.table("chapter_topics").select("topic") \
             .eq("board", board) \
             .eq("class", int(class_name)) \
@@ -713,32 +736,47 @@ def create_question_set():
             topics = [row["topic"] for row in result.data]
 
         if total_marks == 0:
-            return render_template('create_question_set.html', questions=["⚠️ Please enter a valid number for Total Marks."], topics=topics, selected_topics=selected_topics, board=board, class_name=class_name, subject=subject, chapter=chapter)
+            return render_template('create_question_set.html',
+                                   questions=["⚠️ Please enter a valid number for Total Marks."],
+                                   topics=topics, selected_topics=selected_topics,
+                                   board=board, class_name=class_name, subject=subject, chapter=chapter)
 
+        # Book file
         book_result = supabase.table("book_files").select("*") \
             .ilike("board", board) \
             .eq("class", int(class_name)) \
             .ilike("subject", subject).execute()
 
         if not book_result.data:
-            return render_template('create_question_set.html', questions=["⚠️ Book PDF not found in Supabase."], topics=topics, selected_topics=selected_topics, board=board, class_name=class_name, subject=subject, chapter=chapter)
+            return render_template('create_question_set.html',
+                                   questions=["⚠️ Book PDF not found in Supabase."],
+                                   topics=topics, selected_topics=selected_topics,
+                                   board=board, class_name=class_name, subject=subject, chapter=chapter)
 
         gdrive_id = book_result.data[0].get("gdrive_id")
 
+        # Chapter page range
         chapter_result = supabase.table("chapter_ranges").select("*") \
             .eq("class", int(class_name)) \
             .ilike("subject", subject) \
             .ilike("chapter", chapter).execute()
 
         if not chapter_result.data:
-            return render_template('create_question_set.html', questions=["⚠️ Chapter page range not found in Supabase."], topics=topics, selected_topics=selected_topics, board=board, class_name=class_name, subject=subject, chapter=chapter)
+            return render_template('create_question_set.html',
+                                   questions=["⚠️ Chapter page range not found in Supabase."],
+                                   topics=topics, selected_topics=selected_topics,
+                                   board=board, class_name=class_name, subject=subject, chapter=chapter)
 
         start_page = chapter_result.data[0].get("start_page")
         end_page = chapter_result.data[0].get("end_page")
 
         if not gdrive_id or not start_page or not end_page:
-            return render_template('create_question_set.html', questions=["⚠️ Missing book or chapter page info."], topics=topics, selected_topics=selected_topics, board=board, class_name=class_name, subject=subject, chapter=chapter)
+            return render_template('create_question_set.html',
+                                   questions=["⚠️ Missing book or chapter page info."],
+                                   topics=topics, selected_topics=selected_topics,
+                                   board=board, class_name=class_name, subject=subject, chapter=chapter)
 
+        # Extract chapter text
         chapter_text = get_or_extract_chapter_text(board, class_name, subject, chapter, gdrive_id)
 
         def trim_chapter_text(text, max_tokens=4000):
@@ -746,6 +784,7 @@ def create_question_set():
 
         chapter_text = trim_chapter_text(chapter_text)
 
+        # Build section prompt
         section_prompt = ""
         if choose_count > 0:
             section_prompt += f"- Section A: Choose the Correct Answer (1 mark each) — {choose_count} questions\n"
@@ -759,10 +798,24 @@ def create_question_set():
             section_prompt += f"- Section E: 5 Mark Questions — {count_5m} questions\n"
         if count_10m > 0:
             section_prompt += f"- Section F: 10 Mark Essay Questions — {count_10m} questions\n"
+        if comprehension_count > 0:
+            section_prompt += f"- Section G: Comprehension Passage with Questions — {comprehension_count} sets\n"
+            section_prompt += "- Each set should contain a short passage (in selected language) followed by 3-5 related questions.\n"
         if grammar and subject.lower() == "english":
             section_prompt += "- Include grammar-based questions\n"
         if extras:
             section_prompt += f"- Include at least one {' / '.join(extras)} question.\n"
+
+        # Language instruction
+        if language == "english":
+            lang_instruction = "- Output each question in **English only**.\n"
+        elif language == "tamil":
+            lang_instruction = "- Output each question in **Tamil only**.\n"
+        else:
+            lang_instruction = "- Output each question in **both English and Tamil**.\n" \
+                               "- Use the format:\n" \
+                               "  1. [English version]\n" \
+                               "     [Tamil translation of the same question]\n"
 
         full_board_name = "Central Board of Secondary Education" if board.lower() == "cbse" else "Tamil Nadu State Board"
         topic_str = ', '.join(selected_topics) if selected_topics else "General"
@@ -788,16 +841,12 @@ Time: 2½ Hours
 {section_prompt}
 
 📝 Guidelines:
-- Output each question in **both English and Tamil**.
-- Use the format:  
-  1. [English version]  
-     [Tamil translation of the same question]
+{lang_instruction}
 - Do NOT include any answers, hints, or explanations.
 - Format questions in numbered order under each section heading.
 - Indicate marks at the end of each question, e.g., [2 marks].
 - Ensure neat and clean formatting like a final printed board exam paper.
 """
-
 
         try:
             response = together.Complete.create(
@@ -809,25 +858,28 @@ Time: 2½ Hours
 
             full_text = response['choices'][0]['text'].strip()
 
-            def extract_section(title):
-                if title in full_text:
-                    parts = full_text.split(title)
-                    return parts[1].split("Section", 1)[0].strip() if len(parts) > 1 else ""
+            # Flexible section extraction
+            def extract_section(pattern):
+                match = re.search(pattern, full_text, re.IGNORECASE | re.DOTALL)
+                if match:
+                    return match.group(1).strip()
                 return ""
 
             question_json = {
-                "choose": extract_section("Section A: Choose"),
-                "fillups": extract_section("Section B: Fill"),
-                "match": extract_section("Section C: Match"),
-                "2m": extract_section("Section D: 2 Mark"),
-                "5m": extract_section("Section E: 5 Mark"),
-                "10m": extract_section("Section F: 10 Mark"),
-                "grammar": extract_section("grammar"),
-                "map": extract_section("map"),
-                "diagram": extract_section("diagram"),
-                "graph": extract_section("graph")
+                "choose": extract_section(r"Section\s*A.*?:\s*(.*?)(?=Section\s*[B-Z]|$)"),
+                "fillups": extract_section(r"Section\s*B.*?:\s*(.*?)(?=Section\s*[C-Z]|$)"),
+                "match": extract_section(r"Section\s*C.*?:\s*(.*?)(?=Section\s*[D-Z]|$)"),
+                "2m": extract_section(r"Section\s*D.*?:\s*(.*?)(?=Section\s*[E-Z]|$)"),
+                "5m": extract_section(r"Section\s*E.*?:\s*(.*?)(?=Section\s*[F-Z]|$)"),
+                "10m": extract_section(r"Section\s*F.*?:\s*(.*?)(?=Section\s*[G-Z]|$)"),
+                "comprehension": extract_section(r"Section\s*G.*?:\s*(.*?)(?=Section\s*[H-Z]|$)"),
+                "grammar": extract_section(r"grammar"),
+                "map": extract_section(r"map"),
+                "diagram": extract_section(r"diagram"),
+                "graph": extract_section(r"graph")
             }
 
+            # Save to Supabase
             supabase.table("question_sets").insert({
                 "school_teacher_id": session['school_teacher_id'],
                 "board": board,
@@ -836,17 +888,25 @@ Time: 2½ Hours
                 "chapter": chapter,
                 "difficulty": difficulty,
                 "total_marks": total_marks,
-                "topics": selected_topics,  # ✅ only if added to DB
-                "question_types": [],       # maybe populate this too
+                "topics": selected_topics,
+                "question_types": [],
                 "questions": full_text,
                 "question_json": question_json
-                }).execute()
+            }).execute()
 
-            return render_template('create_question_set.html', questions=full_text.splitlines(), topics=topics, selected_topics=selected_topics, board=board, class_name=class_name, subject=subject, chapter=chapter)
+            return render_template('create_question_set.html',
+                                   questions=full_text.splitlines(),
+                                   topics=topics, selected_topics=selected_topics,
+                                   board=board, class_name=class_name,
+                                   subject=subject, chapter=chapter)
 
         except Exception as e:
             print("❌ AI Generation Error:", str(e))
-            return render_template('create_question_set.html', questions=[f"⚠️ AI error: {str(e)}"], topics=topics, selected_topics=selected_topics, board=board, class_name=class_name, subject=subject, chapter=chapter)
+            return render_template('create_question_set.html',
+                                   questions=[f"⚠️ AI error: {str(e)}"],
+                                   topics=topics, selected_topics=selected_topics,
+                                   board=board, class_name=class_name,
+                                   subject=subject, chapter=chapter)
 
 @app.route('/school_teacher/get_topics', methods=['POST'])
 def get_topics():
