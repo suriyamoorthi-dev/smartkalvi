@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Edit Question Set - SmartKalvi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col items-center justify-start p-6">
+
+  <h1 class="text-2xl font-bold mb-6">✏️ Edit Question Set</h1>
+
+  <form method="post" class="w-full max-w-2xl bg-white p-6 rounded-xl shadow-md space-y-4">
+    
+    <label class="block">
+      <span class="font-medium text-gray-700">Subject</span>
+      <input type="text" name="subject" value="{{ q.subject }}" class="w-full border px-3 py-2 rounded mt-1"/>
+    </label>
+
+    <label class="block">
+      <span class="font-medium text-gray-700">Chapter</span>
+      <input type="text" name="chapter" value="{{ q.chapter }}" class="w-full border px-3 py-2 rounded mt-1"/>
+    </label>
+
+    <label class="block">
+      <span class="font-medium text-gray-700">Total Marks</span>
+      <input type="number" name="total_marks" value="{{ q.total_marks }}" class="w-full border px-3 py-2 rounded mt-1"/>
+    </label>
+
+    <label class="block">
+      <span class="font-medium text-gray-700">Difficulty</span>
+      <select name="difficulty" class="w-full border px-3 py-2 rounded mt-1">
+        <option value="easy" {% if q.difficulty == 'easy' %}selected{% endif %}>Easy</option>
+        <option value="medium" {% if q.difficulty == 'medium' %}selected{% endif %}>Medium</option>
+        <option value="hard" {% if q.difficulty == 'hard' %}selected{% endif %}>Hard</option>
+      </select>
+    </label>
+
+    <label class="block">
+      <span class="font-medium text-gray-700">Questions</span>
+      <textarea name="questions" class="w-full border px-3 py-2 rounded mt-1 h-64">{{ q.questions }}</textarea>
+    </label>
+
+    <div class="flex justify-between mt-4">
+      <a href="{{ url_for('my_question_sets') }}" class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</a>
+      <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">💾 Save Changes</button>
+    </div>
+
+  </form>
+
+</body>
+</html>

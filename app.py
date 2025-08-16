@@ -644,15 +644,16 @@ def get_or_extract_chapter_text(board, class_name, subject, chapter, gdrive_id):
     return chapter_text
 
 import time
+import random
 
 COOLDOWN_SECONDS = 200  # ~3 minutes 20 seconds
-
-import re
 
 @app.route('/school_teacher/create_question_set', methods=['GET', 'POST'])
 def create_question_set():
     if 'school_teacher_id' not in session:
         return redirect(url_for('school_teacher_login'))
+
+    import os, random, time
 
     def safe_int(value):
         try:
@@ -660,283 +661,293 @@ def create_question_set():
         except (ValueError, TypeError):
             return 0
 
-    topics = []
-    selected_topics = []
-    board = class_name = subject = chapter = ""
-    questions = []
+    # ---- Helper: robustly extract text from Together responses (legacy/new) ----
+    def extract_ai_text(resp):
+        """
+        Supports:
+        - Legacy Complete.create: resp['choices'][0]['text']  (as seen in your logs)
+        - Older/alt format:       resp['output'][0]['text']
+        - New chat API:           resp.choices[0].message.content
+        Returns trimmed text or "".
+        """
+        if not resp:
+            return ""
 
-    # 🟡 GET request - fetch topics
+        # object-like (sdk classes) path
+        try:
+            # new chat client style
+            if hasattr(resp, "choices") and resp.choices:
+                first = resp.choices[0]
+                if hasattr(first, "message") and hasattr(first.message, "content"):
+                    return (first.message.content or "").strip()
+        except Exception:
+            pass
+
+        # dict styles
+        try:
+            if isinstance(resp, dict):
+                # legacy complete style seen in your log
+                if "choices" in resp and resp["choices"]:
+                    return (resp["choices"][0].get("text") or "").strip()
+                # older output array
+                if "output" in resp and resp["output"]:
+                    return (resp["output"][0].get("text") or "").strip()
+        except Exception:
+            pass
+
+        return ""
+
+    # ---- GET (compat) ----
     if request.method == 'GET':
         board = request.args.get("board", "")
         class_name = request.args.get("class", "")
         subject = request.args.get("subject", "")
-        chapter = request.args.get("chapter", "")
+        chapter_input = request.args.get("chapter", "")
+        chapters = [c.strip() for c in chapter_input.split(',') if c.strip()]
+        topics = []
 
-        if board and class_name and subject and chapter:
-            result = supabase.table("chapter_topics").select("topic") \
-                .eq("board", board) \
-                .eq("class", int(class_name)) \
-                .eq("subject", subject) \
-                .eq("chapter", chapter).execute()
-
-            if result.data:
-                topics = [row["topic"] for row in result.data]
+        if board and class_name and subject and chapters:
+            for ch in chapters:
+                try:
+                    result = supabase.table("chapter_topics").select("topic") \
+                        .eq("board", board) \
+                        .eq("class", int(class_name)) \
+                        .eq("subject", subject) \
+                        .eq("chapter", ch).execute()
+                    if result.data:
+                        topics.extend([row.get("topic") for row in result.data if row.get("topic")])
+                except Exception as e:
+                    print(f"⚠️ Topics fetch error for {ch}: {e}")
 
         return render_template("create_question_set.html", topics=topics, selected_topics=[],
-                               board=board, class_name=class_name, subject=subject, chapter=chapter)
+                               board=board, class_name=class_name, subject=subject, chapter=chapter_input)
 
-    # 🟢 POST request
+    # ---- POST (main) ----
     if request.method == 'POST':
-        # Cooldown check
-        last_request_time = session.get("last_ai_request", 0)
-        now = time.time()
-        if now - last_request_time < COOLDOWN_SECONDS:
-            wait_left = int(COOLDOWN_SECONDS - (now - last_request_time))
-            return render_template(
-                'create_question_set.html',
-                questions=[f"⚠️ Please wait {wait_left} seconds before generating again."],
-                topics=topics, selected_topics=selected_topics,
-                board=board, class_name=class_name, subject=subject, chapter=chapter
-            )
-
-        session["last_ai_request"] = now
-
-        # Form data
-        board = request.form['board']
-        class_name = request.form['class']
-        subject = request.form['subject']
-        chapter = request.form['chapter']
-        selected_topics = request.form.getlist('topics')
-        difficulty = request.form['difficulty']
-        language = request.form.get('language', 'both').lower()  # NEW
-
-        total_marks = safe_int(request.form.get('total_marks'))
-        choose_count = safe_int(request.form.get('choose_count'))
-        fillups_count = safe_int(request.form.get('fillups_count'))
-        match_count = safe_int(request.form.get('match_count'))
-        count_2m = safe_int(request.form.get('2m_count'))
-        count_5m = safe_int(request.form.get('5m_count'))
-        count_10m = safe_int(request.form.get('10m_count'))
-        comprehension_count = safe_int(request.form.get('comprehension_count', 0))  # NEW
-
-        grammar = 'grammar' in request.form
-        extras = []
-        if 'map' in request.form: extras.append("map-based")
-        if 'diagram' in request.form: extras.append("diagram-based")
-        if 'graph' in request.form: extras.append("graph-based")
-
-        # Fetch topics
-        result = supabase.table("chapter_topics").select("topic") \
-            .eq("board", board) \
-            .eq("class", int(class_name)) \
-            .eq("subject", subject) \
-            .eq("chapter", chapter).execute()
-
-        if result.data:
-            topics = [row["topic"] for row in result.data]
-
-        if total_marks == 0:
-            return render_template('create_question_set.html',
-                                   questions=["⚠️ Please enter a valid number for Total Marks."],
-                                   topics=topics, selected_topics=selected_topics,
-                                   board=board, class_name=class_name, subject=subject, chapter=chapter)
-
-        # Book file
-        book_result = supabase.table("book_files").select("*") \
-            .ilike("board", board) \
-            .eq("class", int(class_name)) \
-            .ilike("subject", subject).execute()
-
-        if not book_result.data:
-            return render_template('create_question_set.html',
-                                   questions=["⚠️ Book PDF not found in Supabase."],
-                                   topics=topics, selected_topics=selected_topics,
-                                   board=board, class_name=class_name, subject=subject, chapter=chapter)
-
-        gdrive_id = book_result.data[0].get("gdrive_id")
-
-        # Chapter page range
-        chapter_result = supabase.table("chapter_ranges").select("*") \
-            .eq("class", int(class_name)) \
-            .ilike("subject", subject) \
-            .ilike("chapter", chapter).execute()
-
-        if not chapter_result.data:
-            return render_template('create_question_set.html',
-                                   questions=["⚠️ Chapter page range not found in Supabase."],
-                                   topics=topics, selected_topics=selected_topics,
-                                   board=board, class_name=class_name, subject=subject, chapter=chapter)
-
-        start_page = chapter_result.data[0].get("start_page")
-        end_page = chapter_result.data[0].get("end_page")
-
-        if not gdrive_id or not start_page or not end_page:
-            return render_template('create_question_set.html',
-                                   questions=["⚠️ Missing book or chapter page info."],
-                                   topics=topics, selected_topics=selected_topics,
-                                   board=board, class_name=class_name, subject=subject, chapter=chapter)
-
-        # Extract chapter text
-        chapter_text = get_or_extract_chapter_text(board, class_name, subject, chapter, gdrive_id)
-
-        def trim_chapter_text(text, max_tokens=4000):
-            return text[:max_tokens] + "\n\n[...trimmed for length...]" if len(text) > max_tokens else text
-
-        chapter_text = trim_chapter_text(chapter_text)
-
-        # Build section prompt
-        section_prompt = ""
-        if choose_count > 0:
-            section_prompt += f"- Section A: Choose the Correct Answer (1 mark each) — {choose_count} questions\n"
-        if fillups_count > 0:
-            section_prompt += f"- Section B: Fill in the Blanks (1 mark each) — {fillups_count} questions\n"
-        if match_count > 0:
-            section_prompt += f"- Section C: Match the Following (1 mark each) — {match_count} questions\n"
-        if count_2m > 0:
-            section_prompt += f"- Section D: 2 Mark Questions — {count_2m} questions\n"
-        if count_5m > 0:
-            section_prompt += f"- Section E: 5 Mark Questions — {count_5m} questions\n"
-        if count_10m > 0:
-            section_prompt += f"- Section F: 10 Mark Essay Questions — {count_10m} questions\n"
-        if comprehension_count > 0:
-            section_prompt += f"- Section G: Comprehension Passage with Questions — {comprehension_count} sets\n"
-            section_prompt += "- Each set should contain a short passage (in selected language) followed by 3-5 related questions.\n"
-        if grammar and subject.lower() == "english":
-            section_prompt += "- Include grammar-based questions\n"
-        if extras:
-            section_prompt += f"- Include at least one {' / '.join(extras)} question.\n"
-
-        # Language instruction
-        if language == "english":
-            lang_instruction = "- Output each question in **English only**.\n"
-        elif language == "tamil":
-            lang_instruction = "- Output each question in **Tamil only**.\n"
-        else:
-            lang_instruction = "- Output each question in **both English and Tamil**.\n" \
-                               "- Use the format:\n" \
-                               "  1. [English version]\n" \
-                               "     [Tamil translation of the same question]\n"
-
-        full_board_name = "Central Board of Secondary Education" if board.lower() == "cbse" else "Tamil Nadu State Board"
-        topic_str = ', '.join(selected_topics) if selected_topics else "General"
-
-        prompt = f"""
-You are an expert question paper setter for the {full_board_name} ({board} syllabus) in India.
-
-🎯 Create a *{difficulty.title()} Level* Model Question Paper with the following structure:
-
--------------------------------------
-Class: {class_name}
-Subject: {subject}
-Chapter: {chapter}
-Topics: {topic_str}
-Board: {full_board_name.upper()}
-Total Marks: {total_marks}
-Time: 2½ Hours
--------------------------------------
-
-📘 Use the following official chapter content for question generation:
-{chapter_text}
-
-{section_prompt}
-
-📝 Guidelines:
-{lang_instruction}
-- Do NOT include any answers, hints, or explanations.
-- Format questions in numbered order under each section heading.
-- Indicate marks at the end of each question, e.g., [2 marks].
-- Ensure neat and clean formatting like a final printed board exam paper.
-"""
-
         try:
-            response = together.Complete.create(
-                model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
-                prompt=prompt,
-                max_tokens=3000,
-                temperature=0.7
-            )
+            data = request.get_json()
+            if not data:
+                return jsonify({'success': False, 'error': 'Invalid request data. Please refresh and try again.'})
 
-            full_text = response['choices'][0]['text'].strip()
+            # Cooldown
+            last_request_time = session.get("last_ai_request", 0)
+            now = time.time()
+            if now - last_request_time < COOLDOWN_SECONDS:
+                wait_left = int(COOLDOWN_SECONDS - (now - last_request_time))
+                return jsonify({'success': False, 'error': f'Please wait {wait_left} seconds before generating again.'})
+            session["last_ai_request"] = now
 
-            # Flexible section extraction
-            def extract_section(pattern):
-                match = re.search(pattern, full_text, re.IGNORECASE | re.DOTALL)
-                if match:
-                    return match.group(1).strip()
-                return ""
+            # Inputs
+            board = data.get('board', '').strip()
+            class_name = data.get('class', '').strip()
+            subject = data.get('subject', '').strip()
+            selected_chapters = [c.strip() for c in data.get('chapters', []) if c.strip()]
+            selected_topics = data.get('topics', [])
+            difficulty = data.get('difficulty', 'medium')
+            total_marks = safe_int(data.get('total_marks'))
+            language = data.get('language', 'both').lower()
+            questions_split = data.get('questions_split', [])
+            user_question_types = data.get('question_types', {})
 
-            question_json = {
-                "choose": extract_section(r"Section\s*A.*?:\s*(.*?)(?=Section\s*[B-Z]|$)"),
-                "fillups": extract_section(r"Section\s*B.*?:\s*(.*?)(?=Section\s*[C-Z]|$)"),
-                "match": extract_section(r"Section\s*C.*?:\s*(.*?)(?=Section\s*[D-Z]|$)"),
-                "2m": extract_section(r"Section\s*D.*?:\s*(.*?)(?=Section\s*[E-Z]|$)"),
-                "5m": extract_section(r"Section\s*E.*?:\s*(.*?)(?=Section\s*[F-Z]|$)"),
-                "10m": extract_section(r"Section\s*F.*?:\s*(.*?)(?=Section\s*[G-Z]|$)"),
-                "comprehension": extract_section(r"Section\s*G.*?:\s*(.*?)(?=Section\s*[H-Z]|$)"),
-                "grammar": extract_section(r"grammar"),
-                "map": extract_section(r"map"),
-                "diagram": extract_section(r"diagram"),
-                "graph": extract_section(r"graph")
+            if not all([board, class_name, subject, selected_chapters, questions_split]):
+                return jsonify({'success': False, 'error': 'Missing required fields. Please ensure all details are filled.'})
+
+            # Book PDF id
+            try:
+                book_result = supabase.table("book_files").select("gdrive_id") \
+                    .ilike("board", board) \
+                    .eq("class", int(class_name)) \
+                    .ilike("subject", subject).execute()
+                if not book_result.data or not book_result.data[0].get("gdrive_id"):
+                    return jsonify({'success': False, 'error': f'Book PDF not found for {board} Class {class_name} {subject}.'})
+                gdrive_id = book_result.data[0]["gdrive_id"]
+            except Exception as e:
+                print(f"❌ Database error: {e}")
+                return jsonify({'success': False, 'error': f'Database error: {str(e)}'})
+
+            # Defaults
+            default_q_types = {
+                "1m": ["MCQ", "Fill in the blanks", "True/False"],
+                "2m": ["Short answer", "Define", "Give reason"],
+                "3m": ["Short descriptive answer", "Explain with example", "Numerical problem"],
+                "5m": ["Long answer", "Explain in detail", "Diagram question"]
             }
 
-            # Save to Supabase
-            supabase.table("question_sets").insert({
-                "school_teacher_id": session['school_teacher_id'],
-                "board": board,
-                "class_number": safe_int(class_name),
-                "subject": subject,
-                "chapter": chapter,
-                "difficulty": difficulty,
-                "total_marks": total_marks,
-                "topics": selected_topics,
-                "question_types": [],
-                "questions": full_text,
-                "question_json": question_json
-            }).execute()
+            # Language
+            if language == "english":
+                lang_instruction = "- Output each question in **English only**."
+            elif language == "tamil":
+                lang_instruction = "- Output each question in **Tamil only**."
+            else:
+                lang_instruction = ("- Output each question in **both English and Tamil**.\n"
+                                    "- Format each item as:\n  Qx: English version\n  தமிழ்: தமிழ் பதிப்பு\n"
+                                    "- Do NOT include answers.")
 
-            return render_template('create_question_set.html',
-                                   questions=full_text.splitlines(),
-                                   topics=topics, selected_topics=selected_topics,
-                                   board=board, class_name=class_name,
-                                   subject=subject, chapter=chapter)
+            full_board_name = "CBSE" if board.lower() == "cbse" else "Tamil Nadu State Board"
+            topic_str = ', '.join(selected_topics) if selected_topics else "General topics from the chapters"
+
+            # ---- Generate per chapter (robust) ----
+            final_questions = []
+            total_generated_marks = 0
+
+            for chapter_data in questions_split:
+                chapter_name = chapter_data.get('chapter')
+                if not chapter_name:
+                    continue
+
+                # Fetch chapter text safely
+                ch_text = ""
+                try:
+                    ch_text = get_or_extract_chapter_text(board, class_name, subject, chapter_name, gdrive_id)
+                except Exception as e:
+                    # get_or_extract_chapter_text might internally query Supabase and throw if 0 rows
+                    print(f"❌ Supabase fetch error (chapter {chapter_name}): {e}")
+
+                if not ch_text:
+                    print(f"⚠️ No text extracted for chapter '{chapter_name}', continuing with prompt-only context.")
+                    ch_text = "[Chapter text unavailable. Use general knowledge of the chapter title only.]"
+
+                # Trim input to keep context budget healthy
+                if len(ch_text) > 2500:
+                    ch_text = ch_text[:2500] + "\n\n[...trimmed for length...]"
+
+                # Counts & types
+                count_1m = safe_int(chapter_data.get('1m', 0))
+                count_2m = safe_int(chapter_data.get('2m', 0))
+                count_3m = safe_int(chapter_data.get('3m', 0))
+                count_5m = safe_int(chapter_data.get('5m', 0))
+                chapter_marks = (count_1m*1) + (count_2m*2) + (count_3m*3) + (count_5m*5)
+                if chapter_marks == 0:
+                    continue
+
+                types_1m = user_question_types.get("1m") or default_q_types["1m"]
+                types_2m = user_question_types.get("2m") or default_q_types["2m"]
+                types_3m = user_question_types.get("3m") or default_q_types["3m"]
+                types_5m = user_question_types.get("5m") or default_q_types["5m"]
+
+                section_prompt = f"- From chapter '{chapter_name}' ({chapter_marks} marks):\n"
+                for _ in range(count_5m):
+                    section_prompt += f"  • One 5-mark question of type: {random.choice(types_5m)}\n"
+                for _ in range(count_3m):
+                    section_prompt += f"  • One 3-mark question of type: {random.choice(types_3m)}\n"
+                for _ in range(count_2m):
+                    section_prompt += f"  • One 2-mark question of type: {random.choice(types_2m)}\n"
+                for _ in range(count_1m):
+                    section_prompt += f"  • One 1-mark question of type: {random.choice(types_1m)}\n"
+
+                prompt = f"""
+You are an expert question paper creator for the {full_board_name}. Create a {difficulty.title()} level model question set.
+
+Class: {class_name}
+Subject: {subject}
+Total Marks (this chapter): {chapter_marks}
+Chapter: {chapter_name}
+Focus Topics: {topic_str}
+
+Source Material (extract/snippet):
+{ch_text}
+
+Instructions:
+1. Generate **exactly** the number of questions implied by the distribution below.
+2. Use the question types specified.
+3. {lang_instruction}
+4. Show marks for each question, e.g., "(5 Marks)".
+5. Clean exam format. Do **not** include answers.
+
+Question Distribution:
+{section_prompt}
+"""
+
+                print(f"🤖 Generating questions for chapter: {chapter_name} ...")
+                try:
+                    # Legacy Complete API (your current usage)
+                    response = together.Complete.create(
+                        model="meta-llama/Llama-3.3-70B-Instruct-Turbo",
+                        prompt=prompt,
+                        max_tokens=2000,   # balanced per-chapter
+                        temperature=0.7
+                    )
+                    print("🔍 AI raw response:", response)
+                    chapter_text_out = extract_ai_text(response)
+
+                    # If empty, try a second light attempt with smaller completion to avoid silent fails
+                    if not chapter_text_out:
+                        print("⚠️ Empty text from first attempt, retrying with smaller max_tokens...")
+                        response2 = together.Complete.create(
+                            model="meta-llama/Llama-3.3-70B-Instruct-Turbo",
+                            prompt=prompt,
+                            max_tokens=900,
+                            temperature=0.7
+                        )
+                        print("🔍 AI raw response (retry):", response2)
+                        chapter_text_out = extract_ai_text(response2)
+
+                    if chapter_text_out:
+                        final_questions.append(f"### {chapter_name}\n{chapter_text_out}")
+                        total_generated_marks += chapter_marks
+                    else:
+                        print(f"⚠️ Still empty for chapter: {chapter_name}")
+
+                except Exception as e:
+                    print(f"❌ AI error for {chapter_name}: {e}")
+
+            if not final_questions:
+                return jsonify({'success': False, 'error': 'AI did not generate any questions. Try reducing chapters or marks and retry.'})
+
+            full_text = "\n\n".join(final_questions)
+
+            # ---- Save ----
+            try:
+                supabase.table("question_sets").insert({
+                    "school_teacher_id": session['school_teacher_id'],
+                    "board": board,
+                    "class_number": safe_int(class_name),
+                    "subject": subject,
+                    "chapter": ", ".join(selected_chapters),
+                    "difficulty": difficulty,
+                    "total_marks": total_marks,
+                    "topics": selected_topics,
+                    "questions": full_text
+                }).execute()
+            except Exception as e:
+                print(f"⚠️ Failed to save to database: {e}")
+
+            return jsonify({'success': True, 'questions': full_text})
 
         except Exception as e:
-            print("❌ AI Generation Error:", str(e))
-            return render_template('create_question_set.html',
-                                   questions=[f"⚠️ AI error: {str(e)}"],
-                                   topics=topics, selected_topics=selected_topics,
-                                   board=board, class_name=class_name,
-                                   subject=subject, chapter=chapter)
+            import traceback
+            traceback.print_exc()
+            return jsonify({'success': False, 'error': f'A server error occurred: {str(e)}'})
 
 @app.route('/school_teacher/get_topics', methods=['POST'])
 def get_topics():
     data = request.get_json()
-    board = data.get('board', '').strip()
+    board = data.get('board', '').strip().lower()
     class_name = data.get('class', '').strip()
-    subject = data.get('subject', '').strip()
-    chapter = data.get('chapter', '').strip()
+    subject = data.get('subject', '').strip().lower()
+    chapters = [c.strip().lower() for c in data.get('chapters', [])]
 
-    print("📥 Request received:", board, class_name, subject, chapter)
+    topics_by_chapter = {}
 
-    topics = []
+    for chapter in chapters:
+        if not chapter:
+            continue
+        try:
+            result = supabase.table("chapter_topics").select("topic") \
+                .ilike("board", board) \
+                .ilike("class", class_name) \
+                .ilike("subject", subject) \
+                .ilike("chapter", chapter) \
+                .execute()
 
-    try:
-        result = supabase.table("chapter_topics").select("topic") \
-            .ilike("board", board) \
-            .eq("class", int(class_name)) \
-            .ilike("subject", subject) \
-            .ilike("chapter", chapter) \
-            .execute()
+            topics_by_chapter[chapter] = [row["topic"] for row in result.data] if result.data else []
 
-        print("🎯 Supabase result:", result.data)
+        except Exception as e:
+            print("❌ Error fetching topics:", e)
+            topics_by_chapter[chapter] = []
 
-        if result.data:
-            topics = [row["topic"] for row in result.data]
-
-    except Exception as e:
-        print("❌ Error fetching topics:", e)
-
-    return jsonify({"topics": topics})
+    print("🎯 Topics by chapter:", topics_by_chapter)
+    return jsonify({"topics_by_chapter": topics_by_chapter})
 
 @app.route('/school_teacher/question_sets')
 def my_question_sets():
@@ -959,6 +970,40 @@ def my_question_sets():
     print("✅ Question Sets from DB:", question_sets)
 
     return render_template('school_teacher_question_sets.html', sets=question_sets)
+@app.route('/school_teacher/question_sets/edit/<set_id>', methods=['GET', 'POST'])
+def edit_question_set(set_id):
+    if 'school_teacher_id' not in session:
+        return redirect(url_for('school_teacher_login'))
+
+    teacher_id = str(session['school_teacher_id'])
+
+    # Fetch the question set
+    result = supabase.table("question_sets") \
+        .select("*") \
+        .eq("id", set_id) \
+        .eq("school_teacher_id", teacher_id) \
+        .single() \
+        .execute()
+    
+    q_set = result.data
+    if not q_set:
+        flash("Question set not found", "error")
+        return redirect(url_for('my_question_sets'))
+
+    if request.method == "POST":
+        # Update the set with new values from the form
+        updated_data = {
+            "subject": request.form['subject'],
+            "chapter": request.form['chapter'],
+            "questions": request.form['questions'],
+            "total_marks": int(request.form['total_marks']),
+            "difficulty": request.form['difficulty']
+        }
+        supabase.table("question_sets").update(updated_data).eq("id", set_id).execute()
+        flash("Question set updated successfully!", "success")
+        return redirect(url_for('my_question_sets'))
+
+    return render_template("edit_question_set.html", q=q_set)
 
 from flask import make_response
 from fpdf import FPDF  # install: pip install fpdf
@@ -1842,7 +1887,7 @@ def doubt_solver():
             payload = {
                 "model": DOUBT_SOLVER_MODEL,
                 "prompt": prompt,
-                "max_tokens": 1000,  # Increased for bilingual response
+                "max_tokens": 2000,  # Increased for bilingual response
                 "temperature": 0.7
             }
 
@@ -1920,7 +1965,7 @@ You are a helpful teacher preparing chalkboard notes for Tamil Nadu or CBSE boar
             payload = {
                 "model": DOUBT_SOLVER_MODEL,
                 "prompt": prompt,
-                "max_tokens": 1000,  # 🆙 Increased to avoid cutting
+                "max_tokens": 2000,  # 🆙 Increased to avoid cutting
                 "temperature": 0.6,
                 "stop": None  # ✅ Let it finish naturally
             }

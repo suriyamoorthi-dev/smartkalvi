@@ -19,7 +19,7 @@
 
   <!-- ✅ Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="SmartKalvi – Tamil Nadu’s Smartest Education Platform">
+  <meta name="twitter:title" content="SmartKalvi – Tamil Nadu's Smartest Education Platform">
   <meta name="twitter:description" content="AI-based question generator + live Tamil tutors + gift merch = all-in-one school platform.">
   <meta name="twitter:image" content="https://smartkalvi.com/static/banner-preview.jpg">
 
@@ -29,40 +29,44 @@
 
   <!-- ✅ Favicon -->
   <link rel="icon" href="/favicon.ico" type="image/x-icon">
-</head>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        h1, h2, h3 { font-family: 'Poppins', sans-serif; }
-        .bg-grid-pattern {
-            background-image:
-                linear-gradient(to right, rgba(128, 128, 128, 0.08) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(128, 128, 128, 0.08) 1px, transparent 1px);
-            background-size: 40px 40px;
-        }
-        .animated-gradient {
-            background: linear-gradient(-45deg, #4F46E5, #6D28D9, #0891B2, #0D9488);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-        }
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        .card-hover:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
-        }
-    </style>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    h1, h2, h3 { font-family: 'Poppins', sans-serif; }
+    .bg-grid-pattern {
+        background-image:
+            linear-gradient(to right, rgba(128, 128, 128, 0.08) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(128, 128, 128, 0.08) 1px, transparent 1px);
+        background-size: 40px 40px;
+    }
+    .animated-gradient {
+        background: linear-gradient(-45deg, #4F46E5, #6D28D9, #0891B2, #0D9488);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+    }
+    @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    .card-hover:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+    }
+    .pulse-glow {
+        animation: pulse-glow 2s ease-in-out infinite alternate;
+    }
+    @keyframes pulse-glow {
+        from { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+        to { box-shadow: 0 0 30px rgba(255, 215, 0, 0.8); }
+    }
+  </style>
 </head>
 <body class="animated-gradient text-white min-h-screen flex flex-col">
 
+<!-- HEADER -->
 <header class="absolute top-0 left-0 right-0 z-10 py-5">
     <div class="max-w-7xl mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-8">
-        
         <a href="/" class="flex items-center space-x-3 text-xl sm:text-2xl font-bold">
             <img src="https://img.icons8.com/ios-filled/50/FFFFFF/student-center.png" alt="Logo" class="h-8 w-8 sm:h-9 sm:w-9">
             <span>Smartkalvi</span>
@@ -96,8 +100,9 @@
     </div>
 </header>
 
+<!-- MAIN HERO -->
 <main class="flex-grow flex items-center justify-center w-full px-4 sm:px-6 lg:px-8 py-20">
-    <div class="bg-black/40 backdrop-blur-xl p-8 sm:p-12 md:p-16 rounded-3xl border border-white/30 shadow-2xl-strong w-full max-w-4xl">
+    <div class="bg-black/40 backdrop-blur-xl p-8 sm:p-12 md:p-16 rounded-3xl border border-white/30 shadow-2xl w-full max-w-4xl">
         <h2 class="text-3xl sm:text-5xl md:text-6xl font-extrabold mb-5 leading-tight tracking-tight">
             Empowering Tamil Nadu Students
         </h2>
@@ -114,76 +119,81 @@
                 Student Login
             </a>
             <a href="/school_teacher/login" class="w-full sm:w-auto bg-indigo-600 text-white font-bold px-9 py-4 rounded-full shadow-xl hover:bg-indigo-700 transition transform hover:scale-105 text-lg">
-    School Teacher Login
-</a>
-
+                School Teacher Login
+            </a>
         </div>
-<div class="mt-8 w-full max-w-md mx-auto">
-  <div class="bg-white/10 backdrop-blur-lg p-5 rounded-2xl border border-white/20 text-center shadow-xl card-hover transition duration-300 ease-in-out">
-    <h3 class="text-xl font-bold text-white mb-2">Support Our Mission</h3>
-    <p class="text-gray-300 mb-4 text-sm">Even ₹30 can help us continue offering affordable education tools for all.</p>
-    <a href="/pricing" class="inline-block bg-yellow-400 text-black font-bold px-6 py-2 rounded-full hover:bg-yellow-300 transition">
-      Donate Now
-    </a>
-  </div>
-</div>
 
-        <section class="mt-20 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 text-white">
-        
-<div class="bg-white/10 p-6 rounded-2xl border border-white/20 shadow-xl card-hover transition">
-  <h3 class="text-2xl font-bold mb-2">📘 Testify – All Competitive Exams</h3>
-  <p class="text-gray-300 text-base leading-relaxed">
-    Prepare for UPSC, SSC, TNPSC, Banking, and more with AI-generated mock tests, current affairs, PYQs, and daily quiz packs. One platform for every government exam aspirant.
-  </p>
-</div>
-
-<div class="bg-white/10 p-6 rounded-2xl border border-white/20 shadow-xl card-hover transition">
-  <h3 class="text-2xl font-bold mb-2">🚀 RankPro – JEE | NEET | GATE</h3>
-  <p class="text-gray-300 text-base leading-relaxed">
-    An AI-powered practice tool designed for serious aspirants. Instantly generate chapter-wise questions, get AI-evaluated answers, and simulate real exam conditions for top engineering and medical entrance tests.
-  </p>
-</div>
-
-    </div>
-    <div class="text-center mt-8">
-  <a href="/teacher/login"
-     class="inline-block py-3 px-6 bg-yellow-400 text-black font-semibold rounded-full hover:bg-yellow-300 transition transform hover:scale-105 shadow-xl">
-     Tutor Login👩‍🏫 Start Teaching & Earning Today
-  </a>
-  <p class="text-sm text-white/70 mt-2">
-     Part-time or full-time – flexible teaching from anywhere.
-  </p>
-  
-
-</div>
-
-</section>
-
-
-        <a href="/teacher_register" class="mt-8 inline-block md:hidden bg-green-500 text-white px-7 py-3.5 rounded-full font-semibold hover:bg-green-600 transition transform hover:scale-105 shadow-lg text-base">
-            Become a Teacher
-        </a>
+        <div class="mt-8 w-full max-w-md mx-auto">
+            <div class="bg-white/10 backdrop-blur-lg p-5 rounded-2xl border border-white/20 text-center shadow-xl card-hover transition duration-300 ease-in-out">
+                <h3 class="text-xl font-bold text-white mb-2">Support Our Mission</h3>
+                <p class="text-gray-300 mb-4 text-sm">Even ₹30 can help us continue offering affordable education tools for all.</p>
+                <a href="/pricing" class="inline-block bg-yellow-400 text-black font-bold px-6 py-2 rounded-full hover:bg-yellow-300 transition">
+                  Donate Now
+                </a>
+            </div>
+        </div>
     </div>
 </main>
 
-<div class="mt-10 rounded-xl bg-gradient-to-r from-yellow-200 via-yellow-300 to-yellow-400 p-6 shadow-lg text-center max-w-xl mx-auto">
-  <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-    🎨 Design Your Own Avatar & Gift Items!
-  </h2>
-  <p class="text-gray-700 text-sm sm:text-base mb-4">
-    Create a personalized avatar and print it on T-shirts, mugs, phone cases, ID cards, and all kinds of gift items – directly from your browser!
-  </p>
-  <a href="https://artifyme-mcbd.onrender.com"
-     class="inline-block bg-black text-white font-semibold px-6 py-3 rounded-full hover:bg-gray-800 transition transform hover:scale-105 shadow-md"
-     target="_blank" rel="noopener">
-     🚀 Launch ArtifyMe Now
-  </a>
-</div>
+<!-- AI / Competitive Exams -->
+<section class="mt-20 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 text-white">
+        <div class="bg-white/10 p-6 rounded-2xl border border-white/20 shadow-xl card-hover transition">
+          <h3 class="text-2xl font-bold mb-2">📘 Testify – All Competitive Exams</h3>
+          <p class="text-gray-300 text-base leading-relaxed">
+            Prepare for UPSC, SSC, TNPSC, Banking, and more with AI-generated mock tests, current affairs, PYQs, and daily quiz packs. One platform for every government exam aspirant.
+          </p>
+        </div>
 
+        <div class="bg-white/10 p-6 rounded-2xl border border-white/20 shadow-xl card-hover transition">
+          <h3 class="text-2xl font-bold mb-2">🚀 RankPro – JEE | NEET | GATE</h3>
+          <p class="text-gray-300 text-base leading-relaxed">
+            An AI-powered practice tool designed for serious aspirants. Instantly generate chapter-wise questions, get AI-evaluated answers, and simulate real exam conditions for top engineering and medical entrance tests.
+          </p>
+        </div>
+    </div>
+
+    <div class="text-center mt-8">
+      <a href="/teacher/login" class="inline-block py-3 px-6 bg-yellow-400 text-black font-semibold rounded-full hover:bg-yellow-300 transition transform hover:scale-105 shadow-xl">
+         Tutor Login👩‍🏫 Start Teaching & Earning Today
+      </a>
+      <p class="text-sm text-white/70 mt-2">Part-time or full-time – flexible teaching from anywhere.</p>
     </div>
 </section>
 
+<!-- Educational Tours & Advanced Courses -->
+<section class="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-purple-800 to-indigo-900 text-white border-t border-white/10">
+  <div class="max-w-6xl mx-auto text-center">
+    <h2 class="text-3xl sm:text-4xl font-extrabold mb-6">🌏 Educational Tours & Advanced Courses</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
+      <div class="bg-white/10 p-6 rounded-2xl border border-white/20 shadow-xl card-hover transition">
+        <h3 class="text-2xl font-bold mb-2">✈️ Educational Tours</h3>
+        <p class="text-gray-300 text-base leading-relaxed">
+          Organize field trips, industrial visits, and AI/Robotics workshops. Students experience real-world applications of science and technology.
+        </p>
+      </div>
+
+      <div class="bg-white/10 p-6 rounded-2xl border border-white/20 shadow-xl card-hover transition">
+        <h3 class="text-2xl font-bold mb-2">🤖 Advanced AI Courses</h3>
+        <p class="text-gray-300 text-base leading-relaxed">
+          Learn AI, Machine Learning, and Robotics from industry experts. Hands-on projects, AI simulators, and robotics kits included.
+        </p>
+      </div>
+
+      <div class="bg-white/10 p-6 rounded-2xl border border-white/20 shadow-xl card-hover transition">
+        <h3 class="text-2xl font-bold mb-2">🔧 Robotics Labs</h3>
+        <p class="text-gray-300 text-base leading-relaxed">
+          Explore STEM through interactive robotics labs. Build, code, and program robots while applying theoretical concepts in practice.
+        </p>
+        <a href="/courses" class="mt-4 inline-block bg-yellow-400 text-black font-semibold px-6 py-3 rounded-full hover:bg-yellow-300 transition transform hover:scale-105 shadow-lg text-sm">
+          View Courses
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI for Students & Teachers -->
 <section class="py-16 px-4 sm:px-6 lg:px-8 bg-black/40 border-t border-white/10">
     <div class="max-w-7xl mx-auto text-center">
         <h2 class="text-3xl sm:text-4xl font-extrabold mb-5">Powerful AI Features for Students & Schools</h2>
@@ -218,13 +228,13 @@
             </div>
         </div>
     </div>
-    <!-- 🔽 INSERT THIS NEW SECTION JUST BEFORE <footer> -->
+</section>
+
+<!-- AI + Rewards for Teachers -->
 <section class="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-800 to-blue-900 text-white border-t border-white/10">
   <div class="max-w-6xl mx-auto text-center">
     <h2 class="text-3xl sm:text-4xl font-extrabold mb-6">📚 Smart Teaching with AI + Rewards</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
-
-      <!-- AI for Teachers -->
       <div class="bg-white/10 p-6 rounded-2xl border border-white/20 shadow-xl card-hover transition">
         <h3 class="text-2xl font-bold mb-2">🧠 AI Question Generator for Teachers</h3>
         <p class="text-gray-300 text-base leading-relaxed">
@@ -232,7 +242,6 @@
         </p>
       </div>
 
-      <!-- Kalvi Coins -->
       <div class="bg-white/10 p-6 rounded-2xl border border-white/20 shadow-xl card-hover transition">
         <h3 class="text-2xl font-bold mb-2">💰 Kalvi Coins for Discipline</h3>
         <p class="text-gray-300 text-base leading-relaxed">
@@ -240,7 +249,6 @@
         </p>
       </div>
 
-      <!-- Serve & Earn -->
       <div class="bg-white/10 p-6 rounded-2xl border border-white/20 shadow-xl card-hover transition">
         <h3 class="text-2xl font-bold mb-2">👩‍🏫 Become a Tutor – Serve & Earn</h3>
         <p class="text-gray-300 text-base leading-relaxed">
@@ -250,50 +258,128 @@
           Register as Tutor
         </a>
       </div>
-
     </div>
   </div>
 </section>
-<!-- 🔼 END OF NEW SECTION -->
 
-<!-- 🔽 EXISTING FOOTER FOLLOWS -->
-<footer class="py-10 bg-black/40">
-    <div class="max-w-7xl mx-auto text-center text-gray-400 text-sm space-y-4 px-4 sm:px-6 lg:px-8">
-        <p>&copy; 2025 AI Exam Platform. All Rights Reserved.</p>
-        <p>Crafted with ❤️ for students and educators in Tamil Nadu, India.</p>
-        <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-base">
-            <a href="/" class="hover:text-white transition">Home</a>
-            <a href="/pricing" class="hover:text-white transition">Pricing</a>
-            <a href="/contact" class="hover:text-white transition">Contact</a>
-            <a href="/help" class="hover:text-white transition">Help</a>
-            <a href="/privacy-policy" class="hover:text-white transition">Privacy Policy</a>
+<!-- ArtifyMe Section -->
+<section class="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-yellow-500 to-orange-600 text-white border-t border-white/10">
+  <div class="max-w-6xl mx-auto text-center">
+    <div class="bg-gradient-to-r from-yellow-200 via-yellow-300 to-yellow-400 p-8 rounded-3xl shadow-2xl text-black pulse-glow">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+        <div class="flex-1 text-left">
+          <h2 class="text-3xl sm:text-4xl font-extrabold mb-4 text-gray-900">
+            🎨 ArtifyMe - Create Custom Avatars
+          </h2>
+          <p class="text-lg text-gray-800 leading-relaxed mb-6">
+            Transform your students into unique digital avatars! Generate personalized cartoon characters based on their photos. Perfect for profile pictures, certificates, and making learning more engaging and fun.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-4 items-start">
+            <a href="https://artifyme-mcbd.onrender.com" class="bg-indigo-600 text-white font-bold px-8 py-4 rounded-full shadow-xl hover:bg-indigo-700 transition transform hover:scale-105 text-lg" target="_blank">
+              Generate Avatar Now →
+            </a>
+            <div class="text-sm text-gray-700">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-green-600">✓</span>
+                <span>AI-powered avatar creation</span>
+              </div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-green-600">✓</span>
+                <span>High-quality cartoon style</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-green-600">✓</span>
+                <span>Perfect for student profiles</span>
+              </div>
+            </div>
+          </div>
         </div>
+        <div class="flex-shrink-0">
+          <div class="bg-white/20 p-6 rounded-2xl backdrop-blur-sm">
+            <div class="text-6xl mb-4">🎭</div>
+            <p class="text-sm text-gray-800 font-semibold">Upload Photo → Get Avatar</p>
+          </div>
+        </div>
+      </div>
     </div>
-</footer>
-
+  </div>
 </section>
 
-<script>
-    const menuBtn = document.getElementById('mobileMenuBtn');
-    const mobileMenu = document.getElementById('mobileMenu');
-    menuBtn.addEventListener('click', () => {
-        mobileMenu.classList.toggle('hidden');
-    });
-</script>
-
-<footer class="py-10 bg-black/40">
-    <div class="max-w-7xl mx-auto text-center text-gray-400 text-sm space-y-4 px-4 sm:px-6 lg:px-8">
-        <p>&copy; 2025 AI Exam Platform. All Rights Reserved.</p>
-        <p>Crafted with ❤️ for students and educators in Tamil Nadu, India.</p>
-        <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-base">
-            <a href="/" class="hover:text-white transition">Home</a>
-            <a href="/pricing" class="hover:text-white transition">Pricing</a>
-            <a href="/contact" class="hover:text-white transition">Contact</a>
-            <a href="/help" class="hover:text-white transition">Help</a>
-            <a href="/privacy-policy" class="hover:text-white transition">Privacy Policy</a>
+<!-- Footer -->
+<footer class="bg-black/60 backdrop-blur-lg text-white py-12 px-4 sm:px-6 lg:px-8 border-t border-white/10">
+    <div class="max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+                <div class="flex items-center space-x-3 mb-4">
+                    <img src="https://img.icons8.com/ios-filled/50/FFFFFF/student-center.png" alt="Logo" class="h-8 w-8">
+                    <span class="text-xl font-bold">SmartKalvi</span>
+                </div>
+                <p class="text-gray-300 text-sm leading-relaxed">
+                    Empowering Tamil Nadu students with AI-powered education tools for better exam preparation and academic success.
+                </p>
+            </div>
+            
+            <div>
+                <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="/" class="text-gray-300 hover:text-white transition">Home</a></li>
+                    <li><a href="/pricing" class="text-gray-300 hover:text-white transition">Pricing</a></li>
+                    <li><a href="/courses" class="text-gray-300 hover:text-white transition">Courses</a></li>
+                    <li><a href="/become-a-tutor" class="text-gray-300 hover:text-white transition">Become a Tutor</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 class="text-lg font-semibold mb-4">Support</h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="/help" class="text-gray-300 hover:text-white transition">Help Center</a></li>
+                    <li><a href="/contact" class="text-gray-300 hover:text-white transition">Contact Us</a></li>
+                    <li><a href="/privacy-policy" class="text-gray-300 hover:text-white transition">Privacy Policy</a></li>
+                    <li><a href="/terms" class="text-gray-300 hover:text-white transition">Terms of Service</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 class="text-lg font-semibold mb-4">Connect</h4>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-300 hover:text-white transition text-2xl">📧</a>
+                    <a href="#" class="text-gray-300 hover:text-white transition text-2xl">📱</a>
+                    <a href="#" class="text-gray-300 hover:text-white transition text-2xl">🌐</a>
+                </div>
+                <p class="text-gray-400 text-xs mt-4">
+                    Made with ❤️ for Tamil Nadu Students
+                </p>
+            </div>
+        </div>
+        
+        <div class="border-t border-white/10 mt-8 pt-8 text-center">
+            <p class="text-gray-400 text-sm">
+                © 2024 SmartKalvi. All rights reserved. Empowering education through AI.
+            </p>
         </div>
     </div>
 </footer>
+
+<script>
+    // Mobile menu toggle
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    
+    mobileMenuBtn.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+    });
+
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    });
+</script>
 
 </body>
 </html>
