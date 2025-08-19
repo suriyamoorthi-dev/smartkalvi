@@ -5,44 +5,67 @@
   <title>Edit Question Set - SmartKalvi</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col items-center justify-start p-6">
+<body class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen flex flex-col items-center justify-start p-4 sm:p-6">
 
-  <h1 class="text-2xl font-bold mb-6">✏️ Edit Question Set</h1>
+  <!-- Page Header -->
+  <h1 class="text-2xl sm:text-3xl font-bold mb-6 text-gray-800 flex items-center gap-2">
+    ✏️ Edit Question Set
+  </h1>
 
-  <form method="post" class="w-full max-w-2xl bg-white p-6 rounded-xl shadow-md space-y-4">
-    
-    <label class="block">
-      <span class="font-medium text-gray-700">Subject</span>
-      <input type="text" name="subject" value="{{ q.subject }}" class="w-full border px-3 py-2 rounded mt-1"/>
-    </label>
+  <!-- Card Container -->
+  <form method="post" 
+        class="w-full max-w-2xl bg-white p-6 sm:p-8 rounded-2xl shadow-lg space-y-6 border border-gray-200">
 
-    <label class="block">
-      <span class="font-medium text-gray-700">Chapter</span>
-      <input type="text" name="chapter" value="{{ q.chapter }}" class="w-full border px-3 py-2 rounded mt-1"/>
-    </label>
+    <!-- Subject -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700">📘 Subject</label>
+      <input type="text" name="subject" value="{{ q.subject }}" 
+             class="w-full mt-1 border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"/>
+    </div>
 
-    <label class="block">
-      <span class="font-medium text-gray-700">Total Marks</span>
-      <input type="number" name="total_marks" value="{{ q.total_marks }}" class="w-full border px-3 py-2 rounded mt-1"/>
-    </label>
+    <!-- Chapter -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700">📖 Chapter</label>
+      <input type="text" name="chapter" value="{{ q.chapter }}" 
+             class="w-full mt-1 border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"/>
+    </div>
 
-    <label class="block">
-      <span class="font-medium text-gray-700">Difficulty</span>
-      <select name="difficulty" class="w-full border px-3 py-2 rounded mt-1">
-        <option value="easy" {% if q.difficulty == 'easy' %}selected{% endif %}>Easy</option>
-        <option value="medium" {% if q.difficulty == 'medium' %}selected{% endif %}>Medium</option>
-        <option value="hard" {% if q.difficulty == 'hard' %}selected{% endif %}>Hard</option>
-      </select>
-    </label>
+    <!-- Marks + Difficulty in Responsive Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">📝 Total Marks</label>
+        <input type="number" name="total_marks" value="{{ q.total_marks }}" 
+               class="w-full mt-1 border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"/>
+      </div>
 
-    <label class="block">
-      <span class="font-medium text-gray-700">Questions</span>
-      <textarea name="questions" class="w-full border px-3 py-2 rounded mt-1 h-64">{{ q.questions }}</textarea>
-    </label>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">⚡ Difficulty</label>
+        <select name="difficulty" 
+                class="w-full mt-1 border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+          <option value="easy" {% if q.difficulty == 'easy' %}selected{% endif %}>Easy</option>
+          <option value="medium" {% if q.difficulty == 'medium' %}selected{% endif %}>Medium</option>
+          <option value="hard" {% if q.difficulty == 'hard' %}selected{% endif %}>Hard</option>
+        </select>
+      </div>
+    </div>
 
-    <div class="flex justify-between mt-4">
-      <a href="{{ url_for('my_question_sets') }}" class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</a>
-      <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">💾 Save Changes</button>
+    <!-- Questions -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700">📚 Questions</label>
+      <textarea name="questions" 
+                class="w-full mt-1 border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition h-64 resize-none">{{ q.questions }}</textarea>
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 pt-4">
+      <a href="{{ url_for('my_question_sets') }}" 
+         class="w-full sm:w-auto text-center px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition">
+        ❌ Cancel
+      </a>
+      <button type="submit" 
+              class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md transition">
+        💾 Save Changes
+      </button>
     </div>
 
   </form>

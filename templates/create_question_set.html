@@ -129,52 +129,65 @@
       </div>
 
       <div class="glass-effect rounded-xl p-6 shadow-xl">
-        <h2 class="text-xl font-bold text-white mb-4">📝 Question Type Preferences</h2>
-        <div class="grid md:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-white font-medium mb-2">2 Mark Types</label>
-            <div class="space-y-2">
-              <label class="flex items-center text-white">
-                <input type="checkbox" value="Short answer" class="mr-2 q-type-2m" checked> Choose the correct 
-              </label>
-              <label class="flex items-center text-white">
-                <input type="checkbox" value="Fill in the blanks" class="mr-2 q-type-2m" checked> Fill in the Blanks
-              </label>
-              <label class="flex items-center text-white">
-                <input type="checkbox" value="Match the following" class="mr-2 q-type-2m" checked> Match the Following
-              </label>
+        <h2 class="text-xl font-bold text-white mb-4">📝 Select Question Types (Board Exam Style)</h2>
+        <div class="grid md:grid-cols-2 gap-6">
+
+            <div>
+                <label class="block text-white font-semibold mb-2">1 Mark Questions</label>
+                <div class="space-y-2">
+                    <label class="flex items-center text-white"><input type="checkbox" value="One word answer" class="mr-2 q-type-1m" checked>One word answer</label>
+                    <label class="flex items-center text-white"><input type="checkbox" value="Fill in the blanks" class="mr-2 q-type-1m" checked>Fill in the blanks</label>
+                    <label class="flex items-center text-white"><input type="checkbox" value="True/False" class="mr-2 q-type-1m" checked>True / False</label>
+                    <label class="flex items-center text-white"><input type="checkbox" value="Match the following" class="mr-2 q-type-1m" checked>Match the following</label>
+                    <label class="flex items-center text-white"><input type="checkbox" value="Choose the correct answer" class="mr-2 q-type-1m" checked>Choose the correct answer (MCQ)</label>
+                </div>
             </div>
-          </div>
-          
-          <div>
-            <label class="block text-white font-medium mb-2">3 Mark Types</label>
-            <div class="space-y-2">
-              <label class="flex items-center text-white">
-                <input type="checkbox" value="Comprehension passage" class="mr-2 q-type-3m" checked> Comprehension
-              </label>
-              <label class="flex items-center text-white">
-                <input type="checkbox" value="Short descriptive answer" class="mr-2 q-type-3m" checked> Short Descriptive
-              </label>
-              <label class="flex items-center text-white">
-                <input type="checkbox" value="Numerical problems" class="mr-2 q-type-3m" checked> Numerical Problems
-              </label>
+
+            <div>
+                <label class="block text-white font-semibold mb-2">2 Mark Questions</label>
+                <div class="space-y-2">
+                    <label class="flex items-center text-white"><input type="checkbox" value="Short answer" class="mr-2 q-type-2m" checked>Short answer (1–2 sentences)</label>
+                    <label class="flex items-center text-white"><input type="checkbox" value="Define / Give reason" class="mr-2 q-type-2m" checked>Define / Give reason</label>
+                    <label class="flex items-center text-white"><input type="checkbox" value="Match the following" class="mr-2 q-type-2m" checked>Match the following</label>
+                </div>
             </div>
-          </div>
-          
-          <div>
-            <label class="block text-white font-medium mb-2">5 Mark Types</label>
-            <div class="space-y-2">
-              <label class="flex items-center text-white">
-                <input type="checkbox" value="Long answer" class="mr-2 q-type-5m" checked> Long Answer
-              </label>
-              <label class="flex items-center text-white">
-                <input type="checkbox" value="Graph question" class="mr-2 q-type-5m" checked> Graph Question
-              </label>
-              <label class="flex items-center text-white">
-                <input type="checkbox" value="Map question" class="mr-2 q-type-5m" checked> Map Question
-              </label>
+
+            <div>
+                <label class="block text-white font-semibold mb-2">3 Mark Questions</label>
+                <div class="space-y-2">
+                    <label class="flex items-center text-white"><input type="checkbox" value="Short descriptive" class="mr-2 q-type-3m" checked>Short descriptive (Explain in 3–4 sentences)</label>
+                    <label class="flex items-center text-white"><input type="checkbox" value="Comprehension passage" class="mr-2 q-type-3m" checked>Comprehension passage</label>
+                    <label class="flex items-center text-white"><input type="checkbox" value="Numerical problem" class="mr-2 q-type-3m" checked>Numerical problem (Maths/Science)</label>
+                </div>
             </div>
-          </div>
+
+            <div>
+                <label class="block text-white font-semibold mb-2">5 Mark Questions (General)</label>
+                <div class="space-y-2">
+                    <label class="flex items-center text-white"><input type="checkbox" value="Long answer" class="mr-2 q-type-5m" checked>Long answer (Detailed explanation / Essay)</label>
+                    <label class="flex items-center text-white"><input type="checkbox" value="Diagram question" class="mr-2 q-type-5m" checked>Diagram question (Draw / Label diagram)</label>
+                    <label class="flex items-center text-white"><input type="checkbox" value="Case-based / Problem-solving" class="mr-2 q-type-5m" checked>Case-based / Problem-solving</label>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-white font-semibold mb-2">5 Mark Questions (Maths)</label>
+                <div class="space-y-2">
+                    <label class="flex items-center text-white"><input type="checkbox" value="Problem-solving" class="mr-2 q-type-5m-maths" checked>Problem-solving (e.g., equations, word problems)</label>
+                    <label class="flex items-center text-white"><input type="checkbox" value="Graph/Plotting" class="mr-2 q-type-5m-maths" checked>Graph / Plotting</label>
+                    <label class="flex items-center text-white"><input type="checkbox" value="Application/Real-life problem" class="mr-2 q-type-5m-maths" checked>Application / Real-life problem</label>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-white font-semibold mb-2">5 Mark Questions (Accounts)</label>
+                <div class="space-y-2">
+                    <label class="flex items-center text-white"><input type="checkbox" value="Ledger/Journal Entries" class="mr-2 q-type-5m-accounts" checked>Ledger / Journal Entries</label>
+                    <label class="flex items-center text-white"><input type="checkbox" value="Trial Balance / Rectification" class="mr-2 q-type-5m-accounts" checked>Trial Balance / Rectification</label>
+                    <label class="flex items-center text-white"><input type="checkbox" value="Accounts Preparation" class="mr-2 q-type-5m-accounts" checked>Preparation of Accounts</label>
+                    <label class="flex items-center text-white"><input type="checkbox" value="Practical Problems" class="mr-2 q-type-5m-accounts" checked>Practical Problems (e.g., Depreciation)</label>
+                </div>
+            </div>
         </div>
       </div>
 
@@ -234,12 +247,13 @@
         </div>
     </div>
   </div>
+<div class="mt-6 text-center">
+  <a href="/school_teacher/dashboard" 
+     class="inline-flex items-center px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg shadow hover:bg-teal-700 transition">
+    ← Back to Dashboard
+  </a>
+</div>
 
-  <div class="mt-6 text-center">
-    <a href="/school_teacher/dashboard" 
-       class="text-sm text-white/70 hover:text-white transition underline">
-      ← Back to Dashboard
-    </a>
   </div>
 </div>
 
@@ -283,16 +297,16 @@ function updateCalculations() {
 function autoDistribute() {
   const totalMarks = parseInt(totalMarksEl.value) || 100;
   
-  // Smart distribution: 40% in 2m, 30% in 3m, 20% in 5m, 10% in 1m
+  // Smart distribution: 10% in 1m, 20% in 2m, 30% in 3m, 40% in 5m
   const marks1m = Math.floor(totalMarks * 0.1);
-  const marks2m = Math.floor(totalMarks * 0.4);
+  const marks2m = Math.floor(totalMarks * 0.2);
   const marks3m = Math.floor(totalMarks * 0.3);
-  const marks5m = Math.floor(totalMarks * 0.2);
-  
-  document.getElementById('total_1m').value = Math.floor(marks1m / 1);
-  document.getElementById('total_2m').value = Math.floor(marks2m / 2);
-  document.getElementById('total_3m').value = Math.floor(marks3m / 3);
-  document.getElementById('total_5m').value = Math.floor(marks5m / 5);
+  const marks5m = Math.floor(totalMarks * 0.4);
+
+  document.getElementById('total_1m').value = Math.round(marks1m / 1);
+  document.getElementById('total_2m').value = Math.round(marks2m / 2);
+  document.getElementById('total_3m').value = Math.round(marks3m / 3);
+  document.getElementById('total_5m').value = Math.round(marks5m / 5);
   
   updateCalculations();
 }
@@ -362,16 +376,7 @@ function loadTopicsAndChapterConfig() {
           data.topics_by_chapter[ch].forEach(topic => {
             const label = document.createElement("label");
             label.className = "flex items-center space-x-2 text-white/80 mb-1 cursor-pointer";
-            const input = document.createElement("input");
-            input.type = "checkbox";
-            input.name = "topics";
-            input.value = topic;
-            input.className = "rounded text-indigo-600 focus:ring-indigo-500";
-            const span = document.createElement("span");
-            span.className = "text-sm";
-            span.textContent = topic;
-            label.appendChild(input);
-            label.appendChild(span);
+            label.innerHTML = `<input type="checkbox" name="topics" value="${topic}" class="rounded text-indigo-600 focus:ring-indigo-500"><span class="text-sm">${topic}</span>`;
             chapterDiv.appendChild(label);
             topicCount++;
           });
@@ -396,10 +401,13 @@ function generateQuestions() {
 
   const topics = Array.from(document.querySelectorAll("input[name=topics]:checked")).map(t => t.value);
   
-  // Get selected question types
+  // Get all selected question types
+  const selectedTypes1m = Array.from(document.querySelectorAll(".q-type-1m:checked")).map(cb => cb.value);
   const selectedTypes2m = Array.from(document.querySelectorAll(".q-type-2m:checked")).map(cb => cb.value);
   const selectedTypes3m = Array.from(document.querySelectorAll(".q-type-3m:checked")).map(cb => cb.value);
   const selectedTypes5m = Array.from(document.querySelectorAll(".q-type-5m:checked")).map(cb => cb.value);
+  const selectedTypes5mMaths = Array.from(document.querySelectorAll(".q-type-5m-maths:checked")).map(cb => cb.value);
+  const selectedTypes5mAccounts = Array.from(document.querySelectorAll(".q-type-5m-accounts:checked")).map(cb => cb.value);
   
   let rows = document.querySelectorAll("#chapter-config > div");
   let questions_split = [];
@@ -429,11 +437,16 @@ function generateQuestions() {
     language: document.getElementById("language")?.value || "both",
     questions_split,
     question_types: {
+      "1m": selectedTypes1m,
       "2m": selectedTypes2m,
       "3m": selectedTypes3m,
-      "5m": selectedTypes5m
+      "5m_general": selectedTypes5m,
+      "5m_maths": selectedTypes5mMaths,
+      "5m_accounts": selectedTypes5mAccounts
     }
   };
+
+  console.log("Sending payload:", payload); // For debugging purposes
 
   fetch("/school_teacher/create_question_set", {
     method: "POST",

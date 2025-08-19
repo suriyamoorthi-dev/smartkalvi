@@ -2,111 +2,152 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Chalkboard Notes Generator</title>
+  <title>SmartKalvi Notes Generator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
-    body {
-      font-family: 'Inter', sans-serif;
+    @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap');
+    body { 
+      font-family: 'Figtree', sans-serif; 
+      background-color: #f0f4f8; /* A light, calming blue-gray */
     }
-
-    .fade-in {
-      animation: fadeIn 0.6s ease-in-out forwards;
+    .fade-in { animation: fadeIn 0.6s ease-in-out forwards; }
+    @keyframes fadeIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
+    .tab-active { 
+      background-color: #0d9488; /* teal-600 */
+      color: white;
     }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    .tab-inactive {
+      background-color: #f0f4f8;
+      color: #334155; /* slate-700 */
+    }
+    .prose {
+        --tw-prose-body: #334155; /* slate-700 */
+        --tw-prose-headings: #1e293b; /* slate-800 */
+        --tw-prose-bold: #1e293b;
+        --tw-prose-bullets: #0d9488;
     }
   </style>
 </head>
-<body class="bg-gradient-to-br from-green-50 via-white to-green-100 min-h-screen flex items-center justify-center p-4">
+<body class="p-4 sm:p-6 lg:p-8">
 
-  <div class="w-full max-w-3xl bg-white shadow-xl rounded-2xl p-6 md:p-8 space-y-6 fade-in">
+  <div class="w-full max-w-6xl mx-auto bg-white shadow-2xl rounded-2xl p-6 md:p-8 space-y-8 fade-in">
 
     <!-- Header -->
-    <div class="flex items-center justify-between gap-3 flex-wrap">
-      <h2 class="text-2xl md:text-3xl font-bold text-green-700 tracking-tight">🧑‍🏫 Chalkboard Notes Generator</h2>
-      <a href="/school_teacher/dashboard" class="text-sm text-green-600 hover:text-green-800 transition underline">
-        ← Back to Dashboard
-      </a>
-    </div>
+    <header class="flex items-center justify-between gap-3 flex-wrap border-b border-slate-200 pb-6">
+      <h1 class="text-3xl md:text-4xl font-bold text-teal-700 tracking-tight">
+        <i class="fa-solid fa-chalkboard-user"></i> Chalkboard Notes Generator
+      </h1>
+      <a href="/school_teacher/dashboard" class="text-sm text-teal-600 hover:text-teal-800 transition underline font-medium">← Back to Dashboard</a>
+    </header>
 
     <!-- Form -->
-    <form method="POST" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" onsubmit="showLoading()">
-      <input
-        type="text"
-        name="class"
-        placeholder="Class (e.g., 10)"
-        value="{{ class_value }}"
-        class="border border-gray-300 focus:border-green-500 focus:ring-green-500 p-3 rounded-lg w-full text-sm shadow-sm"
-        required
-      />
+    <form method="POST" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end" onsubmit="showLoading()">
+      
+      <div class="relative">
+        <label for="class-input" class="block text-sm font-medium text-slate-600 mb-1">Class</label>
+        <i class="fa-solid fa-school absolute left-3 bottom-3.5 text-slate-400"></i>
+        <input id="class-input" type="text" name="class" placeholder="e.g., 10" value="{{ class_value or '' }}"
+          class="border border-slate-300 focus:border-teal-500 focus:ring-teal-500 p-3 pl-9 rounded-lg w-full text-sm shadow-sm" required />
+      </div>
 
-      <input
-        type="text"
-        name="subject"
-        placeholder="Subject (e.g., Science)"
-        value="{{ subject }}"
-        class="border border-gray-300 focus:border-green-500 focus:ring-green-500 p-3 rounded-lg w-full text-sm shadow-sm"
-        required
-      />
+      <div class="relative">
+        <label for="subject-input" class="block text-sm font-medium text-slate-600 mb-1">Subject</label>
+        <i class="fa-solid fa-book absolute left-3 bottom-3.5 text-slate-400"></i>
+        <input id="subject-input" type="text" name="subject" placeholder="e.g., Science" value="{{ subject or '' }}"
+          class="border border-slate-300 focus:border-teal-500 focus:ring-teal-500 p-3 pl-9 rounded-lg w-full text-sm shadow-sm" required />
+      </div>
 
-      <input
-        type="text"
-        name="topic"
-        placeholder="Topic (e.g., Friction)"
-        value="{{ topic }}"
-        class="border border-gray-300 focus:border-green-500 focus:ring-green-500 p-3 rounded-lg w-full text-sm shadow-sm"
-        required
-      />
+      <div class="relative">
+        <label for="topic-input" class="block text-sm font-medium text-slate-600 mb-1">Topic</label>
+        <i class="fa-solid fa-lightbulb absolute left-3 bottom-3.5 text-slate-400"></i>
+        <input id="topic-input" type="text" name="topic" placeholder="e.g., Photosynthesis" value="{{ topic or '' }}"
+          class="border border-slate-300 focus:border-teal-500 focus:ring-teal-500 p-3 pl-9 rounded-lg w-full text-sm shadow-sm" required />
+      </div>
+      
+      <div>
+        <label for="section-select" class="block text-sm font-medium text-slate-600 mb-1">View Section</label>
+        <select id="section-select" name="section" class="border border-slate-300 focus:border-teal-500 focus:ring-teal-500 p-3 rounded-lg w-full text-sm shadow-sm">
+          <option value="all" {% if selected_section == 'all' %}selected{% endif %}>Show: All Sections</option>
+          <option value="notes" {% if selected_section == 'notes' %}selected{% endif %}>Show: Chalkboard Notes</option>
+          <option value="lesson_plan" {% if selected_section == 'lesson_plan' %}selected{% endif %}>Show: 45-min Lesson Plan</option>
+          <option value="slow_learner" {% if selected_section == 'slow_learner' %}selected{% endif %}>Show: Slow Learner Guide</option>
+        </select>
+      </div>
 
-      <div class="sm:col-span-2 md:col-span-3 text-right">
-        <button
-          id="submitBtn"
-          type="submit"
-          class="bg-green-600 hover:bg-green-700 text-white font-medium px-6 py-3 rounded-lg w-full sm:w-auto transition-all duration-200 shadow hover:shadow-md flex items-center justify-center gap-2"
-        >
+      <div class="md:col-span-2 lg:col-span-4 text-right">
+        <button id="submitBtn" type="submit"
+          class="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white font-bold px-8 py-3 rounded-lg transition-all duration-200 shadow hover:shadow-lg flex items-center justify-center gap-2">
           <span id="btnText">✨ Generate Notes</span>
           <svg id="spinner" class="animate-spin hidden h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor"
-              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z">
-            </path>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
           </svg>
         </button>
       </div>
     </form>
 
-    <!-- Results -->
-    {% if chalkboard_notes %}
-    <div class="bg-gray-50 border border-gray-300 rounded-xl p-5 fade-in space-y-6">
-      
-      <div>
-        <h3 class="text-lg font-semibold text-gray-800 mb-2">📝 Chalkboard Notes:</h3>
-        <pre class="whitespace-pre-wrap text-sm text-gray-700">{{ chalkboard_notes }}</pre>
-      </div>
+    <!-- Results Section -->
+    <div class="bg-slate-50 rounded-xl p-6 min-h-[400px]">
+      {% if chalkboard_notes or lesson_plan or slow_learner_guide %}
+        <!-- Tab Headers -->
+        <div class="flex flex-wrap space-x-2 border-b border-slate-200 mb-4">
+          {% if (selected_section in ['all','notes']) and chalkboard_notes %}
+          <button id="tab-notes" class="tab-btn px-4 py-2 rounded-t-lg font-semibold text-sm" onclick="showTab('notes')">
+            <i class="fa-solid fa-pen-ruler mr-1"></i> Chalkboard Notes
+          </button>
+          {% endif %}
+          {% if (selected_section in ['all','lesson_plan']) and lesson_plan %}
+          <button id="tab-lesson_plan" class="tab-btn px-4 py-2 rounded-t-lg font-semibold text-sm" onclick="showTab('lesson_plan')">
+            <i class="fa-solid fa-person-chalkboard mr-1"></i> Lesson Plan
+          </button>
+          {% endif %}
+          {% if (selected_section in ['all','slow_learner']) and slow_learner_guide %}
+          <button id="tab-slow_learner" class="tab-btn px-4 py-2 rounded-t-lg font-semibold text-sm" onclick="showTab('slow_learner')">
+            <i class="fa-solid fa-hand-holding-heart mr-1"></i> Slow Learner Guide
+          </button>
+          {% endif %}
+        </div>
 
-      {% if explanation_notes %}
-      <hr class="border-gray-300" />
+        <!-- Tab Content -->
+        <div class="space-y-4">
+          {% if (selected_section in ['all','notes']) and chalkboard_notes %}
+          <section id="content-notes" class="tab-content">
+            <div class="flex justify-end mb-2">
+              <button onclick="copyContent('notes-text', this)" class="copy-btn text-xs text-slate-500 hover:text-teal-600 font-medium"><i class="fa-regular fa-copy mr-1"></i> Copy Text</button>
+            </div>
+            <pre id="notes-text" class="prose max-w-none whitespace-pre-wrap text-sm text-slate-700">{{ chalkboard_notes }}</pre>
+          </section>
+          {% endif %}
+          
+          {% if (selected_section in ['all','lesson_plan']) and lesson_plan %}
+          <section id="content-lesson_plan" class="tab-content">
+            <div class="flex justify-end mb-2">
+              <button onclick="copyContent('plan-text', this)" class="copy-btn text-xs text-slate-500 hover:text-teal-600 font-medium"><i class="fa-regular fa-copy mr-1"></i> Copy Text</button>
+            </div>
+            <pre id="plan-text" class="prose max-w-none whitespace-pre-wrap text-sm text-slate-700">{{ lesson_plan }}</pre>
+          </section>
+          {% endif %}
+          
+          {% if (selected_section in ['all','slow_learner']) and slow_learner_guide %}
+          <section id="content-slow_learner" class="tab-content">
+             <div class="flex justify-end mb-2">
+              <button onclick="copyContent('slow-text', this)" class="copy-btn text-xs text-slate-500 hover:text-teal-600 font-medium"><i class="fa-regular fa-copy mr-1"></i> Copy Text</button>
+            </div>
+            <pre id="slow-text" class="prose max-w-none whitespace-pre-wrap text-sm text-slate-700">{{ slow_learner_guide }}</pre>
+          </section>
+          {% endif %}
+        </div>
 
-      <div>
-        <h3 class="text-lg font-semibold text-green-800 mb-2">🧠 How to Explain Better to Slow Learners:</h3>
-        <pre class="whitespace-pre-wrap text-sm text-gray-700">{{ explanation_notes }}</pre>
-      </div>
+      {% else %}
+        <div class="flex flex-col items-center justify-center h-full text-center text-slate-400">
+          <i class="fa-regular fa-file-lines text-6xl mb-4"></i>
+          <h3 class="text-xl font-semibold text-slate-600">Your Generated Content Will Appear Here</h3>
+          <p>Fill in the details above and click "Generate Notes".</p>
+        </div>
       {% endif %}
-
     </div>
-    {% endif %}
-
   </div>
 
   <script>
@@ -114,7 +155,66 @@
       document.getElementById("btnText").textContent = "Generating...";
       document.getElementById("spinner").classList.remove("hidden");
     }
-  </script>
 
+    function showTab(tabName) {
+      // Hide all content sections
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+      // Deactivate all tab buttons
+      document.querySelectorAll('.tab-btn').forEach(tab => {
+        tab.classList.remove('tab-active');
+        tab.classList.add('tab-inactive');
+      });
+
+      // Show the selected content section
+      const contentEl = document.getElementById('content-' + tabName);
+      if (contentEl) contentEl.classList.remove('hidden');
+      
+      // Activate the selected tab button
+      const tabEl = document.getElementById('tab-' + tabName);
+      if (tabEl) {
+        tabEl.classList.add('tab-active');
+        tabEl.classList.remove('tab-inactive');
+      }
+    }
+
+    async function copyContent(elementId, buttonEl) {
+      const textToCopy = document.getElementById(elementId).innerText;
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+        const originalText = buttonEl.innerHTML;
+        buttonEl.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Copied!';
+        buttonEl.disabled = true;
+        setTimeout(() => {
+          buttonEl.innerHTML = originalText;
+          buttonEl.disabled = false;
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy: ', err);
+      }
+    }
+    
+    // On page load, determine which tab should be active
+    document.addEventListener('DOMContentLoaded', () => {
+      const selectedSection = "{{ selected_section or 'all' }}";
+      let firstVisibleTabName = '';
+
+      // Find the first available tab based on the Jinja variables
+      if (selectedSection === 'all') {
+          if ("{{ chalkboard_notes }}".trim()) firstVisibleTabName = 'notes';
+          else if ("{{ lesson_plan }}".trim()) firstVisibleTabName = 'lesson_plan';
+          else if ("{{ slow_learner_guide }}".trim()) firstVisibleTabName = 'slow_learner';
+      } else {
+          if ("{{ chalkboard_notes }}".trim() && selectedSection === 'notes') firstVisibleTabName = 'notes';
+          else if ("{{ lesson_plan }}".trim() && selectedSection === 'lesson_plan') firstVisibleTabName = 'lesson_plan';
+          else if ("{{ slow_learner_guide }}".trim() && selectedSection === 'slow_learner') firstVisibleTabName = 'slow_learner';
+      }
+
+      if (firstVisibleTabName) {
+          showTab(firstVisibleTabName);
+      }
+    });
+  </script>
 </body>
 </html>

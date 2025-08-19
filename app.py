@@ -549,375 +549,296 @@ from supabase import create_client
 import gdown
 import fitz  # PyMuPDF
 import os
+import time, random, traceback, os
+COOLDOWN_SECONDS = 200  # AI generation cooldown
+
+
+# ---------------- Helper Functions ---------------- #
+def normalize(txt):
+    if not txt:
+        return txt
+    return txt.replace("’", "'").replace("‘", "'").strip()
+
+def safe_int(value, default=0):
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+def split_text_into_chunks(text, chunk_size=1800):
+    return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+
+def extract_ai_text(resp):
+    try:
+        if hasattr(resp, "choices") and resp.choices:
+            return (resp.choices[0].message.content or "").strip()
+        elif isinstance(resp, dict) and resp.get("choices"):
+            return (resp["choices"][0].get("text") or "").strip()
+    except Exception:
+        pass
+    return ""
 
 def get_or_extract_chapter_text(board, class_name, subject, chapter, gdrive_id):
-    import os
-    import fitz  # PyMuPDF
-    import gdown
+    board = normalize(board)
+    subject = normalize(subject)
+    chapter = normalize(chapter)
+    class_name_int = safe_int(class_name)
 
-    class_str = str(class_name)
+    print(f"🔍 Processing Chapter: Board={board}, Class={class_name_int}, Subject={subject}, Chapter={chapter}")
 
-    # ✅ Step 1: Check Supabase for existing chapter content
+    # --- Step 1: Check Supabase cache ---
     try:
-        res = supabase.table("chapter_contents").select("*")\
-            .eq("board", board)\
-            .eq("class", class_str)\
-            .eq("subject", subject)\
-            .eq("chapter", chapter)\
-            .single()\
+        rows = supabase.table("chapter_contents").select("*")\
+            .ilike("board", board)\
+            .eq("class", class_name_int)\
+            .ilike("subject", subject)\
+            .ilike("chapter", chapter)\
             .execute()
-
-        if res.data:
+        if rows and rows.data:
             print("📦 Fetched chapter from Supabase cache")
-            return res.data['content']
+            return rows.data[0].get('content', "")
     except Exception as e:
-        print("❌ Supabase fetch error (likely no match or multiple entries):", str(e))
+        print("❌ Supabase fetch error:", e)
 
-    # ✅ Step 2: Get page range from Supabase
+    # --- Step 2: Get page range ---
     try:
-        page_info = supabase.table("chapter_ranges").select("*")\
-            .eq("board", board)\
-            .eq("class", class_str)\
-            .eq("subject", subject)\
-            .eq("chapter", chapter)\
-            .single()\
+        page_rows = supabase.table("chapter_ranges").select("*")\
+            .ilike("board", board)\
+            .eq("class", class_name_int)\
+            .ilike("subject", subject)\
+            .ilike("chapter", chapter)\
             .execute()
-
-        start_page = page_info.data['start_page']
-        end_page = page_info.data['end_page']
-        print(f"📄 Pages to extract: {start_page} - {end_page}")
+        if page_rows and page_rows.data:
+            start_page = page_rows.data[0].get('start_page')
+            end_page = page_rows.data[0].get('end_page')
+        else:
+            return "⚠️ Chapter page range not found."
     except Exception as e:
-        print("⚠️ Chapter page range not found in Supabase:", str(e))
-        return "⚠️ Chapter page range not found in Supabase."
+        print("❌ Page range fetch error:", e)
+        return "⚠️ Page range fetch error."
 
-    # ✅ Step 3: Download the PDF from Google Drive (if not already cached)
+    # --- Step 3: Download PDF ---
     pdf_folder = "pdf_cache"
     os.makedirs(pdf_folder, exist_ok=True)
     local_pdf = os.path.join(pdf_folder, f"{gdrive_id}.pdf")
-
     if not os.path.exists(local_pdf):
         try:
-            print("⬇️ Downloading PDF from Google Drive...")
             gdown.download(f"https://drive.google.com/uc?id={gdrive_id}", local_pdf, quiet=False)
-            print("✅ PDF downloaded and cached locally")
         except Exception as e:
-            print("❌ PDF download failed:", str(e))
-            return "❌ Failed to download textbook PDF."
-    else:
-        print("✅ PDF already cached, reusing it")
+            print("❌ PDF download failed:", e)
+            return "[Failed to download PDF.]"
 
-    # ✅ Step 4: Extract specific pages
+    # --- Step 4: Extract text from PDF pages ---
     try:
         doc = fitz.open(local_pdf)
         extracted_text = ""
         for i in range(start_page - 1, end_page):
             extracted_text += doc[i].get_text()
         doc.close()
-        print("✅ Text extracted from PDF")
+        chapter_text = extracted_text.strip() or "[Chapter text unavailable.]"
     except Exception as e:
-        print("❌ PDF extraction error:", str(e))
-        return "❌ Failed to extract pages from PDF."
+        print("❌ PDF extraction error:", e)
+        chapter_text = "[Failed to extract chapter text.]"
 
-    chapter_text = extracted_text.strip()
-    print("📏 Extracted text size (chars):", len(chapter_text))
-
-    if not chapter_text:
-        print("⚠️ No text extracted. Check the PDF page range or content format.")
-
-    # ✅ Step 5: Save to Supabase using upsert
+    # --- Step 5: Save to Supabase ---
     try:
-        response = supabase.table("chapter_contents").upsert({
+        supabase.table("chapter_contents").upsert({
             "board": board,
-            "class": class_str,
+            "class": class_name_int,
             "subject": subject,
             "chapter": chapter,
             "content": chapter_text
         }).execute()
-
-        print("✅ Chapter content upserted to Supabase.")
-        print("🔍 Supabase response:", response)
-        if hasattr(response, 'error') and response.error:
-            print("⚠️ Supabase upsert error:", response.error)
     except Exception as e:
-        print("⚠️ Failed to upsert chapter content into Supabase:", str(e))
+        print("⚠️ Failed to upsert chapter content:", e)
 
     return chapter_text
 
-import time
-import random
 
-COOLDOWN_SECONDS = 200  # ~3 minutes 20 seconds
-
+# ---------------- Flask Route ---------------- #
 @app.route('/school_teacher/create_question_set', methods=['GET', 'POST'])
 def create_question_set():
     if 'school_teacher_id' not in session:
         return redirect(url_for('school_teacher_login'))
 
-    import os, random, time
-
-    def safe_int(value):
-        try:
-            return int(value)
-        except (ValueError, TypeError):
-            return 0
-
-    # ---- Helper: robustly extract text from Together responses (legacy/new) ----
-    def extract_ai_text(resp):
-        """
-        Supports:
-        - Legacy Complete.create: resp['choices'][0]['text']  (as seen in your logs)
-        - Older/alt format:       resp['output'][0]['text']
-        - New chat API:           resp.choices[0].message.content
-        Returns trimmed text or "".
-        """
-        if not resp:
-            return ""
-
-        # object-like (sdk classes) path
-        try:
-            # new chat client style
-            if hasattr(resp, "choices") and resp.choices:
-                first = resp.choices[0]
-                if hasattr(first, "message") and hasattr(first.message, "content"):
-                    return (first.message.content or "").strip()
-        except Exception:
-            pass
-
-        # dict styles
-        try:
-            if isinstance(resp, dict):
-                # legacy complete style seen in your log
-                if "choices" in resp and resp["choices"]:
-                    return (resp["choices"][0].get("text") or "").strip()
-                # older output array
-                if "output" in resp and resp["output"]:
-                    return (resp["output"][0].get("text") or "").strip()
-        except Exception:
-            pass
-
-        return ""
-
-    # ---- GET (compat) ----
+    # ---------------- GET Request ---------------- #
     if request.method == 'GET':
-        board = request.args.get("board", "")
-        class_name = request.args.get("class", "")
-        subject = request.args.get("subject", "")
-        chapter_input = request.args.get("chapter", "")
-        chapters = [c.strip() for c in chapter_input.split(',') if c.strip()]
-        topics = []
+        board = normalize(request.args.get("board", ""))
+        class_name = safe_int(request.args.get("class", ""))
+        subject = normalize(request.args.get("subject", ""))
 
-        if board and class_name and subject and chapters:
-            for ch in chapters:
-                try:
-                    result = supabase.table("chapter_topics").select("topic") \
-                        .eq("board", board) \
-                        .eq("class", int(class_name)) \
-                        .eq("subject", subject) \
-                        .eq("chapter", ch).execute()
-                    if result.data:
-                        topics.extend([row.get("topic") for row in result.data if row.get("topic")])
-                except Exception as e:
-                    print(f"⚠️ Topics fetch error for {ch}: {e}")
-
-        return render_template("create_question_set.html", topics=topics, selected_topics=[],
-                               board=board, class_name=class_name, subject=subject, chapter=chapter_input)
-
-    # ---- POST (main) ----
-    if request.method == 'POST':
-        try:
-            data = request.get_json()
-            if not data:
-                return jsonify({'success': False, 'error': 'Invalid request data. Please refresh and try again.'})
-
-            # Cooldown
-            last_request_time = session.get("last_ai_request", 0)
-            now = time.time()
-            if now - last_request_time < COOLDOWN_SECONDS:
-                wait_left = int(COOLDOWN_SECONDS - (now - last_request_time))
-                return jsonify({'success': False, 'error': f'Please wait {wait_left} seconds before generating again.'})
-            session["last_ai_request"] = now
-
-            # Inputs
-            board = data.get('board', '').strip()
-            class_name = data.get('class', '').strip()
-            subject = data.get('subject', '').strip()
-            selected_chapters = [c.strip() for c in data.get('chapters', []) if c.strip()]
-            selected_topics = data.get('topics', [])
-            difficulty = data.get('difficulty', 'medium')
-            total_marks = safe_int(data.get('total_marks'))
-            language = data.get('language', 'both').lower()
-            questions_split = data.get('questions_split', [])
-            user_question_types = data.get('question_types', {})
-
-            if not all([board, class_name, subject, selected_chapters, questions_split]):
-                return jsonify({'success': False, 'error': 'Missing required fields. Please ensure all details are filled.'})
-
-            # Book PDF id
+        available_chapters = []
+        if board and class_name and subject:
             try:
-                book_result = supabase.table("book_files").select("gdrive_id") \
-                    .ilike("board", board) \
-                    .eq("class", int(class_name)) \
-                    .ilike("subject", subject).execute()
-                if not book_result.data or not book_result.data[0].get("gdrive_id"):
-                    return jsonify({'success': False, 'error': f'Book PDF not found for {board} Class {class_name} {subject}.'})
-                gdrive_id = book_result.data[0]["gdrive_id"]
+                chapters_rows = supabase.table("chapter_contents")\
+                    .select("chapter")\
+                    .ilike("board", board)\
+                    .eq("class", class_name)\
+                    .ilike("subject", subject)\
+                    .execute()
+                if chapters_rows and chapters_rows.data:
+                    available_chapters = [r['chapter'] for r in chapters_rows.data]
             except Exception as e:
-                print(f"❌ Database error: {e}")
-                return jsonify({'success': False, 'error': f'Database error: {str(e)}'})
+                print("❌ GET chapters fetch error:", e)
 
-            # Defaults
-            default_q_types = {
-                "1m": ["MCQ", "Fill in the blanks", "True/False"],
-                "2m": ["Short answer", "Define", "Give reason"],
-                "3m": ["Short descriptive answer", "Explain with example", "Numerical problem"],
-                "5m": ["Long answer", "Explain in detail", "Diagram question"]
-            }
+        return render_template("create_question_set.html",
+                               board=board,
+                               class_name=class_name,
+                               subject=subject,
+                               available_chapters=available_chapters,
+                               selected_topics=[],
+                               topics=[])
 
-            # Language
-            if language == "english":
-                lang_instruction = "- Output each question in **English only**."
-            elif language == "tamil":
-                lang_instruction = "- Output each question in **Tamil only**."
-            else:
-                lang_instruction = ("- Output each question in **both English and Tamil**.\n"
-                                    "- Format each item as:\n  Qx: English version\n  தமிழ்: தமிழ் பதிப்பு\n"
-                                    "- Do NOT include answers.")
+    # ---------------- POST Request ---------------- #
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'Invalid request data.'})
 
-            full_board_name = "CBSE" if board.lower() == "cbse" else "Tamil Nadu State Board"
-            topic_str = ', '.join(selected_topics) if selected_topics else "General topics from the chapters"
+        # Cooldown
+        last_request_time = session.get("last_ai_request", 0)
+        now = time.time()
+        if now - last_request_time < COOLDOWN_SECONDS:
+            wait_left = int(COOLDOWN_SECONDS - (now - last_request_time))
+            return jsonify({'success': False, 'error': f'Please wait {wait_left}s before generating again.'})
+        session["last_ai_request"] = now
 
-            # ---- Generate per chapter (robust) ----
-            final_questions = []
-            total_generated_marks = 0
+        # Input fields
+        board = normalize(data.get('board', ''))
+        class_name = safe_int(data.get('class'))
+        subject = normalize(data.get('subject', ''))
+        selected_chapters = [normalize(c) for c in data.get('chapters', []) if c.strip()]
+        selected_topics = data.get('topics', [])
+        difficulty = data.get('difficulty', 'medium')
+        total_marks = safe_int(data.get('total_marks'))
+        language = data.get('language', 'both').lower()
+        questions_split = data.get('questions_split', [])
+        user_question_types = data.get('question_types', {})
 
-            for chapter_data in questions_split:
-                chapter_name = chapter_data.get('chapter')
-                if not chapter_name:
-                    continue
+        if not all([board, class_name, subject, selected_chapters, questions_split]):
+            return jsonify({'success': False, 'error': 'Missing required fields.'})
 
-                # Fetch chapter text safely
-                ch_text = ""
-                try:
-                    ch_text = get_or_extract_chapter_text(board, class_name, subject, chapter_name, gdrive_id)
-                except Exception as e:
-                    # get_or_extract_chapter_text might internally query Supabase and throw if 0 rows
-                    print(f"❌ Supabase fetch error (chapter {chapter_name}): {e}")
+        # Fetch book PDF ID
+        book = supabase.table("book_files").select("gdrive_id")\
+            .ilike("board", board)\
+            .eq("class", class_name)\
+            .ilike("subject", subject)\
+            .maybe_single().execute()
+        gdrive_id = book.data.get("gdrive_id") if book and hasattr(book, "data") else None
+        if not gdrive_id:
+            return jsonify({'success': False, 'error': 'Book PDF not found.'})
 
-                if not ch_text:
-                    print(f"⚠️ No text extracted for chapter '{chapter_name}', continuing with prompt-only context.")
-                    ch_text = "[Chapter text unavailable. Use general knowledge of the chapter title only.]"
+        full_board_name = "CBSE" if board.lower() == "cbse" else "Tamil Nadu State Board"
+        final_questions = []
 
-                # Trim input to keep context budget healthy
-                if len(ch_text) > 2500:
-                    ch_text = ch_text[:2500] + "\n\n[...trimmed for length...]"
+        # ---------------- Chapter Processing ---------------- #
+        default_q_types = {
+            "1m": ["Choose the correct answer (MCQ)", "Fill in the blanks", "True/False"],
+            "2m": ["Short answer", "Define", "Give reason"],
+            "3m": ["Short descriptive answer", "Explain with example", "Numerical problem", "Comprehension passage"],
+            "5m": ["Long answer", "Diagram question", "Case-based / Problem-solving"],
+            "5m-maths": ["Problem-solving", "Graph/Plotting", "Application/Real-life problem"],
+            "5m-accounts": ["Ledger/Journal Entries", "Trial Balance / Rectification", "Accounts Preparation", "Practical Problems"]
+        }
 
-                # Counts & types
-                count_1m = safe_int(chapter_data.get('1m', 0))
-                count_2m = safe_int(chapter_data.get('2m', 0))
-                count_3m = safe_int(chapter_data.get('3m', 0))
-                count_5m = safe_int(chapter_data.get('5m', 0))
-                chapter_marks = (count_1m*1) + (count_2m*2) + (count_3m*3) + (count_5m*5)
-                if chapter_marks == 0:
-                    continue
+        lang_instruction = ("- Output questions in **both English and Tamil**.\n"
+                            "- Format: Qx: English version\n  தமிழ்: Tamil version\n"
+                            "- Do NOT include answers.") if language == "both" else \
+                           "- Output questions in **English only**." if language == "english" else \
+                           "- Output questions in **Tamil only**."
 
-                types_1m = user_question_types.get("1m") or default_q_types["1m"]
-                types_2m = user_question_types.get("2m") or default_q_types["2m"]
-                types_3m = user_question_types.get("3m") or default_q_types["3m"]
-                types_5m = user_question_types.get("5m") or default_q_types["5m"]
+        for chapter_data in questions_split:
+            chapter_name = normalize(chapter_data.get('chapter'))
+            if not chapter_name:
+                continue
 
-                section_prompt = f"- From chapter '{chapter_name}' ({chapter_marks} marks):\n"
-                for _ in range(count_5m):
-                    section_prompt += f"  • One 5-mark question of type: {random.choice(types_5m)}\n"
-                for _ in range(count_3m):
-                    section_prompt += f"  • One 3-mark question of type: {random.choice(types_3m)}\n"
-                for _ in range(count_2m):
-                    section_prompt += f"  • One 2-mark question of type: {random.choice(types_2m)}\n"
-                for _ in range(count_1m):
-                    section_prompt += f"  • One 1-mark question of type: {random.choice(types_1m)}\n"
+            # --- AUTOMATIC PDF DOWNLOAD & TEXT EXTRACTION ---
+            chapter_text = get_or_extract_chapter_text(board, class_name, subject, chapter_name, gdrive_id)
+            if not chapter_text:
+                continue
 
+            chunks = split_text_into_chunks(chapter_text, 1800)
+            counts = {k: safe_int(chapter_data.get(k, 0)) for k in default_q_types.keys()}
+            chosen_types = {k: user_question_types.get(k) or default_q_types[k] for k in default_q_types.keys()}
+
+            section_prompt = ""
+            for qtype, num in counts.items():
+                for _ in range(num):
+                    q_choice = random.choice(chosen_types[qtype])
+                    if q_choice == "Comprehension passage":
+                        section_prompt += ("• One 3-mark Comprehension passage:\n"
+                                           "   - Write a passage (4–6 lines).\n"
+                                           "   - Create exactly 4 short questions from it (1 mark each).\n"
+                                           "   - Follow board exam style formatting.\n")
+                    else:
+                        section_prompt += f"• One {qtype} question of type: {q_choice}\n"
+
+            chapter_text_out = ""
+            for idx, chunk in enumerate(chunks):
                 prompt = f"""
-You are an expert question paper creator for the {full_board_name}. Create a {difficulty.title()} level model question set.
+You are an expert **{full_board_name} question paper setter**.
+Generate board-exam style questions ONLY (no answers).
 
-Class: {class_name}
-Subject: {subject}
-Total Marks (this chapter): {chapter_marks}
 Chapter: {chapter_name}
-Focus Topics: {topic_str}
 
-Source Material (extract/snippet):
-{ch_text}
+Text Reference:
+{chunk}
 
-Instructions:
-1. Generate **exactly** the number of questions implied by the distribution below.
-2. Use the question types specified.
-3. {lang_instruction}
-4. Show marks for each question, e.g., "(5 Marks)".
-5. Clean exam format. Do **not** include answers.
+Rules:
+1. Follow {full_board_name} Board Exam pattern (clear numbering, marks shown).
+2. {lang_instruction}
+3. Do NOT give solutions, only questions.
+4. All questions must be clear, concise, and exam-appropriate.
 
 Question Distribution:
 {section_prompt}
 """
-
-                print(f"🤖 Generating questions for chapter: {chapter_name} ...")
-                try:
-                    # Legacy Complete API (your current usage)
-                    response = together.Complete.create(
-                        model="meta-llama/Llama-3.3-70B-Instruct-Turbo",
-                        prompt=prompt,
-                        max_tokens=2000,   # balanced per-chapter
-                        temperature=0.7
-                    )
-                    print("🔍 AI raw response:", response)
-                    chapter_text_out = extract_ai_text(response)
-
-                    # If empty, try a second light attempt with smaller completion to avoid silent fails
-                    if not chapter_text_out:
-                        print("⚠️ Empty text from first attempt, retrying with smaller max_tokens...")
-                        response2 = together.Complete.create(
+                for attempt in range(3):
+                    try:
+                        response = together.Complete.create(
                             model="meta-llama/Llama-3.3-70B-Instruct-Turbo",
                             prompt=prompt,
-                            max_tokens=900,
+                            max_tokens=2500,
                             temperature=0.7
                         )
-                        print("🔍 AI raw response (retry):", response2)
-                        chapter_text_out = extract_ai_text(response2)
+                        chunk_out = extract_ai_text(response)
+                        if chunk_out:
+                            chapter_text_out += chunk_out + "\n\n"
+                            break
+                        time.sleep(1 + attempt)
+                    except Exception as e:
+                        print(f"❌ Chunk {idx+1}, attempt {attempt+1} error: {e}")
+                        time.sleep(2)
 
-                    if chapter_text_out:
-                        final_questions.append(f"### {chapter_name}\n{chapter_text_out}")
-                        total_generated_marks += chapter_marks
-                    else:
-                        print(f"⚠️ Still empty for chapter: {chapter_name}")
+            if chapter_text_out:
+                final_questions.append(f"### {chapter_name}\n{chapter_text_out}")
 
-                except Exception as e:
-                    print(f"❌ AI error for {chapter_name}: {e}")
+        if not final_questions:
+            return jsonify({'success': False, 'error': 'No valid chapters found to generate questions.'})
 
-            if not final_questions:
-                return jsonify({'success': False, 'error': 'AI did not generate any questions. Try reducing chapters or marks and retry.'})
+        full_text = "\n\n".join(final_questions)
 
-            full_text = "\n\n".join(final_questions)
-
-            # ---- Save ----
-            try:
-                supabase.table("question_sets").insert({
-                    "school_teacher_id": session['school_teacher_id'],
-                    "board": board,
-                    "class_number": safe_int(class_name),
-                    "subject": subject,
-                    "chapter": ", ".join(selected_chapters),
-                    "difficulty": difficulty,
-                    "total_marks": total_marks,
-                    "topics": selected_topics,
-                    "questions": full_text
-                }).execute()
-            except Exception as e:
-                print(f"⚠️ Failed to save to database: {e}")
-
-            return jsonify({'success': True, 'questions': full_text})
-
+        # Save to Supabase
+        try:
+            supabase.table("question_sets").insert({
+                "school_teacher_id": session['school_teacher_id'],
+                "board": board,
+                "class_number": class_name,
+                "subject": subject,
+                "chapter": ", ".join(selected_chapters),
+                "difficulty": difficulty,
+                "total_marks": total_marks,
+                "topics": selected_topics,
+                "questions": full_text
+            }).execute()
         except Exception as e:
-            import traceback
-            traceback.print_exc()
-            return jsonify({'success': False, 'error': f'A server error occurred: {str(e)}'})
+            print(f"⚠️ Failed to save question set: {e}")
+
+        return jsonify({'success': True, 'questions': full_text})
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': f'Server error: {str(e)}'})
 
 @app.route('/school_teacher/get_topics', methods=['POST'])
 def get_topics():
@@ -1004,6 +925,28 @@ def edit_question_set(set_id):
         return redirect(url_for('my_question_sets'))
 
     return render_template("edit_question_set.html", q=q_set)
+
+@app.route('/school_teacher/question_sets/view/<set_id>')
+def view_question_set(set_id):
+    if 'school_teacher_id' not in session:
+        return redirect(url_for('school_teacher_login'))
+
+    teacher_id = str(session['school_teacher_id'])
+
+    # Fetch the question set for this teacher
+    result = supabase.table("question_sets") \
+        .select("*") \
+        .eq("id", set_id) \
+        .eq("school_teacher_id", teacher_id) \
+        .single() \
+        .execute()
+
+    q_set = result.data
+    if not q_set:
+        flash("Question set not found", "error")
+        return redirect(url_for('my_question_sets'))
+
+    return render_template("view_question_set.html", q_set=q_set)
 
 from flask import make_response
 from fpdf import FPDF  # install: pip install fpdf
@@ -1914,105 +1857,152 @@ def doubt_solver():
 
 from flask import render_template, request
 import requests
+
 @app.route("/chalkboard_notes", methods=["GET", "POST"])
 def chalkboard_notes():
-    notes = None
+    import re
+    notes_raw = None
+
     topic = ""
     subject = ""
     class_value = ""
+    selected_section = "all"  # all | notes | lesson_plan | slow_learner
+
     chalkboard_notes = ""
-    explanation_notes = ""
+    lesson_plan = ""
+    slow_learner_guide = ""
+
+    def build_prompt(topic, class_value, subject, section="all"):
+        # section: all | notes | lesson_plan | slow_learner
+        want_notes = section in ("all", "notes")
+        want_plan = section in ("all", "lesson_plan")
+        want_slow = section in ("all", "slow_learner")
+
+        header = f"""You are an expert teacher preparing materials for Tamil Nadu or CBSE students.
+
+Topic: {topic}
+Class: {class_value}
+Subject: {subject}
+
+Write **clean, exam-ready content**. For every English line, write the Tamil line immediately below.
+Keep language simple. Avoid half sentences.
+
+When I ask for a section, output ONLY that section with the exact H3 title given below.
+Use the exact structure and enough depth (≈250–400 words per section).
+"""
+
+        sections = []
+        if want_notes:
+            sections.append("""### Chalkboard Notes
+- Bullet points with key ideas, definitions, formulas.
+- One solved example with steps.
+- Use compact board-style lines.
+- Format as:
+  • Point (English)
+  • வரி (Tamil)""")
+
+        if want_plan:
+            sections.append("""### 45-Minute Lesson Plan
+Exactly split with headings & time:
+1) Introduction – 5 min
+2) Concept Teaching – 15 min
+3) Worked Examples – 10 min
+4) Student Activity – 10 min
+5) Recap & Homework – 5 min
+For each step: Objective, Teacher actions, Student actions, Materials. (English + Tamil line-by-line).""")
+
+        if want_slow:
+            sections.append("""### Slow Learner Guide
+- Re-explain with very simple words.
+- 2 real-life analogies.
+- Step-by-step mini-activity.
+- Common mistakes (3–5) + fixes.
+- Motivational tip.
+(English line followed by Tamil line).""")
+
+        tail = """
+IMPORTANT:
+- Start each requested section with the exact H3 title.
+- Keep English line first, Tamil translation next line, throughout.
+- Do not include any other sections or extra headings.
+"""
+
+        return header + "\n\n".join(sections) + tail
+
+    def extract_section(text, title):
+        # Grab content under ### Title until next ### or end
+        pattern = rf"(?s)###\s*{re.escape(title)}\s*(.*?)(?=\n###|\Z)"
+        m = re.search(pattern, text or "")
+        return (m.group(1).strip() if m else "").strip()
 
     if request.method == "POST":
-        topic = request.form.get("topic", "").strip()
-        subject = request.form.get("subject", "").strip()
-        class_value = request.form.get("class", "").strip()
+        topic = (request.form.get("topic") or "").strip()
+        subject = (request.form.get("subject") or "").strip()
+        class_value = (request.form.get("class") or "").strip()
+        selected_section = (request.form.get("section") or "all").strip()
 
         if topic and subject and class_value:
-            prompt = f"""
-You are a helpful teacher preparing chalkboard notes for Tamil Nadu or CBSE board students.
-
-- Topic: {topic}
-- Class: {class_value}
-- Subject: {subject}
-
-🎯 Create notes in **both English and Tamil**:
-- Write in English first, then Tamil below it.
-- Use bullet points or short sentences
-- Use simple English + simple Tamil where possible
-- Include important formulas or definitions
-- Add one solved example if suitable
-- Keep the tone like it's written on a classroom blackboard
-
-✏️ Chalkboard Notes:
-(English and Tamil version)
-
----
-
-🧠 Better Explanation Guide:
-- Explain the topic for weak students
-- Give a real-life example (in Tamil + English)
-- Mention common misunderstanding (Tamil + English)
-
-✋ Please make sure every sentence is **complete** in both languages.
-"""
+            prompt = build_prompt(topic, class_value, subject, selected_section)
 
             headers = {
                 "Authorization": f"Bearer {DOUBT_SOLVER_API_KEY}",
                 "Content-Type": "application/json"
             }
-
             payload = {
-                "model": DOUBT_SOLVER_MODEL,
+                "model": DOUBT_SOLVER_MODEL,  # e.g. "meta-llama/Llama-3.3-70B-Instruct-Turbo"
                 "prompt": prompt,
-                "max_tokens": 2000,  # 🆙 Increased to avoid cutting
-                "temperature": 0.6,
-                "stop": None  # ✅ Let it finish naturally
+                "max_tokens": 3000,           # more room for detail
+                "temperature": 0.5
             }
 
             try:
-                response = requests.post(
+                resp = requests.post(
                     "https://api.together.xyz/v1/completions",
                     headers=headers,
-                    json=payload
+                    json=payload,
+                    timeout=120,
                 )
-                if response.status_code == 200:
-                    data = response.json()
-                    notes = data.get("choices", [{}])[0].get("text", "").strip()
-
-                    # Log full response for debugging
-                    print("✅ AI Response:\n", notes)
-
-                    # Optional: Check if last line ends mid-word and warn
-                    if notes and not notes.endswith((".", "!", "?", "।")):
-                        notes += "\n\n⚠️ (Note: The response might be incomplete.)"
+                if resp.status_code == 200:
+                    data = resp.json()
+                    notes_raw = (data.get("choices", [{}])[0].get("text") or "").strip()
+                    # safety: if model truncated oddly
+                    if notes_raw and not notes_raw.endswith((".", "!", "?", "।")):
+                        notes_raw += "\n\n(Warning: The model response may have been truncated.)"
                 else:
-                    notes = f"⚠️ AI returned status code {response.status_code}. Please try again."
+                    notes_raw = f"⚠️ AI returned status code {resp.status_code}. Please try again."
             except Exception as e:
-                notes = f"⚠️ Error: {str(e)}"
+                notes_raw = f"⚠️ Error: {str(e)}"
 
-        # ✅ Improved splitting logic
-        if notes:
-            if "---" in notes:
-                chalkboard_notes, explanation_notes = notes.split("---", 1)
-            elif "🧠 Better Explanation Guide:" in notes:
-                parts = notes.split("🧠 Better Explanation Guide:")
-                chalkboard_notes = parts[0]
-                explanation_notes = "🧠 Better Explanation Guide:" + parts[1]
-            else:
-                chalkboard_notes = notes
-                explanation_notes = ""
+        # Parse by titles (works even when only one section returned)
+        if notes_raw:
+            if selected_section in ("all", "notes"):
+                chalkboard_notes = extract_section(notes_raw, "Chalkboard Notes")
+            if selected_section in ("all", "lesson_plan"):
+                lesson_plan = extract_section(notes_raw, "45-Minute Lesson Plan")
+            if selected_section in ("all", "slow_learner"):
+                slow_learner_guide = extract_section(notes_raw, "Slow Learner Guide")
+
+            # If model ignored titles (rare), just dump everything into chosen slot
+            if selected_section == "notes" and not chalkboard_notes:
+                chalkboard_notes = notes_raw
+            if selected_section == "lesson_plan" and not lesson_plan:
+                lesson_plan = notes_raw
+            if selected_section == "slow_learner" and not slow_learner_guide:
+                slow_learner_guide = notes_raw
+            if selected_section == "all" and not any([chalkboard_notes, lesson_plan, slow_learner_guide]):
+                chalkboard_notes = notes_raw  # fallback
 
     return render_template(
         "chalkboard_notes.html",
-        notes=notes,
         topic=topic,
         subject=subject,
         class_value=class_value,
-        chalkboard_notes=chalkboard_notes.strip() if chalkboard_notes else "",
-        explanation_notes=explanation_notes.strip() if explanation_notes else ""
+        selected_section=selected_section,
+        chalkboard_notes=chalkboard_notes,
+        lesson_plan=lesson_plan,
+        slow_learner_guide=slow_learner_guide,
+        notes_raw=notes_raw,
     )
-
 
 from supabase import create_client, Client
 
