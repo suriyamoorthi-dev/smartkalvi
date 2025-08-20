@@ -35,10 +35,14 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label for="board" class="block mb-2 font-medium text-white">Board</label>
-              <select id="board" name="board" class="w-full border border-white/30 px-3 py-2 rounded-lg bg-white/10 text-white focus:outline-none focus:ring-2 focus:ring-white/50">
-                <option value="stateboard">Stateboard</option>
-                <option value="cbse">CBSE</option>
-              </select>
+<select id="board" name="board" 
+  class="w-full border border-white/30 px-3 py-2 rounded-lg 
+         bg-white/10 text-black 
+         focus:outline-none focus:ring-2 focus:ring-white/50">
+  <option value="stateboard">Stateboard</option>
+  <option value="cbse">CBSE</option>
+</select>
+
             </div>
 
             <div>
@@ -64,21 +68,23 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label for="difficulty" class="block mb-2 font-medium text-white">Difficulty</label>
-              <select id="difficulty" name="difficulty" class="w-full border border-white/30 px-3 py-2 rounded-lg bg-white/10 text-white focus:outline-none focus:ring-2 focus:ring-white/50">
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-              </select>
-            </div>
+<select id="difficulty" name="difficulty" 
+        class="w-full border border-white/30 px-3 py-2 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-white/50">
+  <option value="easy">Easy</option>
+  <option value="medium">Medium</option>
+  <option value="hard">Hard</option>
+</select>
+</div>
 
             <div>
               <label for="language" class="block mb-2 font-medium text-white">Language</label>
-              <select id="language" name="language" class="w-full border border-white/30 px-3 py-2 rounded-lg bg-white/10 text-white focus:outline-none focus:ring-2 focus:ring-white/50">
-                <option value="both">English + Tamil</option>
-                <option value="english">English Only</option>
-                <option value="tamil">Tamil Only</option>
-              </select>
-            </div>
+<select id="language" name="language" 
+        class="w-full border border-white/30 px-3 py-2 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-white/50">
+  <option value="both">English + Tamil</option>
+  <option value="english">English Only</option>
+  <option value="tamil">Tamil Only</option>
+</select>
+</div>
           </div>
         </form>
       </div>
@@ -133,61 +139,74 @@
         <div class="grid md:grid-cols-2 gap-6">
 
             <div>
-                <label class="block text-white font-semibold mb-2">1 Mark Questions</label>
-                <div class="space-y-2">
-                    <label class="flex items-center text-white"><input type="checkbox" value="One word answer" class="mr-2 q-type-1m" checked>One word answer</label>
-                    <label class="flex items-center text-white"><input type="checkbox" value="Fill in the blanks" class="mr-2 q-type-1m" checked>Fill in the blanks</label>
-                    <label class="flex items-center text-white"><input type="checkbox" value="True/False" class="mr-2 q-type-1m" checked>True / False</label>
-                    <label class="flex items-center text-white"><input type="checkbox" value="Match the following" class="mr-2 q-type-1m" checked>Match the following</label>
-                    <label class="flex items-center text-white"><input type="checkbox" value="Choose the correct answer" class="mr-2 q-type-1m" checked>Choose the correct answer (MCQ)</label>
-                </div>
-            </div>
+    <label class="block text-white font-semibold mb-2">1 Mark Questions</label>
+    <div class="space-y-2">
+        <label class="flex items-center text-white"><input type="checkbox" value="One word answer" class="mr-2 q-type-1m">One word answer</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Fill in the blanks" class="mr-2 q-type-1m">Fill in the blanks</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="True/False" class="mr-2 q-type-1m">True / False</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Match the following" class="mr-2 q-type-1m">Match the following</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Choose the correct answer" class="mr-2 q-type-1m">Choose the correct answer (MCQ)</label>
+    </div>
+</div>
 
-            <div>
-                <label class="block text-white font-semibold mb-2">2 Mark Questions</label>
-                <div class="space-y-2">
-                    <label class="flex items-center text-white"><input type="checkbox" value="Short answer" class="mr-2 q-type-2m" checked>Short answer (1–2 sentences)</label>
-                    <label class="flex items-center text-white"><input type="checkbox" value="Define / Give reason" class="mr-2 q-type-2m" checked>Define / Give reason</label>
-                    <label class="flex items-center text-white"><input type="checkbox" value="Match the following" class="mr-2 q-type-2m" checked>Match the following</label>
-                </div>
-            </div>
+<div>
+    <label class="block text-white font-semibold mb-2">2 Mark Questions</label>
+    <div class="space-y-2">
+        <label class="flex items-center text-white"><input type="checkbox" value="Short answer" class="mr-2 q-type-2m">Short answer</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Define" class="mr-2 q-type-2m">Define</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Give reason" class="mr-2 q-type-2m">Give reason</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Simple calculation" class="mr-2 q-type-2m">Simple calculation</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Formula application" class="mr-2 q-type-2m">Formula application</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Solve equation" class="mr-2 q-type-2m">Solve equation</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Find value" class="mr-2 q-type-2m">Find value</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Basic proof" class="mr-2 q-type-2m">Basic proof</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Show that" class="mr-2 q-type-2m">Show that</label>
+    </div>
+</div>
 
-            <div>
-                <label class="block text-white font-semibold mb-2">3 Mark Questions</label>
-                <div class="space-y-2">
-                    <label class="flex items-center text-white"><input type="checkbox" value="Short descriptive" class="mr-2 q-type-3m" checked>Short descriptive (Explain in 3–4 sentences)</label>
-                    <label class="flex items-center text-white"><input type="checkbox" value="Comprehension passage" class="mr-2 q-type-3m" checked>Comprehension passage</label>
-                    <label class="flex items-center text-white"><input type="checkbox" value="Numerical problem" class="mr-2 q-type-3m" checked>Numerical problem (Maths/Science)</label>
-                </div>
-            </div>
+<div>
+    <label class="block text-white font-semibold mb-2">3 Mark Questions</label>
+    <div class="space-y-2">
+        <label class="flex items-center text-white"><input type="checkbox" value="Short descriptive" class="mr-2 q-type-3m">Short descriptive (Explain in 3–4 sentences)</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Comprehension passage" class="mr-2 q-type-3m">Comprehension passage</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Numerical problem" class="mr-2 q-type-3m">Numerical problem (Maths/Science)</label>
+    </div>
+</div>
 
-            <div>
-                <label class="block text-white font-semibold mb-2">5 Mark Questions (General)</label>
-                <div class="space-y-2">
-                    <label class="flex items-center text-white"><input type="checkbox" value="Long answer" class="mr-2 q-type-5m" checked>Long answer (Detailed explanation / Essay)</label>
-                    <label class="flex items-center text-white"><input type="checkbox" value="Diagram question" class="mr-2 q-type-5m" checked>Diagram question (Draw / Label diagram)</label>
-                    <label class="flex items-center text-white"><input type="checkbox" value="Case-based / Problem-solving" class="mr-2 q-type-5m" checked>Case-based / Problem-solving</label>
-                </div>
-            </div>
+<div>
+    <label class="block text-white font-semibold mb-2">5 Mark Questions (General)</label>
+    <div class="space-y-2">
+        <label class="flex items-center text-white"><input type="checkbox" value="Long answer" class="mr-2 q-type-5m">Long answer (Detailed explanation / Essay)</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Diagram question" class="mr-2 q-type-5m">Diagram question (Draw / Label diagram)</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Case-based / Problem-solving" class="mr-2 q-type-5m">Case-based / Problem-solving</label>
+      <label class="flex items-center text-white"><input type="checkbox" value="Compare and contrast"" class="mr-2 q-type-5m">Compare and contrast"</label>
+      <label class="flex items-center text-white"><input type="checkbox" value="Analyze causes and effects" class="mr-2 q-type-5m">Analyze causes and effects</label>
+      <label class="flex items-center text-white"><input type="checkbox" value="Evaluate the significance" class="mr-2 q-type-5m">Evaluate the significance</label>
+<label class="flex items-center text-white"><input type="checkbox" value=" Map-based question" class="mr-2 q-type-5m"> Map-based question</label>
+<label class="flex items-center text-white"><input type="checkbox" value="Explain with examples" class="mr-2 q-type-5m"> Explain with examples</label>
 
-            <div>
-                <label class="block text-white font-semibold mb-2">5 Mark Questions (Maths)</label>
-                <div class="space-y-2">
-                    <label class="flex items-center text-white"><input type="checkbox" value="Problem-solving" class="mr-2 q-type-5m-maths" checked>Problem-solving (e.g., equations, word problems)</label>
-                    <label class="flex items-center text-white"><input type="checkbox" value="Graph/Plotting" class="mr-2 q-type-5m-maths" checked>Graph / Plotting</label>
-                    <label class="flex items-center text-white"><input type="checkbox" value="Application/Real-life problem" class="mr-2 q-type-5m-maths" checked>Application / Real-life problem</label>
-                </div>
-            </div>
+      </div>
+</div>
 
-            <div>
-                <label class="block text-white font-semibold mb-2">5 Mark Questions (Accounts)</label>
-                <div class="space-y-2">
-                    <label class="flex items-center text-white"><input type="checkbox" value="Ledger/Journal Entries" class="mr-2 q-type-5m-accounts" checked>Ledger / Journal Entries</label>
-                    <label class="flex items-center text-white"><input type="checkbox" value="Trial Balance / Rectification" class="mr-2 q-type-5m-accounts" checked>Trial Balance / Rectification</label>
-                    <label class="flex items-center text-white"><input type="checkbox" value="Accounts Preparation" class="mr-2 q-type-5m-accounts" checked>Preparation of Accounts</label>
-                    <label class="flex items-center text-white"><input type="checkbox" value="Practical Problems" class="mr-2 q-type-5m-accounts" checked>Practical Problems (e.g., Depreciation)</label>
-                </div>
-            </div>
+<div>
+    <label class="block text-white font-semibold mb-2">5 Mark Questions (Maths)</label>
+    <div class="space-y-2">
+        <label class="flex items-center text-white"><input type="checkbox" value="Problem-solving" class="mr-2 q-type-5m-maths">Problem-solving (e.g., equations, word problems)</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Graph/Plotting" class="mr-2 q-type-5m-maths">Graph / Plotting</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Application/Real-life problem" class="mr-2 q-type-5m-maths">Application / Real-life problem</label>
+    </div>
+</div>
+
+<div>
+    <label class="block text-white font-semibold mb-2">5 Mark Questions (Accounts)</label>
+    <div class="space-y-2">
+        <label class="flex items-center text-white"><input type="checkbox" value="Ledger/Journal Entries" class="mr-2 q-type-5m-accounts">Ledger / Journal Entries</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Trial Balance / Rectification" class="mr-2 q-type-5m-accounts">Trial Balance / Rectification</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Accounts Preparation" class="mr-2 q-type-5m-accounts">Preparation of Accounts</label>
+        <label class="flex items-center text-white"><input type="checkbox" value="Practical Problems" class="mr-2 q-type-5m-accounts">Practical Problems (e.g., Depreciation)</label>
+    </div>
+</div>
+
         </div>
       </div>
 
@@ -232,7 +251,7 @@
     <div id="loading" class="hidden glass-effect rounded-xl p-6 shadow-xl">
       <div class="flex items-center justify-center space-x-4">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-        <span class="text-white text-lg">Generating your question paper... Please wait (2-3 minutes)</span>
+        <span class="text-white text-lg">Generating your question paper... Please wait (2-10 minutes)</span>
       </div>
     </div>
     
@@ -256,7 +275,6 @@
 
   </div>
 </div>
-
 <script>
 const boardEl = document.getElementById('board');
 const classEl = document.getElementById('class');
@@ -271,46 +289,75 @@ const outputContentEl = document.getElementById("output-content");
 
 let generatedContent = '';
 
-// Auto calculate marks and questions
+// ------------------ Calculate total marks & questions ------------------
 function updateCalculations() {
-  const q1m = parseInt(document.getElementById('total_1m')?.value) || 0;
-  const q2m = parseInt(document.getElementById('total_2m')?.value) || 0;
-  const q3m = parseInt(document.getElementById('total_3m')?.value) || 0;
-  const q5m = parseInt(document.getElementById('total_5m')?.value) || 0;
-  
-  const totalQuestions = q1m + q2m + q3m + q5m;
-  const calculatedMarks = (q1m * 1) + (q2m * 2) + (q3m * 3) + (q5m * 5);
-  
-  document.getElementById('calc_1m').textContent = q1m * 1;
-  document.getElementById('calc_2m').textContent = q2m * 2;
-  document.getElementById('calc_3m').textContent = q3m * 3;
-  document.getElementById('calc_5m').textContent = q5m * 5;
-  
+  let totalQuestions = 0;
+  let calculatedMarks = 0;
+
+  document.querySelectorAll("#chapter-config > div").forEach(row => {
+    let q1 = parseInt(row.querySelector(".mark-1")?.value) || 0;
+    let q2 = parseInt(row.querySelector(".mark-2")?.value) || 0;
+    let q3 = parseInt(row.querySelector(".mark-3")?.value) || 0;
+    let q5 = parseInt(row.querySelector(".mark-5")?.value) || 0;
+
+    totalQuestions += q1 + q2 + q3 + q5;
+    calculatedMarks += (q1*1) + (q2*2) + (q3*3) + (q5*5);
+  });
+
   document.getElementById('total_questions').textContent = totalQuestions;
   document.getElementById('calculated_marks').textContent = calculatedMarks;
-  
-  // Update stats
   document.getElementById('stats-marks').textContent = calculatedMarks;
   document.getElementById('stats-questions').textContent = totalQuestions;
 }
 
+// ------------------ Auto distribute marks globally ------------------
 function autoDistribute() {
   const totalMarks = parseInt(totalMarksEl.value) || 100;
-  
-  // Smart distribution: 10% in 1m, 20% in 2m, 30% in 3m, 40% in 5m
-  const marks1m = Math.floor(totalMarks * 0.1);
-  const marks2m = Math.floor(totalMarks * 0.2);
-  const marks3m = Math.floor(totalMarks * 0.3);
-  const marks5m = Math.floor(totalMarks * 0.4);
+
+  let marks1m = Math.floor(totalMarks * 0.1);
+  let marks2m = Math.floor(totalMarks * 0.2);
+  let marks3m = Math.floor(totalMarks * 0.3);
+  let marks5m = Math.floor(totalMarks * 0.4);
+
+  // Adjust last category for rounding
+  let diff = totalMarks - (marks1m + marks2m + marks3m + marks5m);
+  marks5m += diff;
 
   document.getElementById('total_1m').value = Math.round(marks1m / 1);
   document.getElementById('total_2m').value = Math.round(marks2m / 2);
   document.getElementById('total_3m').value = Math.round(marks3m / 3);
   document.getElementById('total_5m').value = Math.round(marks5m / 5);
-  
+
   updateCalculations();
 }
 
+// ------------------ Distribute marks per chapter based on weight ------------------
+function calculateChapterMarks() {
+  let totalMarks = parseInt(totalMarksEl.value) || 100;
+  let rows = document.querySelectorAll("#chapter-config > div");
+
+  rows.forEach(row => {
+    let weight = parseFloat(row.querySelector(".chapter-weight")?.value) || 0;
+    let chapterTotalMarks = Math.round(totalMarks * (weight / 100));
+
+    // Auto-split across 1m/2m/3m/5m (10-20-30-40%)
+    let marks1 = Math.floor(chapterTotalMarks * 0.1);
+    let marks2 = Math.floor(chapterTotalMarks * 0.2);
+    let marks3 = Math.floor(chapterTotalMarks * 0.3);
+    let marks5 = Math.floor(chapterTotalMarks * 0.4);
+    let diff = chapterTotalMarks - (marks1 + marks2 + marks3 + marks5);
+    marks5 += diff;
+
+    row.querySelector(".mark-1").value = Math.round(marks1 / 1);
+    row.querySelector(".mark-2").value = Math.round(marks2 / 2);
+    row.querySelector(".mark-3").value = Math.round(marks3 / 3);
+    row.querySelector(".mark-5").value = Math.round(marks5 / 5);
+  });
+
+  updateCalculations();
+}
+
+// ------------------ Load topics and chapter configuration ------------------
 function loadTopicsAndChapterConfig() {
   const board = boardEl.value.trim();
   const cls = classEl.value.trim();
@@ -318,12 +365,11 @@ function loadTopicsAndChapterConfig() {
   const chapters = chaptersEl.value.split(',').map(c => c.trim()).filter(c => c);
 
   document.getElementById('stats-chapters').textContent = chapters.length;
-
-  // Create chapter configuration cards
   chapterConfigContainer.innerHTML = "";
+
   chapters.forEach((ch) => {
     const card = document.createElement("div");
-    card.className = "bg-white/10 p-4 rounded-lg border border-white/20";
+    card.className = "bg-white/10 p-4 rounded-lg border border-white/20 mb-3";
     card.innerHTML = `
       <div class="flex justify-between items-center mb-3">
         <h3 class="font-bold text-white">${ch}</h3>
@@ -351,12 +397,17 @@ function loadTopicsAndChapterConfig() {
     chapterConfigContainer.appendChild(card);
   });
 
+  // Add event listener for chapter weight inputs
+  document.querySelectorAll(".chapter-weight").forEach(el => {
+    el.addEventListener('input', calculateChapterMarks);
+  });
+
   if(!board || !cls || !subject || chapters.length === 0) {
     topicsContainer.innerHTML = '<p class="text-white/60 italic">Please fill in all basic details first</p>';
     return;
   }
 
-  // Load topics from your existing endpoint
+  // Load topics from backend
   fetch("/school_teacher/get_topics", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
@@ -366,13 +417,14 @@ function loadTopicsAndChapterConfig() {
   .then(data => {
     topicsContainer.innerHTML = "";
     let topicCount = 0;
+
     if (data.topics_by_chapter && Object.keys(data.topics_by_chapter).length > 0) {
       for(const ch in data.topics_by_chapter) {
         if (data.topics_by_chapter[ch].length > 0) {
           const chapterDiv = document.createElement("div");
           chapterDiv.className = "mb-3";
           chapterDiv.innerHTML = `<h4 class="font-bold text-white/90 mb-2">${ch}</h4>`;
-          
+
           data.topics_by_chapter[ch].forEach(topic => {
             const label = document.createElement("label");
             label.className = "flex items-center space-x-2 text-white/80 mb-1 cursor-pointer";
@@ -384,7 +436,7 @@ function loadTopicsAndChapterConfig() {
         }
       }
     }
-    
+
     if(topicCount === 0) {
       topicsContainer.innerHTML = '<p class="text-white/60 italic">No topics found for the selected chapters</p>';
     }
@@ -395,27 +447,25 @@ function loadTopicsAndChapterConfig() {
   });
 }
 
+// ------------------ Generate questions ------------------
+
+// ------------------ Generate questions (Board Exam Style, No Answers) ------------------
 function generateQuestions() {
   loadingEl.classList.remove("hidden");
   outputEl.classList.add("hidden");
+  outputContentEl.innerHTML = "";
 
+  // Get selected topics
   const topics = Array.from(document.querySelectorAll("input[name=topics]:checked")).map(t => t.value);
-  
-  // Get all selected question types
-  const selectedTypes1m = Array.from(document.querySelectorAll(".q-type-1m:checked")).map(cb => cb.value);
-  const selectedTypes2m = Array.from(document.querySelectorAll(".q-type-2m:checked")).map(cb => cb.value);
-  const selectedTypes3m = Array.from(document.querySelectorAll(".q-type-3m:checked")).map(cb => cb.value);
-  const selectedTypes5m = Array.from(document.querySelectorAll(".q-type-5m:checked")).map(cb => cb.value);
-  const selectedTypes5mMaths = Array.from(document.querySelectorAll(".q-type-5m-maths:checked")).map(cb => cb.value);
-  const selectedTypes5mAccounts = Array.from(document.querySelectorAll(".q-type-5m-accounts:checked")).map(cb => cb.value);
-  
+
+  // Prepare chapter-wise weight and mark distribution
   let rows = document.querySelectorAll("#chapter-config > div");
   let questions_split = [];
 
   rows.forEach(row => {
     let chapterName = row.querySelector("h3").textContent;
     let weight = parseFloat(row.querySelector(".chapter-weight")?.value) || 0;
-    
+
     questions_split.push({
       chapter: chapterName,
       weight: weight,
@@ -435,18 +485,10 @@ function generateQuestions() {
     difficulty: document.getElementById("difficulty").value,
     total_marks: parseInt(totalMarksEl.value),
     language: document.getElementById("language")?.value || "both",
-    questions_split,
-    question_types: {
-      "1m": selectedTypes1m,
-      "2m": selectedTypes2m,
-      "3m": selectedTypes3m,
-      "5m_general": selectedTypes5m,
-      "5m_maths": selectedTypes5mMaths,
-      "5m_accounts": selectedTypes5mAccounts
-    }
+    questions_split
   };
 
-  console.log("Sending payload:", payload); // For debugging purposes
+  console.log("Sending payload:", payload);
 
   fetch("/school_teacher/create_question_set", {
     method: "POST",
@@ -458,11 +500,71 @@ function generateQuestions() {
     loadingEl.classList.add("hidden");
     outputEl.classList.remove("hidden");
 
-    if(data.success) {
-      generatedContent = data.questions;
-      outputContentEl.innerHTML = `<pre class="whitespace-pre-wrap text-gray-800">${data.questions}</pre>`;
+    // 🔥 Ensure data.questions is always an array
+    if(data.success && Array.isArray(data.questions)) {
+      generatedContent = data.questions; // [{chapter: "", questions:[{text:"", marks:2}, ...]}, ...]
+
+      // Clear old output
+      outputContentEl.innerHTML = "";
+
+      // Paper container
+      const paperDiv = document.createElement("div");
+      paperDiv.className = "p-6 bg-white rounded-lg text-gray-900";
+
+      // Header
+      const header = document.createElement("div");
+      header.className = "text-center mb-6";
+      header.innerHTML = `
+        <h1 class="text-2xl font-bold mb-1">STATE BOARD OF EDUCATION</h1>
+        <h2 class="text-xl font-semibold mb-1">Class: ${classEl.value} | Subject: ${subjectEl.value}</h2>
+        <p>Total Marks: ${totalMarksEl.value} | Time: 2 Hours</p>
+        <hr class="my-3 border-gray-700">
+      `;
+      paperDiv.appendChild(header);
+
+      let qNumber = 1;
+      const markSections = [1, 2, 3, 5];
+
+      // Render each section (1M, 2M, 3M, 5M)
+      markSections.forEach(mark => {
+        const sectionDiv = document.createElement("div");
+        sectionDiv.className = "mb-6";
+
+        const sectionTitle = document.createElement("h3");
+        sectionTitle.className = "font-bold text-lg mb-2";
+        sectionTitle.textContent = `Part (${mark} Mark Questions)`;
+        sectionDiv.appendChild(sectionTitle);
+
+        generatedContent.forEach(chapterObj => {
+          // 🟢 Expecting structure: {chapter: "Chapter 1", questions:[{text:"q1", marks:2}, ...]}
+          const chapterQuestions = (chapterObj.questions || []).filter(q => q.marks === mark);
+          if(chapterQuestions.length > 0){
+            const chTitle = document.createElement("h4");
+            chTitle.className = "font-semibold mb-1";
+            chTitle.textContent = `Chapter: ${chapterObj.chapter}`;
+            sectionDiv.appendChild(chTitle);
+
+            const ol = document.createElement("ol");
+            ol.className = "list-decimal list-inside space-y-1";
+
+            chapterQuestions.forEach(q => {
+              const li = document.createElement("li");
+              li.className = "bg-white/50 p-2 rounded mb-1 text-gray-800 flex justify-between";
+              li.innerHTML = `<span>${qNumber}. ${q.text}</span> <span class="font-bold">(${q.marks} Marks)</span>`;
+              ol.appendChild(li);
+              qNumber++;
+            });
+
+            sectionDiv.appendChild(ol);
+          }
+        });
+
+        paperDiv.appendChild(sectionDiv);
+      });
+
+      outputContentEl.appendChild(paperDiv);
     } else {
-      outputContentEl.innerHTML = `<div class="text-red-600 font-bold p-4 bg-red-50 rounded">${data.error}</div>`;
+      outputContentEl.innerHTML = `<div class="text-red-600 font-bold p-4 bg-red-50 rounded">${data.error || "Invalid response from server"}</div>`;
     }
   })
   .catch(err => {
@@ -472,10 +574,35 @@ function generateQuestions() {
   });
 }
 
+// ------------------ Download formatted board-style paper ------------------
 function downloadPaper() {
-  if(!generatedContent) return;
-  
-  const blob = new Blob([generatedContent], { type: 'text/plain' });
+  if(!generatedContent || generatedContent.length === 0) return;
+
+  let textContent = "";
+  textContent += `STATE BOARD OF EDUCATION\n`;
+  textContent += `Class: ${classEl.value} | Subject: ${subjectEl.value}\n`;
+  textContent += `Total Marks: ${totalMarksEl.value} | Duration: 2 Hours\n\n`;
+
+  let qNumber = 1;
+  const markSections = [1, 2, 3, 5];
+
+  markSections.forEach(mark => {
+    textContent += `Part (${mark} Mark Questions)\n\n`;
+
+    generatedContent.forEach(chapterObj => {
+      const chapterQuestions = chapterObj.questions.filter(q => q.marks === mark || mark === 0);
+      if(chapterQuestions.length > 0){
+        textContent += `Chapter: ${chapterObj.chapter}\n`;
+        chapterQuestions.forEach(q => {
+          textContent += `${qNumber}. ${q}\n`;
+          qNumber++;
+        });
+        textContent += `\n`;
+      }
+    });
+  });
+
+  const blob = new Blob([textContent], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -484,20 +611,8 @@ function downloadPaper() {
   URL.revokeObjectURL(url);
 }
 
-// Event listeners
-[boardEl, classEl, subjectEl, chaptersEl, totalMarksEl, 
-  document.getElementById('total_1m'), document.getElementById('total_2m'), 
-  document.getElementById('total_3m'), document.getElementById('total_5m')].forEach(el => {
-  if (el) {
-    el.addEventListener('input', updateCalculations);
-  }
-});
-
-// Initial setup
-document.addEventListener("DOMContentLoaded", () => {
-  updateCalculations();
-});
 </script>
+
 
 </body>
 </html>
