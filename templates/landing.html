@@ -65,7 +65,7 @@
 <body class="animated-gradient text-white min-h-screen flex flex-col">
 
 <!-- HEADER -->
-<header class="absolute top-0 left-0 right-0 z-10 py-5">
+<header class="sticky top-0 left-0 right-0 z-50 py-5 bg-black/30 backdrop-blur">
     <div class="max-w-7xl mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-8">
         <a href="/" class="flex items-center space-x-3 text-xl sm:text-2xl font-bold">
             <img src="https://img.icons8.com/ios-filled/50/FFFFFF/student-center.png" alt="Logo" class="h-8 w-8 sm:h-9 sm:w-9">
@@ -103,22 +103,22 @@
 <!-- MAIN HERO -->
 <main class="flex-grow flex items-center justify-center w-full px-4 sm:px-6 lg:px-8 py-20">
     <div class="bg-black/40 backdrop-blur-xl p-8 sm:p-12 md:p-16 rounded-3xl border border-white/30 shadow-2xl w-full max-w-4xl">
-        <h2 class="text-3xl sm:text-5xl md:text-6xl font-extrabold mb-5 leading-tight tracking-tight">
+        <h1 class="text-3xl sm:text-5xl md:text-6xl font-extrabold mb-5 leading-tight tracking-tight">
             Empowering Tamil Nadu Students
-        </h2>
+        </h1>
         <p class="text-lg sm:text-xl text-cyan-300 font-medium mb-7">Master Your Exams with AI Precision</p>
         <p class="text-gray-200 text-base sm:text-lg leading-relaxed mb-10 max-w-3xl mx-auto">
             Generate customized exams, receive AI-powered evaluations, access one-to-one AI tutoring, and effortlessly track student performance. 
             Our platform is 100% aligned with the <strong>Tamil Nadu State Board</strong> and fully supports <strong>CBSE curriculum</strong> as well.
         </p>
-        <div class="flex flex-col sm:flex-row justify-center items-center gap-5 w-full">
-            <a href="/school_admin/login" class="w-full sm:w-auto bg-white text-indigo-700 font-bold px-9 py-4 rounded-full shadow-xl hover:bg-gray-100 transition transform hover:scale-105 text-lg">
+        <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <a href="/school_admin/login" class="bg-white text-indigo-700 font-bold px-9 py-4 rounded-full shadow-xl hover:bg-gray-100 transition transform hover:scale-105 text-lg text-center">
                 School Admin Login
             </a>
-            <a href="/student_login" class="w-full sm:w-auto bg-pink-600 text-white font-bold px-9 py-4 rounded-full shadow-xl hover:bg-pink-700 transition transform hover:scale-105 text-lg">
+            <a href="/student_login" class="bg-pink-600 text-white font-bold px-9 py-4 rounded-full shadow-xl hover:bg-pink-700 transition transform hover:scale-105 text-lg text-center">
                 Student Login
             </a>
-            <a href="/school_teacher/login" class="w-full sm:w-auto bg-indigo-600 text-white font-bold px-9 py-4 rounded-full shadow-xl hover:bg-indigo-700 transition transform hover:scale-105 text-lg">
+            <a href="/school_teacher/login" class="bg-indigo-600 text-white font-bold px-9 py-4 rounded-full shadow-xl hover:bg-indigo-700 transition transform hover:scale-105 text-lg text-center">
                 School Teacher Login
             </a>
         </div>
@@ -134,6 +134,7 @@
         </div>
     </div>
 </main>
+
 
 <!-- AI / Competitive Exams -->
 <section class="mt-20 px-4 sm:px-6 lg:px-8">
@@ -275,20 +276,20 @@
             Transform your students into unique digital avatars! Generate personalized cartoon characters based on their photos. Perfect for profile pictures, certificates, and making learning more engaging and fun.
           </p>
           <div class="flex flex-col sm:flex-row gap-4 items-start">
-            <a href="https://artifyme-mcbd.onrender.com" class="bg-indigo-600 text-white font-bold px-8 py-4 rounded-full shadow-xl hover:bg-indigo-700 transition transform hover:scale-105 text-lg" target="_blank">
+            <a href="https://artifyme-mcbd.onrender.com" rel="noopener noreferrer" target="_blank" class="bg-indigo-600 text-white font-bold px-8 py-4 rounded-full shadow-xl hover:bg-indigo-700 transition transform hover:scale-105 text-lg">
               Generate Avatar Now →
             </a>
             <div class="text-sm text-gray-700">
               <div class="flex items-center gap-2 mb-1">
-                <span class="text-green-600">✓</span>
+                <span class="text-green-600" aria-hidden="true">✓</span>
                 <span>AI-powered avatar creation</span>
               </div>
               <div class="flex items-center gap-2 mb-1">
-                <span class="text-green-600">✓</span>
+                <span class="text-green-600" aria-hidden="true">✓</span>
                 <span>High-quality cartoon style</span>
               </div>
               <div class="flex items-center gap-2">
-                <span class="text-green-600">✓</span>
+                <span class="text-green-600" aria-hidden="true">✓</span>
                 <span>Perfect for student profiles</span>
               </div>
             </div>
@@ -296,7 +297,7 @@
         </div>
         <div class="flex-shrink-0">
           <div class="bg-white/20 p-6 rounded-2xl backdrop-blur-sm">
-            <div class="text-6xl mb-4">🎭</div>
+            <div class="text-6xl mb-4" aria-hidden="true">🎭</div>
             <p class="text-sm text-gray-800 font-semibold">Upload Photo → Get Avatar</p>
           </div>
         </div>
@@ -342,9 +343,9 @@
             <div>
                 <h4 class="text-lg font-semibold mb-4">Connect</h4>
                 <div class="flex space-x-4">
-                    <a href="#" class="text-gray-300 hover:text-white transition text-2xl">📧</a>
-                    <a href="#" class="text-gray-300 hover:text-white transition text-2xl">📱</a>
-                    <a href="#" class="text-gray-300 hover:text-white transition text-2xl">🌐</a>
+                    <a href="#" class="text-gray-300 hover:text-white transition text-2xl" aria-label="Email">📧</a>
+                    <a href="#" class="text-gray-300 hover:text-white transition text-2xl" aria-label="Phone">📱</a>
+                    <a href="#" class="text-gray-300 hover:text-white transition text-2xl" aria-label="Website">🌐</a>
                 </div>
                 <p class="text-gray-400 text-xs mt-4">
                     Made with ❤️ for Tamil Nadu Students
@@ -354,7 +355,7 @@
         
         <div class="border-t border-white/10 mt-8 pt-8 text-center">
             <p class="text-gray-400 text-sm">
-                © 2024 SmartKalvi. All rights reserved. Empowering education through AI.
+                © <span id="year"></span> SmartKalvi. All rights reserved. Empowering education through AI.
             </p>
         </div>
     </div>
@@ -379,6 +380,9 @@
             }
         });
     });
+
+    // Auto year update
+    document.getElementById('year').textContent = new Date().getFullYear();
 </script>
 
 </body>

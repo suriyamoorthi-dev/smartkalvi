@@ -40,7 +40,7 @@
          bg-white/10 text-black 
          focus:outline-none focus:ring-2 focus:ring-white/50">
   <option value="stateboard">Stateboard</option>
-  <option value="cbse">CBSE</option>
+  <option value="Cbse">CBSE</option>
 </select>
 
             </div>
@@ -511,15 +511,19 @@ function generateQuestions() {
       const paperDiv = document.createElement("div");
       paperDiv.className = "p-6 bg-white rounded-lg text-gray-900";
 
-      // Header
-      const header = document.createElement("div");
-      header.className = "text-center mb-6";
-      header.innerHTML = `
-        <h1 class="text-2xl font-bold mb-1">STATE BOARD OF EDUCATION</h1>
-        <h2 class="text-xl font-semibold mb-1">Class: ${classEl.value} | Subject: ${subjectEl.value}</h2>
-        <p>Total Marks: ${totalMarksEl.value} | Time: 2 Hours</p>
-        <hr class="my-3 border-gray-700">
-      `;
+      // header
+      const selectedBoard = boardEl.value.toUpperCase(); // "CBSE" or "STATEBOARD"
+const boardName = selectedBoard === "CBSE" ? "CBSE" : "STATE BOARD";
+
+const header = document.createElement("div");
+header.className = "text-center mb-6";
+header.innerHTML = `
+  <h1 class="text-2xl font-bold mb-1">${boardName} OF EDUCATION</h1>
+  <h2 class="text-xl font-semibold mb-1">Class: ${classEl.value} | Subject: ${subjectEl.value}</h2>
+  <p>Total Marks: ${totalMarksEl.value} | Time: 2 Hours</p>
+  <hr class="my-3 border-gray-700">
+`;
+
       paperDiv.appendChild(header);
 
       let qNumber = 1;
