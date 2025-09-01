@@ -179,7 +179,7 @@
         <label class="flex items-center text-white"><input type="checkbox" value="Long answer" class="mr-2 q-type-5m">Long answer (Detailed explanation / Essay)</label>
         <label class="flex items-center text-white"><input type="checkbox" value="Diagram question" class="mr-2 q-type-5m">Diagram question (Draw / Label diagram)</label>
         <label class="flex items-center text-white"><input type="checkbox" value="Case-based / Problem-solving" class="mr-2 q-type-5m">Case-based / Problem-solving</label>
-      <label class="flex items-center text-white"><input type="checkbox" value="Compare and contrast"" class="mr-2 q-type-5m">Compare and contrast"</label>
+      <label class="flex items-center text-white"><input type="checkbox" value="Compare and contrast" class="mr-2 q-type-5m">Compare and contrast"</label>
       <label class="flex items-center text-white"><input type="checkbox" value="Analyze causes and effects" class="mr-2 q-type-5m">Analyze causes and effects</label>
       <label class="flex items-center text-white"><input type="checkbox" value="Evaluate the significance" class="mr-2 q-type-5m">Evaluate the significance</label>
 <label class="flex items-center text-white"><input type="checkbox" value=" Map-based question" class="mr-2 q-type-5m"> Map-based question</label>
@@ -450,15 +450,27 @@ function loadTopicsAndChapterConfig() {
 // ------------------ Generate questions ------------------
 
 // ------------------ Generate questions (Board Exam Style, No Answers) ------------------
+
 function generateQuestions() {
   loadingEl.classList.remove("hidden");
   outputEl.classList.add("hidden");
   outputContentEl.innerHTML = "";
 
-  // Get selected topics
+  // ✅ Get selected topics
   const topics = Array.from(document.querySelectorAll("input[name=topics]:checked")).map(t => t.value);
 
-  // Prepare chapter-wise weight and mark distribution
+  // ✅ Collect selected question types
+  function getSelectedTypes() {
+    const types = {
+      "1m": Array.from(document.querySelectorAll(".q-type-1m:checked")).map(el => el.value),
+      "2m": Array.from(document.querySelectorAll(".q-type-2m:checked")).map(el => el.value),
+      "3m": Array.from(document.querySelectorAll(".q-type-3m:checked")).map(el => el.value),
+      "5m": Array.from(document.querySelectorAll(".q-type-5m:checked, .q-type-5m-maths:checked, .q-type-5m-accounts:checked")).map(el => el.value)
+    };
+    return types;
+  }
+
+  // ✅ Prepare chapter-wise weight and mark distribution
   let rows = document.querySelectorAll("#chapter-config > div");
   let questions_split = [];
 
@@ -476,6 +488,7 @@ function generateQuestions() {
     });
   });
 
+  // ✅ Payload with question_types
   const payload = {
     board: boardEl.value,
     class: classEl.value,
@@ -485,7 +498,8 @@ function generateQuestions() {
     difficulty: document.getElementById("difficulty").value,
     total_marks: parseInt(totalMarksEl.value),
     language: document.getElementById("language")?.value || "both",
-    questions_split
+    questions_split,
+    question_types: getSelectedTypes() // 🔥 added here
   };
 
   console.log("Sending payload:", payload);
@@ -501,7 +515,7 @@ function generateQuestions() {
     outputEl.classList.remove("hidden");
 
     // 🔥 Ensure data.questions is always an array
-    if(data.success && Array.isArray(data.questions)) {
+    if (data.success && Array.isArray(data.questions)) {
       generatedContent = data.questions; // [{chapter: "", questions:[{text:"", marks:2}, ...]}, ...]
 
       // Clear old output
@@ -512,17 +526,17 @@ function generateQuestions() {
       paperDiv.className = "p-6 bg-white rounded-lg text-gray-900";
 
       // header
-      const selectedBoard = boardEl.value.toUpperCase(); // "CBSE" or "STATEBOARD"
-const boardName = selectedBoard === "CBSE" ? "CBSE" : "STATE BOARD";
+      const selectedBoard = boardEl.value.toUpperCase();
+      const boardName = selectedBoard === "CBSE" ? "CBSE" : "STATE BOARD";
 
-const header = document.createElement("div");
-header.className = "text-center mb-6";
-header.innerHTML = `
-  <h1 class="text-2xl font-bold mb-1">${boardName} OF EDUCATION</h1>
-  <h2 class="text-xl font-semibold mb-1">Class: ${classEl.value} | Subject: ${subjectEl.value}</h2>
-  <p>Total Marks: ${totalMarksEl.value} | Time: 2 Hours</p>
-  <hr class="my-3 border-gray-700">
-`;
+      const header = document.createElement("div");
+      header.className = "text-center mb-6";
+      header.innerHTML = `
+        <h1 class="text-2xl font-bold mb-1">${boardName} OF EDUCATION</h1>
+        <h2 class="text-xl font-semibold mb-1">Class: ${classEl.value} | Subject: ${subjectEl.value}</h2>
+        <p>Total Marks: ${totalMarksEl.value} | Time: 2 Hours</p>
+        <hr class="my-3 border-gray-700">
+      `;
 
       paperDiv.appendChild(header);
 
@@ -540,9 +554,8 @@ header.innerHTML = `
         sectionDiv.appendChild(sectionTitle);
 
         generatedContent.forEach(chapterObj => {
-          // 🟢 Expecting structure: {chapter: "Chapter 1", questions:[{text:"q1", marks:2}, ...]}
           const chapterQuestions = (chapterObj.questions || []).filter(q => q.marks === mark);
-          if(chapterQuestions.length > 0){
+          if (chapterQuestions.length > 0) {
             const chTitle = document.createElement("h4");
             chTitle.className = "font-semibold mb-1";
             chTitle.textContent = `Chapter: ${chapterObj.chapter}`;

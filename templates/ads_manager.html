@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ads Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-4xl mx-auto bg-white p-6 rounded shadow">
+    <h1 class="text-2xl font-bold mb-4">Ads Manager</h1>
+
+    <!-- Add/Edit Form -->
+    <form method="POST" class="space-y-4">
+      {% if edit_ad %}
+        <input type="hidden" name="ad_id" value="{{ edit_ad.id }}">
+      {% endif %}
+
+      <div>
+        <label class="block text-sm font-medium">Title</label>
+        <input type="text" name="title" value="{{ edit_ad.title if edit_ad else '' }}" required
+               class="w-full border rounded p-2">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Description</label>
+        <textarea name="description" class="w-full border rounded p-2">{{ edit_ad.description if edit_ad else '' }}</textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Image URL</label>
+        <input type="text" name="image_url" value="{{ edit_ad.image_url if edit_ad else '' }}" required
+               class="w-full border rounded p-2">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Link URL</label>
+        <input type="text" name="link_url" value="{{ edit_ad.link_url if edit_ad else '' }}" required
+               class="w-full border rounded p-2">
+      </div>
+
+      <!-- Target Page Dropdown -->
+      <div>
+        <label class="block text-sm font-medium">Target Page</label>
+        <select name="target" required class="w-full border rounded p-2">
+          <option value="">-- Select Page --</option>
+          <option value="dashboard" {% if edit_ad and edit_ad.target=='dashboard' %}selected{% endif %}>Dashboard</option>
+          <option value="student" {% if edit_ad and edit_ad.target=='student' %}selected{% endif %}>Student Page</option>
+          <option value="teacher" {% if edit_ad and edit_ad.target=='teacher' %}selected{% endif %}>Teacher Page</option>
+          <option value="home" {% if edit_ad and edit_ad.target=='home' %}selected{% endif %}>Home</option>
+        <option value="student" {% if edit_ad and edit_ad.target=='school_admin_dashboard' %}selected{% endif %}>school_admin_dashboard</option>
+          
+        </select>
+      </div>
+
+      <!-- Position Dropdown -->
+      <div>
+        <label class="block text-sm font-medium">Position</label>
+        <select name="position" required class="w-full border rounded p-2">
+          <option value="top" {% if edit_ad and edit_ad.position=='top' %}selected{% endif %}>Top</option>
+          <option value="bottom" {% if edit_ad and edit_ad.position=='bottom' %}selected{% endif %}>Bottom</option>
+          <option value="sidebar" {% if edit_ad and edit_ad.position=='sidebar' %}selected{% endif %}>Sidebar</option>
+        </select>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <input type="checkbox" name="active" {% if edit_ad and edit_ad.active %}checked{% endif %}>
+        <label>Active</label>
+      </div>
+
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">
+        {% if edit_ad %}Update Ad{% else %}Add Ad{% endif %}
+      </button>
+    </form>
+
+    <!-- List of Ads -->
+    <h2 class="text-xl font-bold mt-8 mb-4">Existing Ads</h2>
+    <table class="w-full border-collapse border">
+      <thead>
+        <tr class="bg-gray-200">
+          <th class="border p-2">ID</th>
+          <th class="border p-2">Title</th>
+          <th class="border p-2">Target</th>
+          <th class="border p-2">Position</th>
+          <th class="border p-2">Active</th>
+          <th class="border p-2">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ad in ads %}
+          <tr>
+            <td class="border p-2">{{ ad.id }}</td>
+            <td class="border p-2">{{ ad.title }}</td>
+            <td class="border p-2">{{ ad.target }}</td>
+            <td class="border p-2">{{ ad.position }}</td>
+            <td class="border p-2">{{ "Yes" if ad.active else "No" }}</td>
+            <td class="border p-2">
+              <a href="{{ url_for('ads_manager', edit=ad.id) }}" class="text-blue-600">Edit</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

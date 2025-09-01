@@ -166,6 +166,8 @@ def events():
 def pricing():
     return render_template('pricing.html')
 
+import random
+
 @app.route('/dashboard')
 def dashboard():
     if 'student_id' not in session:
@@ -173,17 +175,16 @@ def dashboard():
 
     student_id = session['student_id']
 
-    # ✅ 1. Get student data
+    # ✅ Student info
     student_res = supabase.table("students").select("*, classes(*)").eq("id", student_id).single().execute()
-
     student = student_res.data if student_res.data else {}
 
-    # ✅ 2. Get student coins
+    # ✅ Coins
     coin_response = supabase.table('student_coins').select("total_coins").eq("student_id", student_id).limit(1).execute()
     coin_data = coin_response.data[0] if coin_response.data else None
     total_coins = coin_data['total_coins'] if coin_data else 0
 
-    # ✅ 3. Get syllabus
+    # ✅ Syllabus
     syllabus_res = supabase.table("syllabus").select("*").execute()
     syllabus_data = syllabus_res.data if syllabus_res.data else []
 
@@ -201,14 +202,12 @@ def dashboard():
             "topics": topics
         })
 
-    # ✅ 4. Get verified teachers
+    # ✅ Teachers
     teachers_res = supabase.table("teachers").select("*").eq("verified", True).execute()
     teachers_list = teachers_res.data if teachers_res.data else []
-
-    # Map teacher_id to teacher details
     teacher_map = {str(t['id']): t for t in teachers_list}
 
-    # ✅ 5. Get booked teachers
+    # ✅ Bookings
     booking_res = supabase.table("bookings").select("*").eq("student_id", student_id).limit(5).execute()
     booked_rows = booking_res.data if booking_res.data else []
 
@@ -222,19 +221,36 @@ def dashboard():
                 "teacher": teacher
             })
 
-    # ✅ Final render (removed posts and badges)
+    # ✅ Ads
+    top_ads = supabase.table("ads").select("*") \
+                .eq("target", "dashboard") \
+                .eq("slot", "top") \
+                .eq("active", True).execute().data
+
+    bottom_ads = supabase.table("ads").select("*") \
+                   .eq("target", "dashboard") \
+                   .eq("slot", "bottom") \
+                   .eq("active", True).execute().data
+
+    # Pick random 1 ad for each slot
+    top_ad = random.choice(top_ads) if top_ads else None
+    bottom_ad = random.choice(bottom_ads) if bottom_ads else None
+
     return render_template(
         'index.html',
         student=student,
         total_coins=total_coins,
         syllabus=formatted_syllabus,
         teachers=teachers_list,
-        booked_teachers=booked_teachers
+        booked_teachers=booked_teachers,
+        top_ad=top_ad,
+        bottom_ad=bottom_ad
     )
 
-# === Super Admin Routes - Clean and Organized ===
+from datetime import date, datetime
+import random
 
-from datetime import datetime, date
+from datetime import date, datetime
 
 @app.route('/school_admin/dashboard')
 def school_admin_dashboard():
@@ -243,14 +259,17 @@ def school_admin_dashboard():
 
     school_id = session['school_id']
 
+    # -----------------------------
     # Fetch school details
+    # -----------------------------
     school_resp = supabase.table('schools').select("*").eq('id', school_id).single().execute()
-    school = school_resp.data
+    school = school_resp.data if school_resp and school_resp.data else {}
 
     # Fetch teachers
     teachers_resp = supabase.table('school_teachers').select("*").eq('school_id', school_id).execute()
-    teachers = teachers_resp.data
+    teachers = teachers_resp.data if teachers_resp and teachers_resp.data else []
 
+    # Fee Calculation
     total_fee = calculate_total_fee(school)
 
     today = date.today()
@@ -261,24 +280,76 @@ def school_admin_dashboard():
     is_active = False
     due_date = None
 
-    # ✅ Fix: handle full datetime if present
     if payment_status == 'active' and next_due_date_raw:
         try:
             due_date_dt = datetime.fromisoformat(next_due_date_raw)
-            due_date = due_date_dt.date()  # Extract just the date part
+            due_date = due_date_dt.date()
             is_active = due_date >= today
         except Exception as e:
             print("❌ Error parsing next_due_date:", e)
             due_date = None
 
-    return render_template('school_admin_dashboard.html',
-                           school=school,
-                           teachers=teachers,
-                           total_fee=total_fee,
-                           is_active=is_active,
-                           due_date=due_date.strftime('%Y-%m-%d') if due_date else None,
-                           payment_status=payment_status,
-                           payment_proof_url=payment_proof_url)
+    # -----------------------------
+    # Helper function to rotate ads safely
+    # -----------------------------
+    def get_next_ad_for_slot(slot_name):
+        # Fetch active ads for this slot
+        ads_resp = supabase.table("ads").select("*") \
+                    .eq("target", "school_admin_dashboard") \
+                    .eq("slot", slot_name) \
+                    .eq("active", True).execute()
+        ads = ads_resp.data if ads_resp and ads_resp.data else []
+        if not ads:
+            return None
+
+        ads.sort(key=lambda x: x['id'])
+
+        # Fetch last_shown_id safely
+        rotation_resp = supabase.table("ad_rotation").select("last_shown_id") \
+                          .eq("slot", slot_name).maybe_single().execute()
+        last_id = None
+        if rotation_resp and rotation_resp.data:
+            last_id = rotation_resp.data.get('last_shown_id')
+
+        # Determine next ad
+        next_ad = ads[0]
+        if last_id:
+            for i, ad in enumerate(ads):
+                if ad['id'] == last_id:
+                    next_ad = ads[(i + 1) % len(ads)]
+                    break
+
+        # Update rotation table
+        if rotation_resp and rotation_resp.data:
+            supabase.table("ad_rotation").update({"last_shown_id": next_ad['id']}) \
+                     .eq("slot", slot_name).execute()
+        else:
+            supabase.table("ad_rotation").insert({"slot": slot_name, "last_shown_id": next_ad['id']}).execute()
+
+        return next_ad
+
+    # -----------------------------
+    # Get ads for slots
+    # -----------------------------
+    top_ad = get_next_ad_for_slot("top")
+    bottom_ad = get_next_ad_for_slot("bottom")
+
+    # -----------------------------
+    # Render dashboard
+    # -----------------------------
+    return render_template(
+        'school_admin_dashboard.html',
+        school=school,
+        teachers=teachers,
+        total_fee=total_fee,
+        is_active=is_active,
+        due_date=due_date.strftime('%Y-%m-%d') if due_date else None,
+        payment_status=payment_status,
+        payment_proof_url=payment_proof_url,
+        top_ad=top_ad,
+        bottom_ad=bottom_ad
+    )
+
 
 from werkzeug.utils import secure_filename
 import os
@@ -452,39 +523,55 @@ def school_teacher_dashboard():
 
     school_teacher_id = session['school_teacher_id']
 
-    # Get teacher details
+    # ---------------- Teacher Details ----------------
     teacher_result = supabase.table("school_teachers").select("*").eq("id", school_teacher_id).execute()
     teacher = teacher_result.data[0] if teacher_result.data else None
-    print("DEBUG - Teacher:", teacher)
-
     subject = teacher['subject'] if teacher else "N/A"
 
-    # Check school ID and fetch school
+    # ---------------- School Name ----------------
     school_name = "N/A"
     if teacher and teacher.get('school_id'):
         school_id = teacher['school_id']
-        print("DEBUG - School ID from teacher:", school_id)
-
         school_result = supabase.table("schools").select("name").eq("id", school_id).execute()
-        print("DEBUG - School Query Result:", school_result.data)
-
         if school_result.data:
             school_name = school_result.data[0]['name']
 
-    # Class logic as before
+    # ---------------- Assigned Class ----------------
     assigned_class = "Not Assigned"
-    mapping_result = supabase.table("class_teacher_mappings") \
-        .select("class_id") \
-        .eq("teacher_id", school_teacher_id) \
-        .execute()
-
+    mapping_result = supabase.table("class_teacher_mappings").select("class_id").eq("teacher_id", school_teacher_id).execute()
     if mapping_result.data:
         class_id = mapping_result.data[0]['class_id']
         class_result = supabase.table("classes").select("class_name").eq("id", class_id).execute()
         if class_result.data:
             assigned_class = class_result.data[0]['class_name']
 
-    return render_template("school_teacher_dashboard.html", teacher=teacher, school_name=school_name, subject=subject, assigned_class=assigned_class)
+    # ---------------- Fetch Ads for Slots ----------------
+    top_ads = supabase.table("ads").select("*") \
+        .eq("active", True) \
+        .eq("slot", "top") \
+        .in_("target", ["school_teacher_dashboard", "both"]).execute().data
+
+    middle_ads = supabase.table("ads").select("*") \
+        .eq("active", True) \
+        .eq("slot", "middle") \
+        .in_("target", ["school_teacher_dashboard", "both"]).execute().data
+
+    bottom_ads = supabase.table("ads").select("*") \
+        .eq("active", True) \
+        .eq("slot", "bottom") \
+        .in_("target", ["school_teacher_dashboard", "both"]).execute().data
+
+    # ---------------- Render Template ----------------
+    return render_template(
+        "school_teacher_dashboard.html",
+        teacher=teacher,
+        school_name=school_name,
+        subject=subject,
+        assigned_class=assigned_class,
+        top_ads=top_ads,
+        middle_ads=middle_ads,
+        bottom_ads=bottom_ads
+    )
 
 @app.route('/school_admin/teachers')
 def school_list_teachers():
@@ -554,194 +641,170 @@ COOLDOWN_SECONDS = 200  # AI generation cooldown
 
 
 # ---------------- Helper Functions ---------------- #
+import os
+import time
+import random
+import traceback
+import gdown
+import fitz  # PyMuPDF
+
+
+COOLDOWN_SECONDS = 30 # Cooldown period for AI requests
+
+# ==============================================================================
+# UTILITY FUNCTIONS
+# ==============================================================================
+
 def normalize(txt):
+    """
+    Cleans and normalizes a string by stripping whitespace.
+    The original redundant .replace("'", "'") has been removed.
+    """
     if not txt:
-        return txt
-    return txt.replace("'", "'").replace("'", "'").strip()
+        return ""
+    return txt.strip()
 
 def safe_int(value, default=0):
+    """Safely converts a value to an integer, returning a default on failure."""
     try:
         return int(value)
     except (ValueError, TypeError):
         return default
 
 def split_text_into_chunks(text, chunk_size=1800):
-    return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+    """Splits text into smaller chunks of a specified size."""
+    return [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
 
 def extract_ai_text(resp):
+    """Extracts the generated text content from an AI API response object."""
     try:
         if hasattr(resp, "choices") and resp.choices:
             return (resp.choices[0].message.content or "").strip()
         elif isinstance(resp, dict) and resp.get("choices"):
+            # Handles responses from older APIs like together.Complete
             return (resp["choices"][0].get("text") or "").strip()
-    except Exception:
+    except (AttributeError, IndexError, KeyError):
         pass
     return ""
 
+# ==============================================================================
+# CORE LOGIC: CHAPTER TEXT RETRIEVAL AND EXTRACTION
+# ==============================================================================
+
 def get_or_extract_chapter_text(board, class_name, subject, chapter, gdrive_id):
+    """
+    Retrieves chapter text from cache (Supabase) or extracts it from a PDF.
+    Handles caching, PDF download, and text extraction.
+    """
     board = normalize(board)
     subject = normalize(subject)
     chapter = normalize(chapter)
     class_name_int = safe_int(class_name)
 
-    print(f"🔍 Processing Chapter: Board={board}, Class={class_name_int}, Subject={subject}, Chapter={chapter}")
-    print(f"🔍 PDF ID: {gdrive_id}")
+    print(f"\n🔍 Processing Chapter: Board={board}, Class={class_name_int}, Subject={subject}, Chapter={chapter}")
+    print(f"   PDF ID: {gdrive_id}")
 
     # --- Step 1: Check Supabase cache ---
     try:
-        print("🔍 Step 1: Checking Supabase cache...")
-        rows = supabase.table("chapter_contents").select("*")\
-            .ilike("board", board)\
-            .eq("class", class_name_int)\
-            .ilike("subject", subject)\
-            .ilike("chapter", chapter)\
+        print("   Step 1: Checking Supabase cache...")
+        rows = supabase.table("chapter_contents").select("content") \
+            .ilike("board", board).eq("class", class_name_int) \
+            .ilike("subject", subject).ilike("chapter", chapter) \
             .execute()
         
-        if rows and rows.data and len(rows.data) > 0:
+        if rows.data:
             cached_content = rows.data[0].get('content', "")
-            if cached_content and len(cached_content.strip()) > 50:  # Make sure it's not empty
-                print("✅ Found chapter in Supabase cache")
-                return cached_content
+            if len(cached_content) > 50:
+                print("   ✅ Found chapter in Supabase cache.")
+                return True, cached_content
             else:
-                print("⚠️ Found chapter in cache but content is empty/too short")
+                print("   ⚠️ Cache entry found but is empty/too short. Re-extracting.")
         else:
-            print("⚠️ Chapter not found in Supabase cache")
+            print("   ⚠️ Chapter not found in Supabase cache.")
     except Exception as e:
-        print(f"❌ Supabase cache check error: {e}")
+        print(f"   ❌ Supabase cache check error: {e}")
 
     # --- Step 2: Get page range ---
-    print("🔍 Step 2: Getting page range...")
+    print("   Step 2: Getting page range...")
+    start_page, end_page = None, None
     try:
-        page_rows = supabase.table("chapter_ranges").select("*")\
-            .ilike("board", board)\
-            .eq("class", class_name_int)\
-            .ilike("subject", subject)\
-            .ilike("chapter", chapter)\
+        page_rows = supabase.table("chapter_ranges").select("start_page, end_page") \
+            .ilike("board", board).eq("class", class_name_int) \
+            .ilike("subject", subject).ilike("chapter", chapter) \
             .execute()
-            
-        if page_rows and page_rows.data and len(page_rows.data) > 0:
+        
+        # *** LOGIC FIX: Correctly structured if/else block ***
+        if page_rows.data:
             start_page = page_rows.data[0].get('start_page')
             end_page = page_rows.data[0].get('end_page')
-            print(f"✅ Found page range: {start_page} to {end_page}")
-            
             if not start_page or not end_page:
-                print("❌ Page range values are null/empty")
-                return "❌ Chapter page range not properly configured."
-                
+                return False, "❌ Page range values are missing for this chapter."
+            print(f"   ✅ Found page range: {start_page} to {end_page}")
         else:
-            print("❌ No page range found in database")
-            print(f"🔍 Available chapters in database:")
-            # Debug: Show what chapters are available
-            try:
-                debug_rows = supabase.table("chapter_ranges").select("chapter")\
-                    .ilike("board", board)\
-                    .eq("class", class_name_int)\
-                    .ilike("subject", subject)\
-                    .execute()
-                if debug_rows and debug_rows.data:
-                    available_chapters = [r['chapter'] for r in debug_rows.data]
-                    print(f"🔍 Available: {available_chapters}")
-                    print(f"🔍 Looking for: '{chapter}'")
-                else:
-                    print("🔍 No chapters found for this board/class/subject combination")
-            except Exception as debug_e:
-                print(f"❌ Debug query error: {debug_e}")
-            
-            return "❌ Chapter page range not found in database. Please check if the chapter name matches exactly."
+            # This block is now reachable if no page range is found.
+            print(f"   ❌ No page range found in database for chapter '{chapter}'.")
+            return False, f"Chapter page range not found for '{chapter}'."
             
     except Exception as e:
-        print(f"❌ Page range fetch error: {e}")
-        return f"❌ Database error while fetching page range: {str(e)}"
+        return False, f"❌ DB error while fetching page range: {str(e)}"
 
     # --- Step 3: Download PDF ---
-    print("🔍 Step 3: Downloading PDF...")
+    print("   Step 3: Downloading PDF...")
     pdf_folder = "pdf_cache"
     try:
         os.makedirs(pdf_folder, exist_ok=True)
         local_pdf = os.path.join(pdf_folder, f"{gdrive_id}.pdf")
         
         if not os.path.exists(local_pdf):
-            print(f"📥 Downloading PDF from Google Drive: {gdrive_id}")
-            try:
-                # Try different download methods
-                download_url = f"https://drive.google.com/uc?id={gdrive_id}"
-                gdown.download(download_url, local_pdf, quiet=False)
-                
-                if not os.path.exists(local_pdf) or os.path.getsize(local_pdf) < 1000:
-                    print("❌ Downloaded file is too small or doesn't exist")
-                    return "❌ PDF download failed - file too small or corrupted."
-                    
-                print(f"✅ PDF downloaded successfully: {os.path.getsize(local_pdf)} bytes")
-            except Exception as download_e:
-                print(f"❌ PDF download failed: {download_e}")
-                return f"❌ Failed to download PDF: {str(download_e)}"
-        else:
-            print(f"✅ PDF already exists locally: {os.path.getsize(local_pdf)} bytes")
-            
+            print(f"   📥 Downloading PDF from Google Drive: {gdrive_id}")
+            download_url = f"https://drive.google.com/uc?id={gdrive_id}"
+            gdown.download(download_url, local_pdf, quiet=False)
+            if not os.path.exists(local_pdf) or os.path.getsize(local_pdf) < 1000:
+                return False, "❌ PDF download failed (file is too small or corrupted)."
+        print(f"   ✅ PDF available locally: {os.path.getsize(local_pdf)} bytes")
     except Exception as e:
-        print(f"❌ PDF setup error: {e}")
-        return f"❌ PDF setup error: {str(e)}"
+        return False, f"❌ PDF download or setup error: {str(e)}"
 
-    # --- Step 4: Extract text from PDF pages ---
-    print(f"🔍 Step 4: Extracting text from pages {start_page} to {end_page}...")
+    # --- Step 4: Extract text from PDF ---
+    print(f"   Step 4: Extracting text from pages {start_page}-{end_page}...")
     try:
-        import fitz  # Make sure PyMuPDF is imported
-        
         doc = fitz.open(local_pdf)
-        total_pages = doc.page_count
-        print(f"📄 PDF has {total_pages} pages")
-        
-        if start_page > total_pages or end_page > total_pages:
+        if start_page > doc.page_count or end_page > doc.page_count:
             doc.close()
-            return f"❌ Page range ({start_page}-{end_page}) exceeds PDF pages ({total_pages})"
-            
-        extracted_text = ""
-        pages_processed = 0
-        
-        for i in range(start_page - 1, end_page):  # Convert to 0-based indexing
+            return False, f"❌ Page range {start_page}-{end_page} exceeds PDF pages ({doc.page_count})."
+
+        extracted_texts = []
+        for i in range(start_page - 1, end_page):
             try:
                 page_text = doc[i].get_text()
-                extracted_text += page_text + "\n"
-                pages_processed += 1
-                if len(page_text.strip()) > 0:
-                    print(f"✅ Extracted text from page {i + 1}: {len(page_text)} characters")
-                else:
-                    print(f"⚠️ Page {i + 1} appears to be empty")
+                extracted_texts.append(page_text)
             except Exception as page_e:
-                print(f"❌ Error extracting page {i + 1}: {page_e}")
-                
+                print(f"   ⚠️ Error extracting page {i+1}: {page_e}")
         doc.close()
         
-        chapter_text = extracted_text.strip()
-        
-        if not chapter_text or len(chapter_text) < 100:
-            print(f"❌ Extracted text too short: {len(chapter_text)} characters")
-            return "❌ Chapter text extraction failed - content too short or empty."
-            
-        print(f"✅ Successfully extracted {len(chapter_text)} characters from {pages_processed} pages")
-        
+        chapter_text = "\n".join(extracted_texts).strip()
+        if len(chapter_text) < 100:
+            return False, f"❌ Extracted text is too short ({len(chapter_text)} chars)."
+        print(f"   ✅ Extracted {len(chapter_text)} characters.")
     except Exception as e:
-        print(f"❌ PDF extraction error: {e}")
-        return f"❌ Failed to extract text from PDF: {str(e)}"
+        return False, f"❌ PDF text extraction error: {str(e)}"
 
-    # --- Step 5: Save to Supabase ---
-    print("🔍 Step 5: Saving to Supabase cache...")
+    # --- Step 5: Cache result in Supabase ---
+    print("   Step 5: Saving extracted text to Supabase cache...")
     try:
         supabase.table("chapter_contents").upsert({
-            "board": board,
-            "class": class_name_int,
-            "subject": subject,
-            "chapter": chapter,
-            "content": chapter_text
+            "board": board, "class": class_name_int, "subject": subject,
+            "chapter": chapter, "content": chapter_text
         }).execute()
-        print("✅ Chapter content saved to cache")
+        print("   ✅ Chapter content saved to cache.")
     except Exception as e:
-        print(f"⚠️ Failed to cache chapter content: {e}")
-        # Don't return error here - we still have the extracted text
+        print(f"   ⚠️ Failed to cache chapter content: {e}")
 
-    return chapter_text
+    return True, chapter_text
 
-# ---------------- Flask Route ---------------- #
+# ==============================================================================
+# FLASK ROUTE: CREATE QUESTION SET
+# ==============================================================================
 
 @app.route('/school_teacher/create_question_set', methods=['GET', 'POST'])
 def create_question_set():
@@ -750,45 +813,31 @@ def create_question_set():
             return jsonify({'success': False, 'error': 'Session expired. Please login again.'})
         return redirect(url_for('school_teacher_login'))
 
-    # ---------------- GET Request ---------------- #
+    # --- Handle GET Request (Page Load) ---
     if request.method == 'GET':
         board = normalize(request.args.get("board", ""))
         class_name = safe_int(request.args.get("class", ""))
         subject = normalize(request.args.get("subject", ""))
-
         available_chapters = []
         if board and class_name and subject:
             try:
-                chapters_rows = supabase.table("chapter_contents")\
-                    .select("chapter")\
-                    .ilike("board", board.lower())\
-                    .eq("class", class_name)\
-                    .ilike("subject", subject.lower())\
-                    .execute()
-                if chapters_rows and chapters_rows.data:
-                    available_chapters = [r['chapter'] for r in chapters_rows.data]
+                # Fetches chapters that have content available
+                chapters_rows = supabase.table("chapter_contents") \
+                    .select("chapter").ilike("board", board) \
+                    .eq("class", class_name).ilike("subject", subject).execute()
+                if chapters_rows.data:
+                    available_chapters = sorted([r['chapter'] for r in chapters_rows.data])
             except Exception as e:
-                print("❌ GET chapters fetch error:", e)
+                print(f"❌ GET chapters fetch error: {e}")
+        return render_template("create_question_set.html", available_chapters=available_chapters)
 
-        return render_template(
-            "create_question_set.html",
-            board=board,
-            class_name=class_name,
-            subject=subject,
-            available_chapters=available_chapters,
-            selected_topics=[],
-            topics=[]
-        )
-
-    # ---------------- POST Request ---------------- #
+    # --- Handle POST Request (Form Submission) ---
     try:
-        print("🔍 Starting POST request...")
-
         data = request.get_json()
         if not data:
             return jsonify({'success': False, 'error': 'Invalid request data.'})
-
-        # Cooldown check
+        
+        # --- Rate Limiting ---
         last_request_time = session.get("last_ai_request", 0)
         now = time.time()
         if now - last_request_time < COOLDOWN_SECONDS:
@@ -796,203 +845,160 @@ def create_question_set():
             return jsonify({'success': False, 'error': f'Please wait {wait_left}s before generating again.'})
         session["last_ai_request"] = now
 
-        # Inputs
+        # --- Parse Input Data ---
         board = normalize(data.get('board', ''))
         class_name = safe_int(data.get('class'))
         subject = normalize(data.get('subject', ''))
-        selected_chapters = [normalize(c) for c in data.get('chapters', []) if c.strip()]
-        selected_topics = data.get('topics', [])
-        difficulty = data.get('difficulty', 'medium')
-        total_marks = safe_int(data.get('total_marks'))
-        language = data.get('language', 'both').lower()
         questions_split = data.get('questions_split', [])
-        user_question_types = data.get('question_types', {})
 
-        if not all([board, class_name, subject, selected_chapters, questions_split]):
+        if not all([board, class_name, subject, questions_split]):
             return jsonify({'success': False, 'error': 'Missing required fields.'})
 
-        # ---------------- Fetch Book PDF ID (FIXED) ---------------- #
+        # --- Get Book PDF Info ---
         try:
-            board_norm = normalize(board).lower()
-            class_norm = class_name  # Keep as integer
-            subject_norm = normalize(subject).lower()
+            book_result = supabase.table("book_files").select("gdrive_id") \
+                .ilike("board", board).eq("class", class_name) \
+                .ilike("subject", subject).execute()
+            if not book_result.data or not book_result.data[0].get("gdrive_id"):
+                return jsonify({'success': False, 'error': 'Book PDF information not found.'})
+            gdrive_id = book_result.data[0]["gdrive_id"]
+        except Exception:
+            return jsonify({'success': False, 'error': 'Failed to fetch book information.'})
 
-            print(f"🔍 Searching for book: board='{board_norm}', class={class_norm}, subject='{subject_norm}'")
-
-            # Fixed query - use .eq() for integer class field, .ilike() for text fields
-            book_result = supabase.table("book_files").select("gdrive_id")\
-                .ilike("board", board_norm)\
-                .eq("class", class_norm)\
-                .ilike("subject", subject_norm)\
-                .execute()
-
-            if book_result.data and len(book_result.data) > 0:
-                gdrive_id = book_result.data[0].get("gdrive_id")
-                if not gdrive_id:
-                    print("⚠️ Book PDF entry exists but gdrive_id is empty.")
-                    return jsonify({'success': False, 'error': 'Book PDF ID missing in database.'})
-                print("✅ Book PDF found:", gdrive_id)
-            else:
-                print("⚠️ Book PDF not found for", board, class_name, subject)
-                # Debug: Show what's actually in the database
-                try:
-                    debug_result = supabase.table("book_files").select("board, class, subject").execute()
-                    print(f"🔍 Available books in database: {debug_result.data}")
-                except:
-                    pass
-                return jsonify({'success': False, 'error': 'Book PDF not found in database. Please check CBSE entry.'})
-
-        except Exception as e:
-            print("❌ Failed to fetch book information:", e)
-            return jsonify({'success': False, 'error': 'Failed to fetch book information from database.'})
-
-        full_board_name = "CBSE" if board.lower() == "cbse" else "Tamil Nadu State Board"
         final_questions = []
+        skipped_chapters = []
 
-        # Default question types
-        default_q_types = {
-            "1m": ["Choose the correct answer (MCQ)", "Fill in the blanks", "True/False"],
-            "2m": ["Short answer", "Define", "Give reason", "Simple calculation", "Formula application", "Solve equation", "Find value", "Basic proof", "Show that"],
-            "3m": ["Short descriptive answer", "Explain with example", "Numerical problem", "Comprehension passage"],
-            "5m": ["Long answer", "Diagram question", "Case-based / Problem-solving", "Explain with examples", "Map-based question", "Analyze causes and effects", "Compare and contrast", "Evaluate the significance", "Source-based analysis"]
-        }
+        lang_instruction = {
+            "both": "Generate questions in **both English and Tamil**. Format: Qx. English Text\n  தமிழ்: Tamil Text",
+            "english": "Generate questions in **English only**.",
+            "tamil": "Generate questions in **Tamil only**."
+        }.get(data.get('language', 'english'), "Generate questions in English only.")
 
-        lang_instruction = ("- Output questions in **both English and Tamil**.\n"
-                            "- Format: Qx: English version\n  தமிழ்: Tamil version\n"
-                            "- Do NOT include answers.") if language == "both" else \
-                           "- Output questions in **English only**." if language == "english" else \
-                           "- Output questions in **Tamil only**."
-
-        # ---------------- Chapter Processing ---------------- #
+        # --- Process each chapter to generate questions ---
         for chapter_data in questions_split:
             chapter_name = normalize(chapter_data.get('chapter'))
-            if not chapter_name:
+            if not chapter_name: continue
+
+            success, chapter_text = get_or_extract_chapter_text(board, class_name, subject, chapter_name, gdrive_id)
+            if not success:
+                skipped_chapters.append(f"{chapter_name} ({chapter_text})") # Include reason for skip
                 continue
 
-            chapter_text = get_or_extract_chapter_text(board, class_name, subject, chapter_name, gdrive_id)
-            if not chapter_text or chapter_text.startswith("[Failed") or chapter_text.startswith("⚠️"):
-                return jsonify({'success': False, 'error': f'Failed to extract content for chapter: {chapter_name}.'})
-
-            chunks = split_text_into_chunks(chapter_text, 1800)
-            chapter_text_combined = " ".join(chunks)
-
-            counts = {k: safe_int(chapter_data.get(k, 0)) for k in ['1m', '2m', '3m', '5m']}
-            chosen_types = {k: user_question_types.get(k) or default_q_types.get(k, []) for k in ['1m', '2m', '3m', '5m']}
-            chapter_questions = []
-
-            section_prompt = ""
-            for mark_type in ['1m', '2m', '3m', '5m']:
-                num_questions = counts[mark_type]
-                if num_questions > 0:
-                    marks = int(mark_type[0])
-                    available_types = chosen_types[mark_type]
-                    if available_types:
-                        q_choice = random.choice(available_types)
-                        section_prompt += f"- {num_questions} questions of {marks} marks each ({q_choice} type)\n"
-                    else:
-                        section_prompt += f"- {num_questions} questions of {marks} marks each\n"
-
+            counts = {k: safe_int(chapter_data.get(k, 0)) for k in ['1m', '2m', '3m', '5m', '8m']}
             total_questions_needed = sum(counts.values())
-            if total_questions_needed == 0:
-                continue
+            if total_questions_needed == 0: continue
 
-            # 🔥 AI Prompt
+            # --- Build the prompt for the AI ---
+            section_prompt = ""
+            for mark_type, num_questions in counts.items():
+                if num_questions > 0:
+                    marks = int(mark_type[:-1])
+                    if marks == 1:
+                        section_prompt += f"- {num_questions} MCQ questions with 4 options each (A, B, C, D). Each worth 1 mark.\n"
+                    else:
+                        section_prompt += f"- {num_questions} descriptive questions worth {marks} marks each.\n"
+
+            # 🔥 REFINED AND MORE ROBUST PROMPT
             prompt = f"""
-You are creating a {full_board_name} exam question paper.
+You are an expert exam creator for Indian schools. Create questions based *only* on the provided text.
 
-Chapter: {chapter_name}
-Content: {chapter_text_combined[:1000]}...
+**Source Text (Excerpt from Chapter: {chapter_name})**:
+---
+{chapter_text[:3500]}
+---
 
-STRICT INSTRUCTIONS:
-1. Generate EXACTLY {total_questions_needed} questions total
-2. Question distribution:
-{section_prompt}
-3. {lang_instruction}
-4. Format each question as: QUESTION_TEXT|MARKS
-5. NO numbering, NO extra text, NO answers
-6. Each line = one complete question
-"""
+**Instructions**:
+1. Generate Questions: Create exactly {total_questions_needed} questions based on the source text.
+2. Distribution:
+- 2 MUST be Multiple Choice Questions (MCQs) with exactly 4 options (A, B, C, D). Each worth 1 mark.
+- 3 descriptive questions worth 2 marks each.
+3. Language: {lang_instruction}.
+4. Strict Formatting (MANDATORY):
+   - Wrap EACH complete question inside <question> and </question> tags.
+   - Use the pipe symbol | to separate parts.
+   - MCQs (for ALL 1 mark questions): 
+     Question Text|A. Option1\nB. Option2\nC. Option3\nD. Option4|1m
+   - Descriptive Questions (2m, 3m, 5m, 8m):
+     Question Text|Xm
+   - Do NOT include answers or any explanation outside <question> tags.
 
+<questions>
+"""      
+# --- Call AI API with Retry Logic ---
+            ai_text = None
             for attempt in range(3):
                 try:
                     response = together.Complete.create(
                         model="meta-llama/Llama-3.3-70B-Instruct-Turbo",
-                        prompt=prompt,
-                        max_tokens=1500,
-                        temperature=0.5,
-                        stop=["\n\n", "Example:", "Note:"]
+                        prompt=prompt, max_tokens=4000, temperature=0.5,
+                        stop=["</questions>"]
                     )
-                    ai_response = extract_ai_text(response)
-                    if ai_response:
-                        lines = [l.strip() for l in ai_response.split("\n") if l.strip()]
-                        questions_parsed = 0
-                        for line in lines:
-                            if questions_parsed >= total_questions_needed:
-                                break
-                            if '|' in line:
-                                try:
-                                    q_text, marks_str = line.rsplit('|', 1)
-                                    marks = int(''.join(filter(str.isdigit, marks_str)))
-                                    chapter_questions.append({'text': q_text.strip(), 'marks': marks})
-                                    questions_parsed += 1
-                                except:
-                                    continue
-                        break
-                    time.sleep(1 + attempt)
+                    ai_text = extract_ai_text(response)
+                    if ai_text: break
                 except Exception as e:
                     print(f"❌ AI API error (attempt {attempt + 1}): {e}")
-                    if attempt == 2:
-                        return jsonify({'success': False, 'error': f'AI service error while processing "{chapter_name}".'})
                     time.sleep(2)
+
+            if not ai_text:
+                skipped_chapters.append(f"{chapter_name} (AI generation failed)")
+                continue
+
+            # --- 🔥 CORRECTED & ROBUST PARSING LOGIC ---
+            chapter_questions = []
+            raw_questions = ai_text.strip().split('<question>')
+            
+            for item in raw_questions:
+                if '</question>' not in item: continue
+                
+                content = item.split('</question>')[0].strip()
+                parts = content.split('|')
+                
+                try:
+                    if len(parts) == 3: # MCQ: text|options|marks
+                        question_text = f"{parts[0].strip()}\n{parts[1].strip()}"
+                        marks_str = parts[2]
+                    elif len(parts) == 2: # Standard: text|marks
+                        question_text = parts[0].strip()
+                        marks_str = parts[1]
+                    else:
+                        print(f"⚠️ Skipping malformed line (parts={len(parts)}): {content}")
+                        continue
+                        
+                    marks = int(marks_str.strip().replace('m', ''))
+                    chapter_questions.append({'text': question_text, 'marks': marks})
+
+                except (ValueError, IndexError) as e:
+                    print(f"⚠️ Failed to parse question content: '{content}'. Error: {e}")
 
             if chapter_questions:
                 final_questions.append({'chapter': chapter_name, 'questions': chapter_questions})
+            else:
+                skipped_chapters.append(f"{chapter_name} (Failed to parse AI output)")
 
         if not final_questions:
-            return jsonify({'success': False, 'error': 'No questions could be generated.'})
+            return jsonify({'success': False, 'error': 'Failed to generate any questions.', 'skipped': skipped_chapters})
 
-        full_text_for_db = ""
-        for chapter_obj in final_questions:
-            full_text_for_db += f"### {chapter_obj['chapter']}\n"
-            for q in chapter_obj['questions']:
-                full_text_for_db += f"• {q['text']} ({q['marks']} marks)\n"
-            full_text_for_db += "\n"
-
+        # --- Save the generated question set to the database ---
+        # (Assuming you will store the structured JSON instead of plain text)
         try:
             supabase.table("question_sets").insert({
                 "school_teacher_id": session['school_teacher_id'],
-                "board": board,
-                "class_number": class_name,
-                "subject": subject,
-                "chapter": ", ".join(selected_chapters),
-                "difficulty": difficulty,
-                "total_marks": total_marks,
-                "topics": selected_topics,
-                "questions": full_text_for_db.strip()
+                "board": board, "class_number": class_name, "subject": subject,
+                "chapter": ", ".join([c['chapter'] for c in final_questions]),
+                "difficulty": data.get('difficulty', 'medium'),
+                "total_marks": data.get('total_marks'),
+                "questions_json": final_questions # Store as JSON for easier rendering
             }).execute()
         except Exception as e:
-            print(f"⚠️ Failed to save question set: {e}")
+            print(f"⚠️ Failed to save question set to DB: {e}")
+            # Don't fail the whole request, just return the questions to the user
 
-        return jsonify({'success': True, 'questions': final_questions})
+        return jsonify({'success': True, 'questions': final_questions, 'skipped': skipped_chapters})
 
     except Exception as e:
-        print(f"❌ UNEXPECTED ERROR: {e}")
+        print(f"❌ UNEXPECTED ERROR in create_question_set: {e}")
         traceback.print_exc()
-        return jsonify({'success': False, 'error': f'An unexpected server error occurred: {str(e)}'})
-
-# Helper function
-def extract_ai_text(response):
-    try:
-        if hasattr(response, 'choices') and response.choices:
-            return response.choices[0].text.strip()
-        elif hasattr(response, 'output') and hasattr(response.output, 'choices'):
-            return response.output.choices[0].text.strip()
-        elif isinstance(response, dict) and 'choices' in response:
-            return response['choices'][0]['text'].strip()
-        return None
-    except Exception as e:
-        print(f"❌ Error extracting AI text: {e}")
-        return None
+        return jsonify({'success': False, 'error': 'An unexpected server error occurred.'})
         
 @app.route('/school_teacher/get_topics', methods=['POST'])
 def get_topics():
@@ -1045,6 +1051,7 @@ def my_question_sets():
     print("✅ Question Sets from DB:", question_sets)
 
     return render_template('school_teacher_question_sets.html', sets=question_sets)
+
 @app.route('/school_teacher/question_sets/edit/<set_id>', methods=['GET', 'POST'])
 def edit_question_set(set_id):
     if 'school_teacher_id' not in session:
@@ -1065,22 +1072,41 @@ def edit_question_set(set_id):
         flash("Question set not found", "error")
         return redirect(url_for('my_question_sets'))
 
+    import json
+    # Parse questions_json if it exists
+    if q_set.get("questions_json"):
+        if isinstance(q_set["questions_json"], str):
+            try:
+                q_set["questions_json"] = json.loads(q_set["questions_json"])
+            except Exception as e:
+                print(f"Failed to parse questions_json: {e}")
+                q_set["questions_json"] = []
+
     if request.method == "POST":
-        # Update the set with new values from the form
+        # Update the set with new values
         updated_data = {
             "subject": request.form['subject'],
             "chapter": request.form['chapter'],
-            "questions": request.form['questions'],
             "total_marks": int(request.form['total_marks']),
             "difficulty": request.form['difficulty']
         }
+
+        # Optional: update questions_json if textarea contains JSON
+        questions_input = request.form.get("questions_json", "")
+        if questions_input:
+            try:
+                updated_data["questions_json"] = json.loads(questions_input)
+            except:
+                flash("Invalid questions format. Must be valid JSON.", "error")
+                return redirect(url_for('edit_question_set', set_id=set_id))
+
         supabase.table("question_sets").update(updated_data).eq("id", set_id).execute()
         flash("Question set updated successfully!", "success")
         return redirect(url_for('my_question_sets'))
 
     return render_template("edit_question_set.html", q=q_set)
 
-@app.route('/school_teacher/question_sets/view/<set_id>')
+@app.route("/school_teacher/question_sets/view/<set_id>")
 def view_question_set(set_id):
     if 'school_teacher_id' not in session:
         return redirect(url_for('school_teacher_login'))
@@ -1095,11 +1121,20 @@ def view_question_set(set_id):
         .single() \
         .execute()
 
-    q_set = result.data
+    q_set = result.data  # This must not be None
     if not q_set:
         flash("Question set not found", "error")
         return redirect(url_for('my_question_sets'))
 
+    # If questions are stored as JSON string, parse it
+    import json
+    if q_set.get("questions_json") and isinstance(q_set["questions_json"], str):
+        try:
+            q_set["questions_json"] = json.loads(q_set["questions_json"])
+        except:
+            q_set["questions_json"] = []
+
+    # ✅ Pass q_set to template
     return render_template("view_question_set.html", q_set=q_set)
 
 from flask import make_response
@@ -2279,7 +2314,12 @@ def teacher_dashboard():
         "teacher_id": teacher_id,
         "month": datetime.now().strftime("%Y-%m"),
         "total_earning": total_monthly_earning
-        }, on_conflict="teacher_id, month").execute()
+    }, on_conflict="teacher_id, month").execute()
+
+    # ✅ Fetch ads by position
+    top_ads = supabase.table("ads").select("*").eq("position", "top").execute().data
+    middle_ads = supabase.table("ads").select("*").eq("position", "middle").execute().data
+    bottom_ads = supabase.table("ads").select("*").eq("position", "bottom").execute().data
 
     return render_template('teacher_dashboard.html',
                            teacher=teacher,
@@ -2291,42 +2331,56 @@ def teacher_dashboard():
                            teacher_percentage=teacher_percentage,
                            your_percentage=your_percentage,
                            total_students=total_students,
-                           total_monthly_earning=total_monthly_earning)
+                           total_monthly_earning=total_monthly_earning,
+                           top_ads=top_ads,
+                           middle_ads=middle_ads,
+                           bottom_ads=bottom_ads)
 
 @app.route('/teachers')
 def list_teachers():
     category = request.args.get('category')
 
-    # Step 1: Fetch verified teachers (with or without category)
-    if category:
-        response = supabase.table("teachers").select("id, name, subject, image_url, bio, rating, verified, category")\
-            .eq("category", category)\
-            .eq("verified", True)\
-            .execute()
-    else:
-        response = supabase.table("teachers").select("id, name, subject, image_url, bio, rating, verified, category")\
-            .eq("verified", True)\
-            .execute()
+    # Step 1: Fetch verified teachers (with optional category)
+    query = supabase.table("teachers").select(
+        "id, name, subject, image_url, bio, rating, verified, category"
+    ).eq("verified", True)
 
-    teachers_data = response.data
+    if category:
+        query = query.eq("category", category)
+
+    response = query.execute()
+    teachers_data = response.data or []
 
     # Step 2: Fetch all active monthly plans
     plans_res = supabase.table("teacher_monthly_plans").select("*").eq("active", True).execute()
-    plans = plans_res.data if plans_res.data else []
+    plans = plans_res.data or []
 
-    # Step 3: Create teacher_id -> plan map
+    # Step 3: Map teacher_id -> plan
     plan_map = {str(plan["teacher_id"]): plan for plan in plans}
 
-    # Step 4: Inject fee into each teacher
+    # Step 4: Inject monthly_fee into each teacher
     for teacher in teachers_data:
         tid = str(teacher["id"])
         teacher["monthly_fee"] = plan_map.get(tid, {}).get("price")
 
-    return render_template('teachers.html', teachers=teachers_data, selected_category=category)
+    # ✅ Fetch ads for this page
+    top_ads = supabase.table("ads").select("*").eq("position", "top").execute().data or []
+    middle_ads = supabase.table("ads").select("*").eq("position", "middle").execute().data or []
+    bottom_ads = supabase.table("ads").select("*").eq("position", "bottom").execute().data or []
 
-from flask import render_template, redirect, url_for, session
-from datetime import datetime  # ✅ Clean import
+    return render_template(
+        'teachers.html', 
+        teachers=teachers_data, 
+        selected_category=category,
+        top_ads=top_ads,
+        middle_ads=middle_ads,
+        bottom_ads=bottom_ads
+    )
 
+
+# ------------------------------
+# Teacher Profile Page
+# ------------------------------
 @app.route('/teacher/profile/<int:teacher_id>')
 def teacher_profile(teacher_id):
     # ✅ Get Teacher
@@ -2335,15 +2389,17 @@ def teacher_profile(teacher_id):
     if not teacher:
         return "Teacher not found", 404
 
-    # ✅ Monthly Plan
-    plan_res = supabase.table("teacher_monthly_plans").select("*").eq("teacher_id", teacher_id).eq("active", True).limit(1).execute()
+    # ✅ Active Monthly Plan
+    plan_res = supabase.table("teacher_monthly_plans").select("*")\
+        .eq("teacher_id", teacher_id)\
+        .eq("active", True).limit(1).execute()
     monthly_plan = plan_res.data[0] if plan_res.data else None
 
-    # ✅ Slots
+    # ✅ Available Slots
     slots_res = supabase.table("available_slots").select("*").eq("teacher_id", teacher_id).execute()
     slots = slots_res.data or []
 
-    # ✅ Materials
+    # ✅ Study Materials
     materials_res = supabase.table("teacher_materials").select("*").eq("teacher_id", teacher_id).execute()
     materials = materials_res.data or []
 
@@ -2351,7 +2407,7 @@ def teacher_profile(teacher_id):
     reviews_res = supabase.table("reviews").select("*").eq("teacher_id", teacher_id).execute()
     reviews = reviews_res.data or []
 
-    # ✅ Subscription Check
+    # ✅ Check Student Subscription
     student_id = session.get("student_id")
     is_active_subscriber = False
     active_subscription = None
@@ -2360,10 +2416,9 @@ def teacher_profile(teacher_id):
         sub_res = supabase.table("subscriptions").select("*")\
             .eq("teacher_id", teacher_id)\
             .eq("student_id", student_id)\
-            .eq("status", "paid")\
-            .execute()
+            .eq("status", "paid").execute()
 
-        today = datetime.today().date()  # ✅ Clean usage
+        today = datetime.today().date()
         for sub in sub_res.data:
             try:
                 end_date = datetime.strptime(sub["end_date"], "%Y-%m-%d").date()
@@ -2374,16 +2429,25 @@ def teacher_profile(teacher_id):
             except Exception as e:
                 print("Subscription date error:", e)
 
-    # ✅ Render Page
-    return render_template("teacher_profile.html", 
+    # ✅ Fetch ads for profile page
+    top_ads = supabase.table("ads").select("*").eq("position", "top").execute().data or []
+    middle_ads = supabase.table("ads").select("*").eq("position", "middle").execute().data or []
+    bottom_ads = supabase.table("ads").select("*").eq("position", "bottom").execute().data or []
+
+    return render_template(
+        "teacher_profile.html", 
         teacher=teacher, 
         slots=slots, 
         materials=materials, 
         reviews=reviews, 
         monthly_plan=monthly_plan,
         is_active_subscriber=is_active_subscriber,
-        active_subscription=active_subscription
+        active_subscription=active_subscription,
+        top_ads=top_ads,
+        middle_ads=middle_ads,
+        bottom_ads=bottom_ads
     )
+
 
 @app.route('/book-slot/<int:slot_id>', methods=['GET', 'POST'])
 def book_slot(slot_id):
@@ -3142,6 +3206,81 @@ def smartlab():
 
     return render_template("smartlab.html", experiments=data)
 
+from flask import Flask, render_template, request, redirect, url_for
+import random
+from supabase import create_client
+
+
+SUPABASE_URL = "https://szfgjywjvfkeudhiobis.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6ZmdqeXdqdmZrZXVkaGlvYmlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5NDE3NzQsImV4cCI6MjA2NjUxNzc3NH0.OTO8bXjruB8kAfDlDS9CG7evruUbl6ljbswlJzbO8H0"
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Admin: Manage Ads
+@app.route("/admin/ads", methods=["GET", "POST"])
+def ads_manager():
+    edit_ad = None
+    edit_id = request.args.get("edit")
+
+    if edit_id:
+        result = supabase.table("ads").select("*").eq("id", int(edit_id)).execute()
+        if result.data:
+            edit_ad = result.data[0]
+
+    if request.method == "POST":
+        ad_id = request.form.get("ad_id")  # Hidden input for edit
+        title = request.form["title"]
+        description = request.form.get("description", "")
+        image_url = request.form["image_url"]
+        link_url = request.form["link_url"]
+        target = request.form.get("target", "all")     # ✅ fixed
+        position = request.form.get("position", "top") # ✅ fixed
+        active = request.form.get("active") == "on"
+
+        if ad_id:  # Update existing ad
+            supabase.table("ads").update({
+                "title": title,
+                "description": description,
+                "image_url": image_url,
+                "link_url": link_url,
+                "target": target,
+                "position": position,
+                "active": active
+            }).eq("id", int(ad_id)).execute()
+        else:  # Insert new ad
+            supabase.table("ads").insert({
+                "title": title,
+                "description": description,
+                "image_url": image_url,
+                "link_url": link_url,
+                "target": target,
+                "position": position,
+                "active": active,
+                "clicks": 0
+            }).execute()
+        return redirect(url_for("ads_manager"))
+
+    # Show all ads
+    ads = supabase.table("ads").select("*").execute().data
+    return render_template("ads_manager.html", ads=ads, edit_ad=edit_ad)
+
+# Delete Ad
+@app.route("/ads/delete/<int:ad_id>")
+def delete_ad(ad_id):
+    supabase.table("ads").delete().eq("id", ad_id).execute()
+    return redirect(url_for("ads_manager"))
+
+# Track Clicks
+@app.route("/ad_click/<int:ad_id>")
+def ad_click(ad_id):
+    current_clicks = supabase.table("ads").select("clicks").eq("id", ad_id).execute().data[0]['clicks']
+    supabase.table("ads").update({"clicks": current_clicks + 1}).eq("id", ad_id).execute()
+
+    ad = supabase.table("ads").select("link_url").eq("id", ad_id).single().execute().data
+    return redirect(ad['link_url'])
+
 @app.route('/health')
 def health():
     return "OK"
@@ -3158,5 +3297,6 @@ def cleanup_old_bookings():
     response = supabase.table("bookings").delete().lt("created_at", cutoff_date).execute()
 
     return f"{len(response.data)} old bookings deleted ✅"
+
 if __name__ == '__main__':
     app.run(debug=True)

@@ -8,10 +8,23 @@
 <body class="bg-gray-50 min-h-screen p-6">
   <div class="max-w-4xl mx-auto bg-white rounded-xl shadow p-6">
     <h1 class="text-2xl font-bold mb-2">{{ q_set.subject }} - {{ q_set.chapter }}</h1>
-    <p class="text-sm text-gray-500 mb-4">Class: {{ q_set.class }} | Marks: {{ q_set.total_marks }} | Difficulty: {{ q_set.difficulty }}</p>
+    <p class="text-sm text-gray-500 mb-4">
+      Class: {{ q_set.class_number }} | Marks: {{ q_set.total_marks }} | Difficulty: {{ q_set.difficulty }}
+    </p>
 
-    <div class="bg-gray-50 border p-4 rounded-md whitespace-pre-wrap text-gray-800">
-      {{ q_set.questions | safe }}
+    <div class="bg-gray-50 border p-4 rounded-md text-gray-800">
+      {% if q_set.questions_json %}
+        {% for ch in q_set.questions_json %}
+          <h2 class="font-semibold text-lg mb-2">📘 Chapter: {{ ch.chapter }}</h2>
+          <ul class="list-disc ml-5 mb-4">
+            {% for q in ch.questions %}
+              <li class="mb-2">Q{{ loop.index }} ({{ q.marks }}m): {{ q.text }}</li>
+            {% endfor %}
+          </ul>
+        {% endfor %}
+      {% else %}
+        <p class="text-gray-500">⚠️ No questions available</p>
+      {% endif %}
     </div>
 
     <a href="{{ url_for('my_question_sets') }}" class="inline-block mt-4 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md">

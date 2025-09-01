@@ -26,6 +26,17 @@
 
     <div class="max-w-6xl mx-auto space-y-8">
 
+        <!-- ✅ Top Banner Ads -->
+        <div class="w-full flex justify-center">
+            {% if top_ads %}
+                {% for ad in top_ads %}
+                <a href="{{ ad.link_url or '#' }}" target="_blank" class="top-ad block w-full max-w-4xl h-auto rounded-xl shadow-lg border border-gray-200 mb-6" style="{% if not loop.first %}display:none{% endif %}">
+                    <img src="{{ ad.image_url }}" alt="Advertisement" class="w-full h-auto rounded-xl">
+                </a>
+                {% endfor %}
+            {% endif %}
+        </div>
+
         <!-- Navigation Buttons -->
         <nav class="bg-white p-4 rounded-xl shadow-lg flex flex-wrap justify-around gap-4">
             <a href="{{ url_for('teacher_edit_profile') }}" class="nav-btn bg-blue-600 hover:bg-blue-700">✏️ Edit Profile</a>
@@ -45,6 +56,17 @@
             <p class="mt-2 text-gray-600">Your commission is based on your current rating of <strong>{{ teacher.rating }}/5</strong>.</p>
         </div>
 
+        <!-- ✅ Middle Banner Ads -->
+        <div class="w-full flex justify-center">
+            {% if middle_ads %}
+                {% for ad in middle_ads %}
+                <a href="{{ ad.link_url or '#' }}" target="_blank" class="middle-ad block w-full max-w-3xl h-auto rounded-xl shadow-lg border border-gray-200 my-6" style="{% if not loop.first %}display:none{% endif %}">
+                    <img src="{{ ad.image_url }}" alt="Advertisement" class="w-full h-auto rounded-xl">
+                </a>
+                {% endfor %}
+            {% endif %}
+        </div>
+
         <!-- Total Monthly Earnings Summary -->
         <div class="section-card border-green-300">
             <h2 class="section-title text-green-700">📈 Total Monthly Earnings Summary</h2>
@@ -52,7 +74,6 @@
                 <p><strong>Paid Students:</strong> {{ total_students }}</p>
                 <p><strong>Estimated Total Earning:</strong> ₹{{ total_monthly_earning }}</p>
             </div>
-
             <form action="{{ url_for('request_withdrawal') }}" method="POST" onsubmit="return confirm('Are you sure you want to request withdrawal?');">
                 <button type="submit" class="action-btn bg-green-600 hover:bg-green-700 mt-4">💸 Request Withdrawal</button>
             </form>
@@ -75,7 +96,6 @@
         <div class="section-card border-purple-200">
             <h2 class="section-title text-purple-700">📚 My Posts</h2>
             <a href="{{ url_for('teacher_add_material') }}" class="action-btn bg-purple-600 hover:bg-purple-700">Upload New Posts</a>
-            
             {% if materials %}
                 <ul class="mt-4 space-y-3">
                 {% for material in materials %}
@@ -100,7 +120,6 @@
         <div class="section-card border-green-200">
             <h2 class="section-title text-green-700">🕒 My Available Slots</h2>
             <a href="{{ url_for('teacher_add_slot') }}" class="action-btn bg-green-600 hover:bg-green-700">Add New Slot</a>
-            
             {% if slots %}
                 <ul class="mt-4 space-y-3">
                 {% for slot in slots %}
@@ -132,7 +151,35 @@
             <a href="{{ url_for('teacher_bookings') }}" class="action-btn bg-yellow-600 hover:bg-yellow-700">View All My Bookings</a>
         </div>
 
+        <!-- ✅ Bottom Banner Ads -->
+        <div class="w-full flex justify-center">
+            {% if bottom_ads %}
+                {% for ad in bottom_ads %}
+                <a href="{{ ad.link_url or '#' }}" target="_blank" class="bottom-ad block w-full max-w-4xl h-auto rounded-xl shadow-lg border border-gray-200 mt-6" style="{% if not loop.first %}display:none{% endif %}">
+                    <img src="{{ ad.image_url }}" alt="Advertisement" class="w-full h-auto rounded-xl">
+                </a>
+                {% endfor %}
+            {% endif %}
+        </div>
+
     </div>
+
+    <!-- JS for rotating ads -->
+    <script>
+        function rotateAds(className, interval=5000){
+            const ads = document.querySelectorAll(`.${className}`);
+            if(ads.length <= 1) return;
+            let current = 0;
+            setInterval(() => {
+                ads[current].style.display = 'none';
+                current = (current + 1) % ads.length;
+                ads[current].style.display = 'block';
+            }, interval);
+        }
+        rotateAds('top-ad', 5000);
+        rotateAds('middle-ad', 5000);
+        rotateAds('bottom-ad', 5000);
+    </script>
 
     <style>
         .nav-btn {

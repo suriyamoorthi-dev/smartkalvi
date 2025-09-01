@@ -29,13 +29,23 @@
     </aside>
 
     <!-- Main Dashboard Content -->
-    <main class="flex-1 p-6 space-y-6">
+    <main class="flex-1 p-6 space-y-8">
+
+      <!-- ✅ Top Banner Ads -->
+      <div class="w-full flex justify-center">
+        {% if top_ads %}
+          {% for ad in top_ads %}
+          <a href="{{ ad.link_url or '#' }}" target="_blank" class="top-ad block max-w-4xl w-full h-auto rounded-xl shadow-lg border border-gray-200" style="{% if not loop.first %}display:none{% endif %}">
+            <img src="{{ ad.image_url }}" alt="Advertisement" class="w-full h-auto rounded-xl">
+          </a>
+          {% endfor %}
+        {% endif %}
+      </div>
 
       <!-- Payment Info -->
       <div class="bg-white rounded-xl shadow p-6">
         <h2 class="text-lg font-bold mb-2">💰 Current Monthly Fee</h2>
         <p class="text-gray-700 text-sm mb-3">Total Fee: ₹{{ total_fee }}</p>
-
         {% if is_active %}
           <span class="inline-block bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full">
             Active till {{ due_date }}
@@ -57,19 +67,21 @@
                class="inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm transition"
                target="_blank">💸 Pay via UPI</a>
             {% if payment_status == 'pending' %}
-  <p class="text-sm text-orange-600 mt-2">⏳ Payment under review by Superadmin</p>
-  <p class="text-sm text-gray-600">Uploaded Proof: <a href="{{ payment_proof_url }}" class="text-blue-600 underline" target="_blank">View</a></p>
-{% elif is_active %}
-  <span class="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full">✅ Active till {{ due_date }}</span>
-{% else %}
-  <!-- Show upload form only if no pending -->
-  <form action="{{ url_for('school_admin_payment_success') }}" method="post" enctype="multipart/form-data" class="space-y-2 mt-4">
-    <input type="file" name="payment_proof" accept="image/*,application/pdf" required class="block text-sm">
-    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm">📤 Upload Payment Proof</button>
-  </form>
-{% endif %}
-
+              <p class="text-sm text-orange-600 mt-2">⏳ Payment under review by Superadmin</p>
+              <p class="text-sm text-gray-600">Uploaded Proof: <a href="{{ payment_proof_url }}" class="text-blue-600 underline" target="_blank">View</a></p>
+            {% endif %}
           </div>
+        {% endif %}
+      </div>
+
+      <!-- ✅ Middle Banner Ads -->
+      <div class="w-full flex justify-center">
+        {% if middle_ads %}
+          {% for ad in middle_ads %}
+          <a href="{{ ad.link_url or '#' }}" target="_blank" class="middle-ad block max-w-3xl w-full h-auto rounded-xl shadow-lg border border-gray-200" style="{% if not loop.first %}display:none{% endif %}">
+            <img src="{{ ad.image_url }}" alt="Advertisement" class="w-full h-auto rounded-xl">
+          </a>
+          {% endfor %}
         {% endif %}
       </div>
 
@@ -97,9 +109,15 @@
         </div>
       </div>
 
-      <!-- Ads Section -->
-      <div class="text-center text-sm text-gray-500 mt-8">
-        📢 Advertisement Area – Your Banner or Partner Promotion Here
+      <!-- ✅ Bottom Banner Ads -->
+      <div class="w-full flex justify-center">
+        {% if bottom_ads %}
+          {% for ad in bottom_ads %}
+          <a href="{{ ad.link_url or '#' }}" target="_blank" class="bottom-ad block max-w-4xl w-full h-auto rounded-xl shadow-lg border border-gray-200" style="{% if not loop.first %}display:none{% endif %}">
+            <img src="{{ ad.image_url }}" alt="Advertisement" class="w-full h-auto rounded-xl">
+          </a>
+          {% endfor %}
+        {% endif %}
       </div>
 
     </main>
@@ -109,6 +127,24 @@
   <footer class="text-center text-gray-500 text-sm py-4">
     &copy; 2025 SmartKalvi - Tamil Nadu Syllabus
   </footer>
+
+  <!-- JS: Rotate Ads -->
+  <script>
+    function rotateAds(className, interval=5000){
+      const ads = document.querySelectorAll(`.${className}`);
+      if(ads.length <= 1) return;
+      let current = 0;
+      setInterval(() => {
+        ads[current].style.display = 'none';
+        current = (current + 1) % ads.length;
+        ads[current].style.display = 'block';
+      }, interval);
+    }
+
+    rotateAds('top-ad', 5000);
+    rotateAds('middle-ad', 5000);
+    rotateAds('bottom-ad', 5000);
+  </script>
 
 </body>
 </html>

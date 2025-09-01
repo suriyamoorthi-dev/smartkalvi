@@ -49,11 +49,25 @@
       </div>
     </div>
 
-    <!-- Questions -->
+    <!-- Questions (JSON) -->
     <div>
-      <label class="block text-sm font-medium text-gray-700">📚 Questions</label>
-      <textarea name="questions" 
-                class="w-full mt-1 border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition h-64 resize-none">{{ q.questions }}</textarea>
+      <label class="block text-sm font-medium text-gray-700">📚 Questions (JSON)</label>
+      <textarea name="questions_json" 
+                class="w-full mt-1 border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition h-64 resize-none font-mono text-sm">{{ q.questions_json | tojson(indent=2) }}</textarea>
+      <p class="text-gray-500 text-xs mt-1">
+        Edit the questions as JSON. Example format:
+        <pre class="bg-gray-100 p-2 rounded text-xs">
+[
+  {
+    "chapter": "Chapter Name",
+    "questions": [
+      {"text": "Question 1 text", "marks": 2},
+      {"text": "Question 2 text", "marks": 1}
+    ]
+  }
+]
+        </pre>
+      </p>
     </div>
 
     <!-- Buttons -->

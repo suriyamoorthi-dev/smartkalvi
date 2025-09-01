@@ -14,9 +14,10 @@
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
 
+  
+  <!-- Header -->
   <header class="bg-white shadow-lg sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 py-4 sm:flex sm:items-center sm:justify-between">
-      
       <div class="flex items-center gap-4 flex-grow">
         {% if teacher.profile_pic %}
           <img src="{{ teacher.profile_pic }}" alt="Profile Picture" class="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover border-4 border-blue-500 shadow-md">
@@ -36,7 +37,6 @@
           </p>
         </div>
       </div>
-      
       <div class="mt-4 sm:mt-0 flex-shrink-0">
         <a href="{{ url_for('edit_teacher_profile') }}" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-full shadow-lg transition">
           <span class="mr-2">✏️</span> Edit Profile
@@ -45,9 +45,21 @@
     </div>
   </header>
 
+  <!-- Main Content -->
   <main class="flex-grow max-w-7xl mx-auto px-4 py-8">
+
+    <!-- ✅ Top Banner Ads -->
+      {% if top_ad %}
+      <div class="w-full flex justify-center">
+        <a href="{{ top_ad.link_url or '#' }}" target="_blank" class="block">
+          <img src="{{ top_ad.image_url }}" alt="Advertisement"
+               class="max-w-4xl w-full h-auto rounded-xl shadow-lg border border-gray-200">
+        </a>
+      </div>
+      {% endif %}
+
+    <!-- Feature Cards -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-      
       <a href="{{ url_for('my_question_sets') }}" class="feature-card bg-yellow-100 hover:bg-yellow-200 rounded-2xl shadow-md p-6 flex flex-col items-center justify-center text-center">
         <div class="text-4xl mb-2">📄</div>
         <div class="text-sm font-semibold text-gray-800">Question Sets</div>
@@ -87,13 +99,54 @@
         <div class="text-4xl mb-2 animate-bounce">🎨</div>
         <div class="text-sm font-bold">ArtifyMe</div>
       </a>
-      
     </div>
+
+    <!-- ✅ Middle Banner Ads -->
+    <div class="w-full flex justify-center my-8">
+      {% if middle_ads %}
+        {% for ad in middle_ads %}
+          <a href="{{ ad.link_url or '#' }}" target="_blank" class="middle-ad block max-w-3xl w-full h-auto rounded-xl shadow-lg border border-gray-200" style="{% if not loop.first %}display:none{% endif %}">
+            <img src="{{ ad.image_url }}" alt="Advertisement" class="w-full h-auto rounded-xl">
+          </a>
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    <!-- ✅ Bottom Banner Ads -->
+    <div class="w-full flex justify-center mt-8">
+      {% if bottom_ads %}
+        {% for ad in bottom_ads %}
+          <a href="{{ ad.link_url or '#' }}" target="_blank" class="bottom-ad block max-w-4xl w-full h-auto rounded-xl shadow-lg border border-gray-200" style="{% if not loop.first %}display:none{% endif %}">
+            <img src="{{ ad.image_url }}" alt="Advertisement" class="w-full h-auto rounded-xl">
+          </a>
+        {% endfor %}
+      {% endif %}
+    </div>
+
   </main>
 
+  <!-- Footer -->
   <footer class="text-center text-sm text-gray-600 py-6 bg-white shadow-inner mt-8">
     &copy; 2025 SmartKalvi · All Rights Reserved
   </footer>
+
+  <!-- ✅ JS for Rotating Ads -->
+  <script>
+    function rotateAds(className, interval=5000){
+      const ads = document.querySelectorAll(`.${className}`);
+      let current = 0;
+      if(ads.length <= 1) return;
+      setInterval(() => {
+        ads[current].style.display = 'none';
+        current = (current + 1) % ads.length;
+        ads[current].style.display = 'block';
+      }, interval);
+    }
+
+    rotateAds('top-ad', 5000);
+    rotateAds('middle-ad', 5000);
+    rotateAds('bottom-ad', 5000);
+  </script>
 
 </body>
 </html>
