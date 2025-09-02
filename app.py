@@ -821,7 +821,6 @@ def create_question_set():
         available_chapters = []
         if board and class_name and subject:
             try:
-                # Fetches chapters that have content available
                 chapters_rows = supabase.table("chapter_contents") \
                     .select("chapter").ilike("board", board) \
                     .eq("class", class_name).ilike("subject", subject).execute()
@@ -836,7 +835,7 @@ def create_question_set():
         data = request.get_json()
         if not data:
             return jsonify({'success': False, 'error': 'Invalid request data.'})
-        
+
         # --- Rate Limiting ---
         last_request_time = session.get("last_ai_request", 0)
         now = time.time()
@@ -874,31 +873,33 @@ def create_question_set():
             "tamil": "Generate questions in **Tamil only**."
         }.get(data.get('language', 'english'), "Generate questions in English only.")
 
-        # --- Process each chapter to generate questions ---
+        # --- Process each chapter ---
         for chapter_data in questions_split:
             chapter_name = normalize(chapter_data.get('chapter'))
-            if not chapter_name: continue
+            if not chapter_name: 
+                continue
 
             success, chapter_text = get_or_extract_chapter_text(board, class_name, subject, chapter_name, gdrive_id)
             if not success:
-                skipped_chapters.append(f"{chapter_name} ({chapter_text})") # Include reason for skip
+                skipped_chapters.append(f"{chapter_name} ({chapter_text})")
                 continue
 
             counts = {k: safe_int(chapter_data.get(k, 0)) for k in ['1m', '2m', '3m', '5m', '8m']}
             total_questions_needed = sum(counts.values())
-            if total_questions_needed == 0: continue
+            if total_questions_needed == 0: 
+                continue
 
-            # --- Build the prompt for the AI ---
-            section_prompt = ""
+            # --- Build distribution instructions dynamically ---
+            distribution_text = ""
             for mark_type, num_questions in counts.items():
                 if num_questions > 0:
                     marks = int(mark_type[:-1])
                     if marks == 1:
-                        section_prompt += f"- {num_questions} MCQ questions with 4 options each (A, B, C, D). Each worth 1 mark.\n"
+                        distribution_text += f"- {num_questions} MCQ questions with 4 options each (A, B, C, D). Each worth 1 mark.\n"
                     else:
-                        section_prompt += f"- {num_questions} descriptive questions worth {marks} marks each.\n"
+                        distribution_text += f"- {num_questions} descriptive questions worth {marks} marks each.\n"
 
-            # 🔥 REFINED AND MORE ROBUST PROMPT
+            # --- AI Prompt ---
             prompt = f"""
 You are an expert exam creator for Indian schools. Create questions based *only* on the provided text.
 
@@ -910,8 +911,7 @@ You are an expert exam creator for Indian schools. Create questions based *only*
 **Instructions**:
 1. Generate Questions: Create exactly {total_questions_needed} questions based on the source text.
 2. Distribution:
-- 2 MUST be Multiple Choice Questions (MCQs) with exactly 4 options (A, B, C, D). Each worth 1 mark.
-- 3 descriptive questions worth 2 marks each.
+{distribution_text}
 3. Language: {lang_instruction}.
 4. Strict Formatting (MANDATORY):
    - Wrap EACH complete question inside <question> and </question> tags.
@@ -923,18 +923,22 @@ You are an expert exam creator for Indian schools. Create questions based *only*
    - Do NOT include answers or any explanation outside <question> tags.
 
 <questions>
-"""      
-# --- Call AI API with Retry Logic ---
+"""
+
+            # --- Call AI API with Retry ---
             ai_text = None
             for attempt in range(3):
                 try:
                     response = together.Complete.create(
                         model="meta-llama/Llama-3.3-70B-Instruct-Turbo",
-                        prompt=prompt, max_tokens=4000, temperature=0.5,
+                        prompt=prompt,
+                        max_tokens=4000,
+                        temperature=0.5,
                         stop=["</questions>"]
                     )
                     ai_text = extract_ai_text(response)
-                    if ai_text: break
+                    if ai_text: 
+                        break
                 except Exception as e:
                     print(f"❌ AI API error (attempt {attempt + 1}): {e}")
                     time.sleep(2)
@@ -943,27 +947,25 @@ You are an expert exam creator for Indian schools. Create questions based *only*
                 skipped_chapters.append(f"{chapter_name} (AI generation failed)")
                 continue
 
-            # --- 🔥 CORRECTED & ROBUST PARSING LOGIC ---
+            # --- Parse AI output ---
             chapter_questions = []
             raw_questions = ai_text.strip().split('<question>')
-            
             for item in raw_questions:
-                if '</question>' not in item: continue
-                
+                if '</question>' not in item: 
+                    continue
                 content = item.split('</question>')[0].strip()
                 parts = content.split('|')
-                
                 try:
-                    if len(parts) == 3: # MCQ: text|options|marks
+                    if len(parts) == 3:  # MCQ
                         question_text = f"{parts[0].strip()}\n{parts[1].strip()}"
                         marks_str = parts[2]
-                    elif len(parts) == 2: # Standard: text|marks
+                    elif len(parts) == 2:  # Descriptive
                         question_text = parts[0].strip()
                         marks_str = parts[1]
                     else:
                         print(f"⚠️ Skipping malformed line (parts={len(parts)}): {content}")
                         continue
-                        
+
                     marks = int(marks_str.strip().replace('m', ''))
                     chapter_questions.append({'text': question_text, 'marks': marks})
 
@@ -978,20 +980,20 @@ You are an expert exam creator for Indian schools. Create questions based *only*
         if not final_questions:
             return jsonify({'success': False, 'error': 'Failed to generate any questions.', 'skipped': skipped_chapters})
 
-        # --- Save the generated question set to the database ---
-        # (Assuming you will store the structured JSON instead of plain text)
+        # --- Save to DB ---
         try:
             supabase.table("question_sets").insert({
                 "school_teacher_id": session['school_teacher_id'],
-                "board": board, "class_number": class_name, "subject": subject,
+                "board": board, 
+                "class_number": class_name, 
+                "subject": subject,
                 "chapter": ", ".join([c['chapter'] for c in final_questions]),
                 "difficulty": data.get('difficulty', 'medium'),
                 "total_marks": data.get('total_marks'),
-                "questions_json": final_questions # Store as JSON for easier rendering
+                "questions_json": final_questions
             }).execute()
         except Exception as e:
             print(f"⚠️ Failed to save question set to DB: {e}")
-            # Don't fail the whole request, just return the questions to the user
 
         return jsonify({'success': True, 'questions': final_questions, 'skipped': skipped_chapters})
 
@@ -1030,6 +1032,8 @@ def get_topics():
     print("🎯 Topics by chapter:", topics_by_chapter)
     return jsonify({"topics_by_chapter": topics_by_chapter})
 
+from jinja2 import Undefined
+
 @app.route('/school_teacher/question_sets')
 def my_question_sets():
     print("🚀 Route /school_teacher/question_sets was called")
@@ -1041,16 +1045,38 @@ def my_question_sets():
     teacher_id = str(session['school_teacher_id'])
     print("✅ Session ID:", teacher_id)
 
-    result = supabase.table("question_sets") \
-        .select("*") \
-        .eq("school_teacher_id", teacher_id) \
-        .order("created_at", desc=True) \
-        .execute()
+    try:
+        result = supabase.table("question_sets") \
+            .select("*") \
+            .eq("school_teacher_id", teacher_id) \
+            .order("created_at", desc=True) \
+            .execute()
 
-    question_sets = result.data
-    print("✅ Question Sets from DB:", question_sets)
+        question_sets = result.data or []
+        print("✅ Question Sets from DB:", question_sets)
 
-    return render_template('school_teacher_question_sets.html', sets=question_sets)
+        # --- Replace any Undefined values with None ---
+        for qs in question_sets:
+            for k, v in qs.items():
+                if isinstance(v, Undefined):
+                    qs[k] = None
+
+        # --- Pass default empty lists for ads ---
+        return render_template(
+            'school_teacher_question_sets.html',
+            sets=question_sets,
+            top_ads=[],
+            bottom_ads=[]
+        )
+
+    except Exception as e:
+        print(f"❌ ERROR fetching question sets: {e}")
+        return render_template(
+            'school_teacher_question_sets.html',
+            sets=[],
+            top_ads=[],
+            bottom_ads=[]
+        )
 
 @app.route('/school_teacher/question_sets/edit/<set_id>', methods=['GET', 'POST'])
 def edit_question_set(set_id):
