@@ -18,7 +18,6 @@
         </a>
     </div>
 
-
     <!-- Header -->
     <div class="relative">
         <div class="h-32 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
@@ -95,7 +94,6 @@
             {% endif %}
         </div>
 
-      
         <!-- Available Slots -->
         <div class="bg-slate-50 p-4 rounded-lg shadow-sm">
             <h2 class="text-lg font-semibold text-green-800 flex items-center gap-3 mb-3">
@@ -161,11 +159,32 @@
             <p class="text-sm text-gray-500">Be the first to leave a review!</p>
             {% endif %}
 
+            <!-- Inline Review Form -->
             {% if is_active_subscriber %}
-            <div class="mt-4 text-center">
-                <a href="/review/{{ teacher.id }}" class="inline-block bg-pink-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-pink-700 shadow-md">
-                    <i class="fas fa-pencil-alt mr-2"></i>Write a Review
-                </a>
+            <div class="mt-6 bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+                <h3 class="text-sm font-bold text-gray-800 mb-2">✍️ Write a Review</h3>
+                <form action="/submit-review/{{ teacher.id }}" method="POST" class="space-y-3">
+                    
+                    <!-- Rating -->
+                    <div class="flex items-center space-x-1">
+                        {% for i in range(1,6) %}
+                        <label>
+                            <input type="radio" name="rating" value="{{ i }}" class="hidden peer">
+                            <i class="fas fa-star text-gray-300 peer-checked:text-yellow-500 cursor-pointer"></i>
+                        </label>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Comment -->
+                    <textarea name="comment" rows="3" placeholder="Write your feedback..."
+                        class="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-pink-400"></textarea>
+
+                    <!-- Submit -->
+                    <button type="submit" 
+                        class="bg-pink-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-pink-700 transition-all">
+                        Submit Review
+                    </button>
+                </form>
             </div>
             {% endif %}
         </div>

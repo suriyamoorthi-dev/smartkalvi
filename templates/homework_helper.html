@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>📘 Homework Helper - SmartKalvi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+  <!-- Header -->
+  <header class="bg-blue-600 text-white p-4 shadow">
+    <h1 class="text-xl font-bold text-center">📘 SmartKalvi Homework Helper</h1>
+    <p class="text-center text-sm">Get solutions in English, Tamil & Hindi with tips & tricks</p>
+  </header>
+
+  <!-- ✅ Mobile Bottom Navigation Bar -->
+  <div class="fixed bottom-0 w-full bg-white border-t flex justify-around items-center py-2 sm:hidden shadow z-50">
+
+    <!-- 🔙 Back -->
+    <a href="javascript:history.back()" 
+       class="flex flex-col items-center text-gray-700 hover:text-indigo-600 text-xs">
+      🔙 <span>Back</span>
+    </a>
+
+    <!-- 🏠 Home -->
+    <a href="/dashboard" 
+       class="flex flex-col items-center text-gray-700 hover:text-indigo-600 text-xs">
+      🏠 <span>Home</span>
+    </a>
+
+  </div>
+
+  <!-- Main Layout -->
+  <main class="max-w-5xl mx-auto p-4 grid md:grid-cols-3 gap-4">
+
+    <!-- Left/Main Form -->
+    <div class="md:col-span-2 space-y-4">
+      <form method="POST" class="bg-white shadow-lg rounded-2xl p-6 space-y-4" id="homeworkForm">
+
+        <!-- Class -->
+        <label class="block text-sm font-medium">Select Class</label>
+        <select name="class_level" class="w-full border rounded-lg p-2">
+          <option value="">-- Choose Class --</option>
+          <option value="6">Class 6</option>
+          <option value="7">Class 7</option>
+          <option value="8">Class 8</option>
+          <option value="9">Class 9</option>
+          <option value="10">Class 10</option>
+          <option value="11">Class 11</option>
+          <option value="12">Class 12</option>
+        </select>
+
+        <!-- Subject -->
+        <div>
+          <label class="block text-gray-700 font-medium mb-1">📝 Subject</label>
+          <select name="subject" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-400">
+            <option value="">-- Select Subject --</option>
+            <option value="Math">Mathematics</option>
+            <option value="Science">Science</option>
+            <option value="Physics">Physics</option>
+            <option value="Chemistry">Chemistry</option>
+            <option value="Biology">Biology</option>
+            <option value="History">History</option>
+            <option value="Geography">Geography</option>
+            <option value="English">English</option>
+            <option value="Tamil">Tamil</option>
+          </select>
+          <p class="text-xs text-gray-500 mt-1">Leave empty if you only want to enter a specific question.</p>
+        </div>
+
+        <!-- Chapter -->
+        <div>
+          <label class="block text-gray-700 font-medium mb-1">📖 Chapter (Optional)</label>
+          <input type="text" name="chapter" placeholder="e.g. Photosynthesis, Trigonometry" 
+                class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-400">
+        </div>
+
+        <!-- Specific Question -->
+        <div>
+          <label class="block text-gray-700 font-medium mb-1">❓ Specific Question</label>
+          <textarea name="question" rows="3" placeholder="Type your homework question here..."
+                    class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-400"></textarea>
+        </div>
+
+        <!-- Language -->
+        <label class="block text-sm font-medium">Select Language</label>
+        <select name="language" class="w-full border rounded-lg p-2">
+          <option value="English">English</option>
+          <option value="Tamil">Tamil</option>
+          <option value="Hindi">Hindi</option>
+        </select>
+
+        <!-- Submit Button -->
+        <div class="text-center">
+          <button type="submit" 
+                  class="bg-blue-600 text-white px-6 py-2 rounded-xl shadow hover:bg-blue-700 transition">
+            ✨ Solve My Homework
+          </button>
+        </div>
+      </form>
+
+      <!-- Loading Animation -->
+      <div id="loading" class="hidden text-center py-6">
+        <div class="flex items-center justify-center space-x-2">
+          <svg class="animate-spin h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" 
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+          <span class="text-gray-700 font-medium">Solving your question...</span>
+        </div>
+      </div>
+
+      <!-- Answer Section -->
+      {% if answer %}
+      <section class="mt-6 bg-white shadow-md rounded-2xl p-6">
+        <h2 class="text-lg font-bold mb-3">✅ Solution</h2>
+        <div class="prose max-w-none text-gray-800 whitespace-pre-line">
+          {{ answer|safe }}
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- Middle Ads -->
+      <div id="middleAd" class="bg-white p-4 rounded-2xl shadow border text-center text-gray-600 h-32 flex items-center justify-center">
+        {% if middle_ads %}
+          <a href="{{ middle_ads[0].link_url or '#' }}" target="_blank">
+            <img src="{{ middle_ads[0].image_url }}" alt="Advertisement" class="max-h-28 mx-auto rounded-lg">
+          </a>
+        {% else %}
+          Your Ad Here
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Sidebar Ads -->
+    <aside class="space-y-4">
+
+      <!-- Top Ads -->
+      <div id="topAd" class="w-full flex justify-center my-4">
+        {% if top_ads %}
+          <a href="{{ top_ads[0].link_url or '#' }}" target="_blank">
+            <img src="{{ top_ads[0].image_url }}" alt="Advertisement" class="w-full rounded-lg shadow hover:scale-105 transition-all">
+          </a>
+        {% else %}
+          <div class="text-gray-500 text-center">Your Ad Here</div>
+        {% endif %}
+      </div>
+
+      <!-- Bottom Ads -->
+      <div id="bottomAd" class="w-full my-4">
+        {% if bottom_ads %}
+          <a href="{{ bottom_ads[0].link_url or '#' }}" target="_blank">
+            <img src="{{ bottom_ads[0].image_url }}" alt="Advertisement" class="w-full rounded-lg shadow-md">
+          </a>
+        {% else %}
+          <div class="text-gray-500 text-center">Your Ad Here</div>
+        {% endif %}
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- JS -->
+  <script>
+    const form = document.getElementById("homeworkForm");
+    const loading = document.getElementById("loading");
+
+    form.addEventListener("submit", () => {
+      loading.classList.remove("hidden");
+    });
+
+    // --- Auto rotate ads ---
+    function rotateAds(containerId, adsList) {
+      if (!adsList || adsList.length === 0) return;
+      let index = 0;
+      setInterval(() => {
+        index = (index + 1) % adsList.length;
+        const ad = adsList[index];
+        document.getElementById(containerId).innerHTML = `
+          <a href="${ad.link_url || '#'}" target="_blank">
+            <img src="${ad.image_url}" alt="Advertisement" class="w-full rounded-lg shadow-md">
+          </a>`;
+      }, 5000); // change every 5 sec
+    }
+
+    rotateAds("topAd", {{ top_ads|tojson|safe }});
+    rotateAds("middleAd", {{ middle_ads|tojson|safe }});
+    rotateAds("bottomAd", {{ bottom_ads|tojson|safe }});
+  </script>
+
+</body>
+</html>
