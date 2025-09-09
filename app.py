@@ -109,9 +109,30 @@ supabase_questions = create_client(QUESTIONS_URL, QUESTIONS_KEY)
 
 
 # === Routes ===
+
 @app.route('/')
 def homepage():
-    return render_template('landing.html')
+    # ✅ Top Ads
+    top_ads = supabase.table("ads").select("*") \
+                .eq("target", "landing") \
+                .eq("slot", "top") \
+                .eq("active", True).execute().data
+
+    # ✅ Bottom Ads
+    bottom_ads = supabase.table("ads").select("*") \
+                   .eq("target", "landing") \
+                   .eq("slot", "bottom") \
+                   .eq("active", True).execute().data
+
+    # Pick random 1 ad for each slot
+    top_ad = random.choice(top_ads) if top_ads else None
+    bottom_ad = random.choice(bottom_ads) if bottom_ads else None
+
+    return render_template(
+        'landing.html',
+        top_ad=top_ad,
+        bottom_ad=bottom_ad
+    )
 
 @app.route('/become-a-tutor')
 def become_a_tutor():

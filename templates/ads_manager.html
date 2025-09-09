@@ -44,11 +44,13 @@
         <select name="target" required class="w-full border rounded p-2">
           <option value="">-- Select Page --</option>
           <option value="dashboard" {% if edit_ad and edit_ad.target=='dashboard' %}selected{% endif %}>Dashboard</option>
-          <option value="student" {% if edit_ad and edit_ad.target=='student' %}selected{% endif %}>Student Page</option>
-          <option value="teacher" {% if edit_ad and edit_ad.target=='teacher' %}selected{% endif %}>Teacher Page</option>
-          <option value="home" {% if edit_ad and edit_ad.target=='home' %}selected{% endif %}>Home</option>
-        <option value="student" {% if edit_ad and edit_ad.target=='school_admin_dashboard' %}selected{% endif %}>school_admin_dashboard</option>
-          
+          <option value="student" {% if edit_ad and edit_ad.target=='homework_helper' %}selected{% endif %}>homework_helper</option>
+          <option value="teacher" {% if edit_ad and edit_ad.target=='teacher' %}selected{% endif %}>Tutor Page</option>
+          <option value="/" {% if edit_ad and edit_ad.target=='/' %}selected{% endif %}>Home</option>
+        <option value="school_admin_dashboard" {% if edit_ad and edit_ad.target=='school_admin_dashboard' %}selected{% endif %}>school_admin_dashboard</option>
+        <option value="school_teacher_dashboard" {% if edit_ad and edit_ad.target=='school_teacher_dashboard' %}selected{% endif %}>school_teacher_dashboard</option>
+      
+          <option value="chalkboard_notes" {% if edit_ad and edit_ad.target=='chalkboard_notes' %}selected{% endif %}>AI notes</option>     
         </select>
       </div>
 
