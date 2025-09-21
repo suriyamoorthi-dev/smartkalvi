@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📢 Create News Post - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen p-6">
+
+    <div class="max-w-3xl mx-auto bg-white shadow-lg rounded-lg p-8">
+
+        <h1 class="text-3xl font-bold mb-6 text-center">📢 Create News Post</h1>
+
+        <form method="POST" enctype="multipart/form-data" class="space-y-6">
+
+            <!-- Title -->
+            <div>
+                <label for="title" class="block font-semibold mb-1">Title</label>
+                <input type="text" id="title" name="title" required
+                    class="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <!-- Author -->
+            <div>
+                <label for="author" class="block font-semibold mb-1">Author</label>
+                <input type="text" id="author" name="author" required
+                    class="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter author name">
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label for="description" class="block font-semibold mb-1">Description</label>
+                <textarea id="description" name="description" rows="5" required
+                    class="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            </div>
+
+            <!-- Image Upload -->
+            <div>
+                <label for="image" class="block font-semibold mb-1">Image (optional)</label>
+                <input type="file" id="image" name="image" accept="image/*"
+                    class="w-full" onchange="previewImage(event)">
+            </div>
+
+            <!-- Image Preview -->
+            <div id="imagePreview" class="mt-4 hidden">
+                <img src="" alt="Image Preview" class="w-full max-h-64 object-cover rounded shadow">
+            </div>
+
+            <!-- Post Type -->
+            <div>
+                <label for="post_type" class="block font-semibold mb-1">Post Type</label>
+                <select id="post_type" name="post_type"
+                    class="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="announcement">Announcement</option>
+                    <option value="event">Event</option>
+                    <option value="achievement">Achievement</option>
+                    <option value="holiday">Holiday</option>
+                </select>
+            </div>
+
+            <!-- Pin Post -->
+            <div class="flex items-center">
+                <input type="checkbox" id="is_pinned" name="is_pinned" class="mr-2">
+                <label for="is_pinned" class="font-semibold">Pin this post</label>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="text-center">
+                <button type="submit"
+                    class="bg-indigo-600 text-white px-6 py-3 rounded font-semibold hover:bg-indigo-700 transition">
+                    ✅ Publish News
+                </button>
+            </div>
+        </form>
+
+    </div>
+
+    <script>
+        function previewImage(event) {
+            const preview = document.getElementById('imagePreview');
+            const img = preview.querySelector('img');
+            const file = event.target.files[0];
+
+            if (file) {
+                img.src = URL.createObjectURL(file);
+                preview.classList.remove('hidden');
+            } else {
+                preview.classList.add('hidden');
+                img.src = '';
+            }
+        }
+    </script>
+
+</body>
+
+</html>

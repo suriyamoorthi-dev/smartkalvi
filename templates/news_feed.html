@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>📢 School News Feed</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&family=Roboto:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f3f4f6;
+    }
+
+    .font-headline {
+      font-family: 'Merriweather', serif;
+    }
+
+    /* Like animation */
+    .like-animate {
+      animation: pop 0.3s ease forwards;
+    }
+
+    @keyframes pop {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.6);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .truncate-text {
+      display: inline;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 bg-white shadow-md">
+    <div class="max-w-3xl mx-auto flex items-center justify-between py-4 px-4">
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-800 font-headline">Recent Post</h1>
+      <a href="/"
+        class="bg-gray-200 text-gray-800 px-4 py-2 rounded-full font-medium hover:bg-gray-300 transition-colors">
+        ← Home
+      </a>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto mt-6 space-y-8 px-3">
+
+    <!-- News Feed -->
+    <div id="postsContainer" class="space-y-8">
+      {% for post in posts %}
+      <article
+        class="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-200">
+
+        <!-- Card Header -->
+        <div class="flex items-center justify-between p-4">
+          <div class="flex items-center space-x-3">
+            <div
+              class="w-10 h-10 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 flex items-center justify-center text-white font-bold">
+              {{ post.post_type[0]|upper }}
+            </div>
+            <div>
+              <p class="font-semibold text-gray-800">{{ post.post_type|capitalize }}</p>
+              <p class="text-xs text-gray-500">{{ post.published_at }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Image -->
+        {% if post.image_url %}
+        <a href="/news/{{ post.id }}">
+          <img src="{{ post.image_url }}" alt="{{ post.title }}"
+            class="w-full h-64 object-cover transition-transform duration-300 hover:scale-105">
+        </a>
+        {% else %}
+        <div class="w-full h-64 bg-gray-100 flex items-center justify-center text-gray-400">
+          <span class="text-sm">Image Not Available</span>
+        </div>
+        {% endif %}
+
+        <!-- Content -->
+        <div class="p-4 space-y-2">
+          <h2 class="text-lg font-bold text-gray-900 leading-snug">
+            <a href="/news/{{ post.id }}" class="hover:text-blue-600 transition-colors">{{ post.title }}</a>
+          </h2>
+          <p class="text-sm text-gray-500">By {{ post.author }}</p>
+
+          <!-- Description with Read More -->
+          <p class="text-gray-600 text-sm" id="desc{{ post.id }}" data-full="{{ post.description }}">
+            {{ post.description[:150] }}{% if post.description|length > 150 %}...{% endif %}
+          </p>
+          {% if post.description|length > 150 %}
+          <button class="text-blue-500 text-sm font-semibold readMoreBtn" data-post-id="{{ post.id }}">Read More</button>
+          {% endif %}
+
+          <!-- Social Buttons -->
+          <div class="flex items-center justify-between pt-3 border-t space-x-3 mt-2">
+            <button class="flex items-center space-x-1 text-red-500 hover:text-red-600 font-semibold likeBtn"
+              data-post-id="{{ post.id }}">
+              <span class="text-xl">❤️</span>
+              <span class="likeCount">{{ post.like_count if post.like_count else 0 }}</span>
+            </button>
+            <button class="flex items-center space-x-1 text-gray-600 hover:text-gray-800 font-semibold commentBtn"
+              data-post-id="{{ post.id }}">
+              💬 Comment
+            </button>
+            <a href="https://wa.me/?text={{ post.title }} - {{ request.host_url }}news/{{ post.id }}" target="_blank"
+              class="flex items-center space-x-1 text-green-600 hover:text-green-700 font-semibold">
+              📤 Share
+            </a>
+          </div>
+
+          <!-- Comment Section -->
+          <div class="mt-4 hidden commentSection" id="commentSection{{ post.id }}">
+            <form class="space-y-2 commentForm" data-post-id="{{ post.id }}">
+              <input type="text" name="name" placeholder="Your Name" class="w-full p-2 border rounded">
+              <textarea name="comment" placeholder="Write a comment..." class="w-full p-2 border rounded"></textarea>
+              <button type="submit"
+                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Post Comment</button>
+            </form>
+            <div class="mt-2 commentsList" id="commentsList{{ post.id }}"></div>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+
+    <!-- Load More -->
+    <div class="text-center mt-6">
+      <button id="loadMoreBtn"
+        class="px-8 py-3 text-base font-bold rounded-full text-gray-900 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 transition-all duration-300 shadow-xl">
+        Load More
+      </button>
+    </div>
+
+  </main>
+
+<script>
+let offset = {{ posts|length }};
+
+// Load More Posts
+$('#loadMoreBtn').click(function () {
+    $.get('/load-more-news', { offset: offset }, function (data) {
+        if (!data.length) {
+            $('#loadMoreBtn').text('No More News').prop('disabled', true);
+            return;
+        }
+
+        data.forEach(post => {
+            const imageBlock = post.image_url
+                ? `<a href="/news/${post.id}"><img src="${post.image_url}" alt="${post.title}" class="w-full h-64 object-cover transition-transform duration-300 hover:scale-105"></a>`
+                : `<div class="w-full h-64 bg-gray-100 flex items-center justify-center text-gray-400"><span class="text-sm">Image Not Available</span></div>`;
+
+            const descShort = post.description.length > 150 ? post.description.substring(0,150) + '...' : post.description;
+            const readMoreBtn = post.description.length > 150 ? `<button class="text-blue-500 text-sm font-semibold readMoreBtn" data-post-id="${post.id}">Read More</button>` : '';
+
+            const postHtml = `
+            <article class="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-200">
+                <div class="flex items-center justify-between p-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 flex items-center justify-center text-white font-bold">${post.post_type[0].toUpperCase()}</div>
+                        <div>
+                            <p class="font-semibold text-gray-800">${post.post_type.charAt(0).toUpperCase() + post.post_type.slice(1)}</p>
+                            <p class="text-xs text-gray-500">${post.published_at}</p>
+                        </div>
+                    </div>
+                </div>
+                ${imageBlock}
+                <div class="p-4 space-y-2">
+                    <h2 class="text-lg font-bold text-gray-900 leading-snug"><a href="/news/${post.id}" class="hover:text-blue-600 transition-colors">${post.title}</a></h2>
+                    <p class="text-sm text-gray-500">By ${post.author}</p>
+                    <p class="text-gray-600 text-sm" id="desc${post.id}" data-full="${post.description}">${descShort}</p>
+                    ${readMoreBtn}
+                    <div class="flex items-center justify-between pt-3 border-t space-x-3 mt-2">
+                        <button class="flex items-center space-x-1 text-red-500 hover:text-red-600 font-semibold likeBtn" data-post-id="${post.id}"><span class="text-xl">❤️</span> <span class="likeCount">${post.like_count || 0}</span></button>
+                        <button class="flex items-center space-x-1 text-gray-600 hover:text-gray-800 font-semibold commentBtn" data-post-id="${post.id}">💬 Comment</button>
+                        <a href="https://wa.me/?text=${encodeURIComponent(post.title+' - '+window.location.origin+'/news/'+post.id)}" target="_blank" class="flex items-center space-x-1 text-green-600 hover:text-green-700 font-semibold">📤 Share</a>
+                    </div>
+                    <div class="mt-4 hidden commentSection" id="commentSection${post.id}">
+                        <form class="space-y-2 commentForm" data-post-id="${post.id}">
+                            <input type="text" name="name" placeholder="Your Name" class="w-full p-2 border rounded">
+                            <textarea name="comment" placeholder="Write a comment..." class="w-full p-2 border rounded"></textarea>
+                            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Post Comment</button>
+                        </form>
+                        <div class="mt-2 commentsList" id="commentsList${post.id}"></div>
+                    </div>
+                </div>
+            </article>`;
+            $('#postsContainer').append(postHtml);
+        });
+
+        offset += data.length;
+    });
+});
+
+// Like Button
+$(document).on("click", ".likeBtn", function () {
+    const postId = $(this).data("post-id");
+    const btn = $(this);
+    const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
+
+    if (likedPosts.includes(postId)) {
+        alert("You have already liked this post!");
+        return;
+    }
+
+    $.post(`/news/${postId}/like`, function (data) {
+        btn.find(".likeCount").text(data.likes);
+        btn.addClass("like-animate");
+        setTimeout(() => btn.removeClass("like-animate"), 300);
+
+        likedPosts.push(postId);
+        localStorage.setItem('likedPosts', JSON.stringify(likedPosts));
+    });
+});
+
+// Toggle Comment Section
+$(document).on("click", ".commentBtn", function () {
+    const postId = $(this).data("post-id");
+    $(`#commentSection${postId}`).toggleClass("hidden");
+    loadComments(postId);
+});
+
+// Load Comments
+function loadComments(postId) {
+    $.get(`/news/${postId}/comments`, function (data) {
+        let html = "";
+        if (!data.length) html = "<p class='text-gray-500'>No comments yet.</p>";
+        else {
+            data.forEach(c => {
+                html += `<div class="p-3 bg-white rounded shadow mb-2">
+                            <p class="font-semibold">${c.name}</p>
+                            <p>${c.comment}</p>
+                            <p class="text-xs text-gray-400">${new Date(c.created_at).toLocaleString()}</p>
+                         </div>`;
+            });
+        }
+        $(`#commentsList${postId}`).html(html);
+    });
+}
+
+// Submit Comment
+$(document).on("submit", ".commentForm", function (e) {
+    e.preventDefault();
+    const postId = $(this).data("post-id");
+    const form = $(this);
+
+    $.post(`/news/${postId}/comment`, form.serialize(), function () {
+        form[0].reset();
+        loadComments(postId);
+    });
+});
+
+// Read More / Show Less
+$(document).on("click", ".readMoreBtn", function () {
+    const postId = $(this).data("post-id");
+    const descEl = $("#desc" + postId);
+    const fullText = descEl.data("full");
+
+    if ($(this).text() === "Read More") {
+        descEl.text(fullText);
+        $(this).text("Show Less");
+    } else {
+        descEl.text(fullText.substring(0,150) + "...");
+        $(this).text("Read More");
+    }
+});
+</script>
+
+</body>
+</html>

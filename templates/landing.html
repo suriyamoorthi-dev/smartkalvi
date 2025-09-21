@@ -13,23 +13,28 @@
   <style>
     body { font-family: 'Inter', sans-serif; }
     h1, h2, h3 { font-family: 'Poppins', sans-serif; }
+    
     .btn-primary {
-      background-color: #ffcc00;
+      background: linear-gradient(90deg, #ffcc00, #ffb700);
       color: #000;
       padding: 0.75rem 1.5rem;
-      font-weight: bold;
+      font-weight: 600;
       border-radius: 9999px;
-      transition: background-color 0.3s, transform 0.3s;
+      transition: transform 0.3s, box-shadow 0.3s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     .btn-primary:hover {
-      background-color: #e6b800;
       transform: scale(1.05);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
     }
+
     .section-container { max-width: 1200px; margin: auto; padding: 4rem 1rem; }
+    .feature-card:hover { transform: translateY(-5px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); }
+    .news-card:hover { transform: translateY(-5px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); }
   </style>
 </head>
 
-<body class="bg-white text-gray-800">
+<body class="bg-gray-50 text-gray-800">
 
   <!-- Header -->
   <header class="py-4 shadow-md sticky top-0 bg-white z-50">
@@ -39,10 +44,10 @@
         <span>SmartKalvi</span>
       </a>
       <nav class="hidden md:flex space-x-8 font-medium">
-        <a href="/" class="hover:text-indigo-600">Home</a>
-        <a href="/pricing" class="hover:text-indigo-600">Pricing</a>
-        <a href="/contact" class="hover:text-indigo-600">Contact</a>
-        <a href="/help" class="hover:text-indigo-600">Help</a>
+        <a href="/" class="hover:text-indigo-600 transition">Home</a>
+        <a href="/pricing" class="hover:text-indigo-600 transition">Pricing</a>
+        <a href="/contact" class="hover:text-indigo-600 transition">Contact</a>
+        <a href="/help" class="hover:text-indigo-600 transition">Help</a>
         <a href="/become-a-tutor" class="btn-primary">Become a Teacher</a>
       </nav>
       <button class="md:hidden" id="mobileMenuBtn">☰</button>
@@ -58,8 +63,8 @@
   </header>
 
   <!-- Hero Section -->
-  <section class="section-container text-center">
-    <h1 class="text-5xl font-extrabold mb-6">Smart Learning for Every Student</h1>
+  <section class="section-container text-center bg-gradient-to-r from-indigo-50 via-white to-indigo-50 rounded-lg shadow-lg p-12">
+    <h1 class="text-5xl font-extrabold mb-6 text-indigo-700">Smart Learning for Every Student</h1>
     <p class="text-xl text-gray-600 mb-8">AI-powered adaptive tests, live Tamil & English tutors, doubt solving, avatar rewards, and more – all in one platform.</p>
     <div class="flex flex-col sm:flex-row justify-center gap-4">
       <a href="/student_login" class="btn-primary">🎯 Student Login</a>
@@ -69,70 +74,156 @@
   </section>
 
   <!-- Become a Tutor Highlight -->
-  <section class="section-container bg-gray-50 rounded-lg shadow p-8 text-center">
+  <section class="section-container bg-indigo-100 rounded-lg shadow-lg p-10 text-center">
     <h2 class="text-3xl font-bold mb-4">👩‍🏫 Become a Tutor – Serve & Earn</h2>
     <p class="text-gray-700 mb-6">
-      Share your knowledge and earn from anywhere. Flexible hours, AI teaching tools, and guaranteed earnings per session.
-      Tamil Nadu needs you!
+      Share your knowledge and earn from anywhere. Flexible hours, AI teaching tools, and guaranteed earnings per session. Tamil Nadu needs you!
     </p>
     <a href="/teacher/login" class="btn-primary inline-block">Login as Tutor</a>
   </section>
+
+    <!-- Connect / Advertise Highlight -->
+<section class="section-container bg-purple-100 rounded-lg shadow-lg p-10 text-center">
+  <h2 class="text-3xl font-bold mb-4">📢 Advertise & Connect With Our Audience</h2>
+  <p class="text-gray-700 mb-6">
+    Promote your brand to thousands of students, teachers, and parents across Tamil Nadu.  
+    Affordable plans, high engagement, and targeted placements to boost your visibility.
+  </p>
+  <a href="/advertise" class="btn-primary inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition">
+    Explore Advertising Options
+  </a>
+</section>
+
+  <!-- News Feed Preview Section -->
+<section class="section-container">
+  <h2 class="text-3xl font-bold text-center mb-10 bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">
+    📢 Latest posts & Announcements
+  </h2>
+
+  <!-- Slider -->
+  <div class="swiper mySwiper">
+    <div class="swiper-wrapper">
+      {% for post in posts[:3] %}  <!-- Show only 3 -->
+      <div class="swiper-slide">
+        <div class="bg-white shadow-lg rounded-2xl overflow-hidden group transition-all duration-300 hover:shadow-2xl">
+          {% if post.image_url %}
+          <div class="overflow-hidden">
+            <img src="{{ post.image_url }}" class="w-full h-56 object-cover transition-transform duration-300 group-hover:scale-110"/>
+          </div>
+          {% endif %}
+          <div class="p-5">
+            <h3 class="font-semibold text-xl mb-2 group-hover:text-blue-600 transition-colors duration-300">
+              {{ post.title }}
+            </h3>
+            <p class="text-gray-600 text-sm mb-4">{{ post.description | truncate(120) }}</p>
+            
+            <!-- Date Badge -->
+            <span class="inline-block bg-gray-100 text-gray-500 text-xs font-medium px-3 py-1 rounded-full mb-4">
+              📅 {{ post.published_at }}
+            </span>
+
+            <div>
+              <a href="/news/{{ post.id }}" class="btn-primary inline-block transition duration-300 hover:scale-105 hover:shadow-md">
+                Read More →
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Navigation buttons -->
+    <div class="flex justify-center mt-6 space-x-4">
+      <button class="swiper-button-prev !static !text-blue-600"></button>
+      <button class="swiper-button-next !static !text-blue-600"></button>
+    </div>
+  </div>
+
+  <!-- View All Button -->
+  <div class="text-center mt-10">
+    <a href="/news-feed" class="btn-primary px-8 py-3 text-lg font-semibold rounded-full shadow-md transition duration-300 hover:scale-105 hover:shadow-lg">
+      📄 View All post
+    </a>
+  </div>
+</section>
+
+<!-- SwiperJS CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js"></script>
+
+<script>
+  var swiper = new Swiper(".mySwiper", {
+    loop: true,
+    autoplay: { delay: 4000, disableOnInteraction: false },
+    navigation: {
+      nextEl: ".swiper-button-next",
+      prevEl: ".swiper-button-prev",
+    },
+  });
+</script>
+
 
   <!-- Features Section -->
   <section class="section-container">
     <h2 class="text-3xl font-bold text-center mb-10">Why Choose SmartKalvi</h2>
     <div class="grid gap-8 sm:grid-cols-1 md:grid-cols-3">
-      <div class="p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
-        <h3 class="font-bold text-xl mb-2">📚 AI Exams</h3>
+      <div class="p-8 bg-white rounded-xl shadow feature-card transition">
+        <div class="text-5xl mb-4">📚</div>
+        <h3 class="font-bold text-xl mb-2">AI Exams</h3>
         <p>Generate instant mock tests from your syllabus with detailed performance analysis.</p>
       </div>
-      <div class="p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
-        <h3 class="font-bold text-xl mb-2">🤖 AI Tutors</h3>
+      <div class="p-8 bg-white rounded-xl shadow feature-card transition">
+        <div class="text-5xl mb-4">🤖</div>
+        <h3 class="font-bold text-xl mb-2">AI Tutors</h3>
         <p>24/7 intelligent support in Tamil & English for personalized learning experience.</p>
       </div>
-      <div class="p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
-        <h3 class="font-bold text-xl mb-2">🎮 Rewards & Avatars</h3>
+      <div class="p-8 bg-white rounded-xl shadow feature-card transition">
+        <div class="text-5xl mb-4">🎮</div>
+        <h3 class="font-bold text-xl mb-2">Rewards & Avatars</h3>
         <p>Earn Kalvi Coins, badges, and customize your avatar while learning and achieving milestones.</p>
       </div>
     </div>
   </section>
 
   <!-- Advanced Courses Section -->
-  <section class="section-container bg-indigo-100 text-center rounded-lg">
+  <section class="section-container bg-indigo-50 text-center rounded-xl p-12">
     <h2 class="text-3xl font-bold mb-10">Advanced AI & Robotics Courses</h2>
     <div class="grid gap-8 sm:grid-cols-1 md:grid-cols-3">
-      <div class="p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
-        <h3 class="font-bold text-xl mb-2">✈️ Educational Tours</h3>
+      <div class="p-8 bg-white rounded-xl shadow feature-card transition">
+        <div class="text-5xl mb-4">✈️</div>
+        <h3 class="font-bold text-xl mb-2">Educational Tours</h3>
         <p>Field trips & industrial visits to see real-world applications of science and technology.</p>
       </div>
-      <div class="p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
-        <h3 class="font-bold text-xl mb-2">🧠 AI Courses</h3>
+      <div class="p-8 bg-white rounded-xl shadow feature-card transition">
+        <div class="text-5xl mb-4">🧠</div>
+        <h3 class="font-bold text-xl mb-2">AI Courses</h3>
         <p>Hands-on projects & expert-led classes in AI, ML, and Robotics technologies.</p>
       </div>
-      <div class="p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
-        <h3 class="font-bold text-xl mb-2">🔧 Robotics Labs</h3>
+      <div class="p-8 bg-white rounded-xl shadow feature-card transition">
+        <div class="text-5xl mb-4">🔧</div>
+        <h3 class="font-bold text-xl mb-2">Robotics Labs</h3>
         <p>Interactive labs where students build, program, and experiment with real robots.</p>
       </div>
     </div>
   </section>
 
-
-{% if bottom_ad %}
-<div class="w-full my-4 text-center">
-    <a href="{{ bottom_ad.link }}" target="_blank">
-        <img src="{{ bottom_ad.image_url }}" alt="Bottom Advertisement" class="mx-auto max-w-full h-auto">
-    </a>
-</div>
-{% endif %}
   <!-- Call to Action Section -->
-  <section class="section-container text-center">
+  <section class="section-container text-center bg-indigo-600 text-white rounded-xl p-12 my-12">
     <h2 class="text-3xl font-bold mb-6">Start Your Smart Learning Journey Today!</h2>
-    <a href="/student_login" class="btn-primary text-lg inline-block">🚀 Get Started Now</a>
+    <a href="/student_login" class="btn-primary bg-white text-indigo-600 hover:text-white hover:bg-indigo-500">🚀 Get Started Now</a>
   </section>
 
   <!-- Footer -->
-  <footer class="bg-gray-900 text-gray-300 text-center py-6">
-    <p>© <span id="year"></span> SmartKalvi – Empowering Tamil Nadu Students with Smart Learning</p>
+  <footer class="bg-gray-900 text-gray-300 py-8">
+    <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-4">
+      <p>© <span id="year"></span> SmartKalvi – Empowering Tamil Nadu Students with Smart Learning</p>
+      <div class="text-right space-x-4">
+        <a href="/" class="hover:text-white transition">Home</a>
+        <a href="/contact" class="hover:text-white transition">Contact</a>
+        <a href="/help" class="hover:text-white transition">Help</a>
+      </div>
+    </div>
   </footer>
 
   <script>
@@ -142,5 +233,4 @@
     });
   </script>
 </body>
-
 </html>

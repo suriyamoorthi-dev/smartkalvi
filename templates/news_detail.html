@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ post.title }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&family=Roboto:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    body { font-family: 'Roboto', sans-serif; }
+    h1   { font-family: 'Merriweather', serif; }
+  </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen p-4 sm:p-8">
+
+  <div class="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden">
+
+    <!-- Header -->
+    <header class="p-6 sm:p-10 text-center">
+      <h1 class="text-3xl sm:text-5xl font-extrabold leading-snug text-gray-900 tracking-tight mb-3">
+        {{ post.title }}
+      </h1>
+
+      <!-- ✅ Author + Meta Info -->
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-gray-600 text-sm mt-4">
+        <span class="font-medium">
+          ✍️ By {{ post.author }}
+        </span>
+        <span class="hidden sm:inline">•</span>
+        <span>
+          🗓️ {{ post.published_at }}
+        </span>
+        <span class="hidden sm:inline">•</span>
+        <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-xs font-semibold">
+          {{ post.post_type | capitalize }}
+        </span>
+      </div>
+    </header>
+
+    <!-- Top Advertisement -->
+    {% if top_ad %}
+    <div class="my-6 p-4 bg-white rounded-xl shadow-lg text-center">
+      {% if top_ad.image_url %}
+      <a href="{{ top_ad.link_url }}" target="_blank">
+        <img src="{{ top_ad.image_url }}" alt="{{ top_ad.title }}"
+             class="mx-auto max-h-48 object-contain">
+      </a>
+      {% else %}
+      <a href="{{ top_ad.link_url }}" target="_blank"
+         class="font-bold text-blue-600 hover:underline">
+        {{ top_ad.title }}
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if post.image_url %}
+    <figure class="relative w-full h-64 sm:h-[400px] overflow-hidden">
+      <img src="{{ post.image_url }}" alt="News Image"
+           class="w-full h-full object-cover transition-transform duration-500 ease-in-out hover:scale-105">
+    </figure>
+    {% endif %}
+
+    <!-- Article -->
+    <article class="p-6 sm:p-10 prose max-w-none prose-lg">
+      <p class="text-gray-800 leading-relaxed whitespace-pre-line">
+        {{ post.description }}
+      </p>
+    </article>
+
+    <!-- Share Buttons -->
+    <div class="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 mt-8 mb-12 px-6">
+      <a href="https://wa.me/?text={{ post.title }} {{ request.url }}"
+         target="_blank"
+         class="flex-1 text-center sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-green-500 text-white font-medium rounded-full hover:bg-green-600 transition-all duration-300 shadow-lg hover:shadow-xl">
+        <span>📤 Share on WhatsApp</span>
+      </a>
+      <a href="https://twitter.com/intent/tweet?text={{ post.title }}&url={{ request.url }}"
+         target="_blank"
+         class="flex-1 text-center sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white font-medium rounded-full hover:bg-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl">
+        <span>🐦 Share on Twitter</span>
+      </a>
+    </div>
+
+    {% if related_posts %}
+<section class="border-t border-gray-200 px-4 sm:px-8 py-10 bg-gradient-to-b from-white to-gray-50">
+  <h2 class="text-2xl font-extrabold text-gray-900 mb-6 text-center">
+    🔗 Related Articles
+  </h2>
+
+  <!-- Horizontal Scroll Wrapper -->
+  <div class="flex space-x-5 overflow-x-auto snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-300 pb-4">
+    {% for related in related_posts %}
+    <a href="/news/{{ related.id }}"
+       class="relative w-72 flex-none snap-center rounded-2xl overflow-hidden shadow-lg bg-gray-900 group">
+       
+      {% if related.image_url %}
+      <!-- Article Image -->
+      <img src="{{ related.image_url }}" 
+           alt="{{ related.title }}"
+           class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300">
+      {% else %}
+      <div class="w-full h-48 bg-gray-200 flex items-center justify-center text-gray-500">
+        No Image
+      </div>
+      {% endif %}
+
+      <!-- Gradient Overlay -->
+      <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10"></div>
+
+      <!-- Content -->
+      <div class="absolute bottom-0 p-4">
+        <span class="inline-block mb-2 px-3 py-1 bg-indigo-600 text-white text-xs font-semibold rounded-full shadow">
+          {{ related.post_type | capitalize }}
+        </span>
+        <h3 class="text-lg font-bold text-white leading-snug group-hover:text-yellow-300 line-clamp-2">
+          {{ related.title }}
+        </h3>
+        <p class="text-sm text-gray-200 mt-1">
+          {% if related.author %}By {{ related.author }}{% else %}SmartKalvi Editorial{% endif %}
+        </p>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+    <!-- Bottom Advertisement -->
+    {% if bottom_ad %}
+    <div class="my-6 p-4 bg-white rounded-xl shadow-lg text-center">
+      {% if bottom_ad.image_url %}
+      <a href="{{ bottom_ad.link_url }}" target="_blank">
+        <img src="{{ bottom_ad.image_url }}" alt="{{ bottom_ad.title }}"
+             class="mx-auto max-h-52 w-full object-contain rounded-lg">
+      </a>
+      {% else %}
+      <a href="{{ bottom_ad.link_url }}" target="_blank"
+         class="font-bold text-blue-600 hover:underline">
+        {{ bottom_ad.title }}
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Back Button -->
+    <div class="text-center p-6 sm:p-8">
+      <a href="/news-feed"
+         class="inline-block bg-indigo-600 text-white px-8 py-3 rounded-full font-medium tracking-wide hover:bg-indigo-700 transition-all duration-300 shadow-lg">
+         ← Back to News Feed
+      </a>
+    </div>
+
+  </div>
+</body>
+</html>

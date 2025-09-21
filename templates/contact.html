@@ -4,20 +4,39 @@
     <meta charset="UTF-8">
     <title>Contact Us - AI Exam Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="min-h-screen flex flex-col bg-gradient-to-br from-indigo-700 to-purple-700 text-white">
 
-<header class="p-4 flex justify-between items-center max-w-7xl mx-auto">
+<header class="p-4 flex items-center max-w-7xl mx-auto">
+    <!-- Back Button -->
+    <button onclick="history.back()" class="flex items-center text-white font-semibold hover:text-gray-300 transition mr-4">
+        <i class="fas fa-arrow-left mr-2"></i> Back
+    </button>
     <a href="/" class="text-2xl font-bold">AI Exam Platform</a>
 </header>
 
-<main class="flex-grow flex items-center justify-center px-4">
-    <div class="bg-black/30 backdrop-blur p-6 sm:p-10 rounded-xl shadow-xl w-full max-w-lg">
-        <h1 class="text-3xl font-bold mb-4">Contact Us</h1>
-        <p class="mb-6 text-gray-200">Have questions or feedback? We're happy to help.</p>
-        <p class="mb-2">📧 Email: <a href="mailto:edupulse6@gmail.com" class="underline">edupulse6@gmail.com"</a></p>
-        <p>📞 Phone: +91 8667694224</p>
-    </div>
+<main class="flex-grow flex items-center justify-center px-4 py-6">
+  <div class="bg-black/30 backdrop-blur p-6 sm:p-10 rounded-xl shadow-xl w-full max-w-md text-center">
+    <h1 class="text-3xl font-bold mb-4 text-white">Contact Us</h1>
+    <p class="mb-6 text-gray-200">Have questions or feedback? We're happy to help.</p>
+
+    <p class="mb-2 text-gray-100">
+      📧 Email: 
+      <a href="mailto:edupulse6@gmail.com" class="underline text-indigo-300 hover:text-indigo-400">
+        edupulse6@gmail.com
+      </a>
+    </p>
+
+    <p class="mb-6 text-gray-100">📞 Phone: +91 8667694224</p>
+
+    <!-- WhatsApp Direct Button -->
+    <a href="https://wa.me/918667694224?text=Hi%20SmartKalvi%2C%20I%20would%20like%20to%20know%20more%20about%20advertising."
+       target="_blank"
+       class="inline-flex items-center justify-center w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-semibold px-5 py-3 rounded-lg shadow transition">
+       <i class="fab fa-whatsapp text-xl mr-2"></i> Chat on WhatsApp
+    </a>
+  </div>
 </main>
 
 <footer class="p-4 text-center text-sm text-gray-300">

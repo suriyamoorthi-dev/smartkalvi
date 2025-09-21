@@ -112,26 +112,34 @@ supabase_questions = create_client(QUESTIONS_URL, QUESTIONS_KEY)
 
 @app.route('/')
 def homepage():
-    # ✅ Top Ads
-    top_ads = supabase.table("ads").select("*") \
-                .eq("target", "landing") \
-                .eq("slot", "top") \
-                .eq("active", True).execute().data
+    # Step 1: Fetch pinned posts (up to 4)
+    pinned_response = supabase.table('news_feed')\
+        .select('*')\
+        .eq('is_pinned', True)\
+        .order('published_at', desc=True)\
+        .limit(4)\
+        .execute()
+    pinned_posts = pinned_response.data
+    pinned_count = len(pinned_posts)
 
-    # ✅ Bottom Ads
-    bottom_ads = supabase.table("ads").select("*") \
-                   .eq("target", "landing") \
-                   .eq("slot", "bottom") \
-                   .eq("active", True).execute().data
+    # Step 2: Fetch normal posts (limit remaining to make total 4)
+    normal_limit = 4 - pinned_count
+    normal_posts = []
+    if normal_limit > 0:
+        normal_response = supabase.table('news_feed')\
+            .select('*')\
+            .eq('is_pinned', False)\
+            .order('published_at', desc=True)\
+            .limit(normal_limit)\
+            .execute()
+        normal_posts = normal_response.data
 
-    # Pick random 1 ad for each slot
-    top_ad = random.choice(top_ads) if top_ads else None
-    bottom_ad = random.choice(bottom_ads) if bottom_ads else None
+    # Combine posts for display
+    combined_posts = pinned_posts + normal_posts
 
     return render_template(
         'landing.html',
-        top_ad=top_ad,
-        bottom_ad=bottom_ad
+        posts=combined_posts
     )
 
 @app.route('/become-a-tutor')
@@ -1493,33 +1501,63 @@ def school_teacher_leave_requests():
 
     teacher_id = session['school_teacher_id']
 
-    # Step 1: Get class assigned to this teacher
-    mapping = supabase.table("class_teacher_mappings") \
+    # Step 1: Get teacher info
+    teacher_result = supabase.table("school_teachers") \
+        .select("id, school_id") \
+        .eq("id", teacher_id) \
+        .maybe_single() \
+        .execute()
+    teacher = teacher_result.data
+
+    if not teacher:
+        return "Teacher not found", 404
+
+    school_id = teacher.get("school_id")
+
+    # Step 2: Get all class mappings for this teacher in the same school
+    mappings_result = supabase.table("class_teacher_mappings") \
         .select("class_id") \
         .eq("teacher_id", teacher_id) \
-        .single().execute().data
+        .eq("school_id", school_id) \
+        .execute()
+    mappings = mappings_result.data or []
 
-    if not mapping:
+    if not mappings:
         return "No class assigned to this teacher.", 403
 
-    class_id = mapping['class_id']
+    # Step 3: Get all students in these classes AND same school
+    students = []
+    for m in mappings:
+        class_id = m['class_id']
+        s_result = supabase.table("students") \
+            .select("id, name") \
+            .eq("class_id", class_id) \
+            .eq("school_id", school_id) \
+            .execute()
+        students.extend(s_result.data or [])
 
-    # Step 2: Get students in that class
-    students = supabase.table("students").select("id").eq("class_id", class_id).execute().data
-    student_ids = [s["id"] for s in students]
+    student_ids = [s['id'] for s in students]
 
-    # Step 3: Get leave requests
+    # Step 4: Fetch leave requests for those students
+    leave_requests = []
     if student_ids:
-        leave_requests = supabase.table("leave_requests") \
+        lr_result = supabase.table("leave_requests") \
             .select("*") \
-            .in_("requester_id", student_ids) \
-            .eq("role", "student") \
-            .order("created_at", desc=True) \
-            .execute().data
-    else:
-        leave_requests = []
+            .in_("student_id", student_ids) \
+            .order("submitted_at", desc=True) \
+            .execute()
+        leave_requests = lr_result.data or []
 
-    return render_template("school_teacher_leave_requests.html", leave_requests=leave_requests)
+    # Step 5: Attach student names to leave requests
+    student_map = {s['id']: s['name'] for s in students}
+    for lr in leave_requests:
+        lr['student_name'] = student_map.get(lr['student_id'], "Unknown")
+
+    # Step 6: Render template (Tailwind)
+    return render_template(
+        "teacher_leave_requests.html",
+        leaves=leave_requests
+    )
 
 @app.route('/school_teacher/leave_requests')
 def view_leave_requests():
@@ -1570,6 +1608,16 @@ def update_leave_status(leave_id):
     }).eq("id", leave_id).execute()
 
     return redirect(url_for('class_teacher_leave_requests'))
+
+@app.route('/school/approve_leave/<leave_id>')
+def approve_leave(leave_id):
+    supabase.table("leave_requests").update({"status": "approved"}).eq("id", leave_id).execute()
+    return redirect(url_for("school_teacher_leave_requests"))
+
+@app.route('/school/reject_leave/<leave_id>')
+def reject_leave(leave_id):
+    supabase.table("leave_requests").update({"status": "rejected"}).eq("id", leave_id).execute()
+    return redirect(url_for("school_teacher_leave_requests"))
 
 @app.route('/school_teacher/give_reward', methods=['POST'])
 def give_reward():
@@ -1945,7 +1993,7 @@ def student_submit_leave():
         }
 
         supabase.table("leave_requests").insert(leave_data).execute()
-        return redirect(url_for('student_dashboard'))
+        return redirect(url_for('dashboard'))
 
     return render_template('student/submit_leave.html', student=student_data)
 
@@ -1963,6 +2011,7 @@ def student_leave_status():
         .execute()
 
     return render_template("student_leave_status.html", leaves=leaves.data)
+
 
 @app.route('/redeem', methods=['GET', 'POST'])
 def redeem_coins():
@@ -3382,6 +3431,235 @@ def ad_click(ad_id):
     ad = supabase.table("ads").select("link_url").eq("id", ad_id).single().execute().data
     return redirect(ad['link_url'])
 
+
+from supabase import create_client
+import uuid
+
+# Initialize Supabase Client
+
+SUPABASE_URL = "https://szfgjywjvfkeudhiobis.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6ZmdqeXdqdmZrZXVkaGlvYmlzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDk0MTc3NCwiZXhwIjoyMDY2NTE3Nzc0fQ.bKu1Wjc52dQFeJHNg7iNfNV3eE7A2eL9UtPoNo_eD3g"
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+def upload_image(image_file):
+    if not image_file:
+        return None
+
+    file_extension = image_file.filename.split('.')[-1]
+    unique_filename = f"{uuid.uuid4()}.{file_extension}"
+
+    file_content = image_file.read()
+
+    # Upload image to Supabase Storage
+    response = supabase.storage.from_('news').upload(unique_filename, file_content)
+
+    if not (200 <= response.status_code < 300):
+        print('Upload failed:', response.data)
+        return None
+
+    # Build public URL
+    image_url = f"{SUPABASE_URL}/storage/v1/object/public/news/{unique_filename}"
+
+    print('Image uploaded successfully:', image_url)
+
+    return image_url
+
+@app.route('/admin/create-news', methods=['GET', 'POST'])
+def create_news():
+    if request.method == 'POST':
+        image_file = request.files.get('image')
+        image_url = upload_image(image_file) if image_file else None
+
+        data = {
+            "title": request.form['title'],
+            "description": request.form['description'],
+            "image_url": image_url,
+            "post_type": request.form['post_type'],
+            "is_pinned": 'is_pinned' in request.form
+        }
+
+        supabase.table('news_feed').insert(data).execute()
+
+        return redirect('/admin/news-feed')
+
+    return render_template('admin_create_news.html')
+
+@app.route('/admin/news-feed')
+def admin_news_feed():
+    # Fetch all news posts (latest first)
+    response = supabase.table('news_feed').select('*').order('published_at', desc=True).execute()
+    posts = response.data
+
+    return render_template('admin_news_feed.html', posts=posts)
+
+# Edit News
+@app.route('/admin/news/edit/<int:post_id>', methods=['GET', 'POST'])
+def edit_news(post_id):
+    response = supabase.table('news_feed').select('*').eq('id', post_id).single().execute()
+    post = response.data
+
+    if request.method == 'POST':
+        image_file = request.files.get('image')
+        image_url = upload_image(image_file) if image_file else post['image_url']
+
+        updated_data = {
+            "title": request.form['title'],
+            "description": request.form['description'],
+            "image_url": image_url,
+            "post_type": request.form['post_type'],
+            "is_pinned": 'is_pinned' in request.form
+        }
+
+        supabase.table('news_feed').update(updated_data).eq('id', post_id).execute()
+        return redirect('/admin/news-feed')
+
+    return render_template('admin_edit_news.html', post=post)
+
+
+# Delete News
+@app.route('/admin/news/delete/<int:post_id>', methods=['POST'])
+def delete_news(post_id):
+    supabase.table('news_feed').delete().eq('id', post_id).execute()
+    return redirect('/admin/news-feed')
+
+import random
+from flask import Flask, render_template, request, jsonify
+     
+# ------------------ News Detail ------------------ #
+
+@app.route('/news/<int:post_id>')
+def news_detail(post_id):
+    # Fetch the main post
+    response = supabase.table('news_feed').select('*').eq('id', post_id).single().execute()
+    post = response.data
+    if not post:
+        return "Post not found", 404
+
+    # If no author column exists, fallback to created_by
+    if "author" not in post or not post.get("author"):
+        post["author"] = f"User {post['created_by']}" if post.get("created_by") else "Admin"
+
+    # Related posts (same post_type, exclude current post)
+    related_response = supabase.table('news_feed') \
+        .select('id, title, post_type, published_at, author, created_by') \
+        .eq('post_type', post['post_type']) \
+        .neq('id', post_id) \
+        .order('published_at', desc=True) \
+        .limit(5) \
+        .execute()
+    related_posts = related_response.data if related_response.data else []
+
+    # Top + Bottom ads for news_post page
+    top_ads = supabase.table("ads").select("*") \
+        .eq("target", "news_post") \
+        .eq("slot", "top") \
+        .eq("active", True).execute().data or []
+
+    bottom_ads = supabase.table("ads").select("*") \
+        .eq("target", "news_post") \
+        .eq("slot", "bottom") \
+        .eq("active", True).execute().data or []
+
+    # Random rotation
+    top_ad = random.choice(top_ads) if top_ads else None
+    bottom_ad = random.choice(bottom_ads) if bottom_ads else None
+
+    return render_template(
+        'news_detail.html',
+        post=post,
+        related_posts=related_posts,
+        top_ad=top_ad,
+        bottom_ad=bottom_ad
+    )
+
+# ------------------ Load More News ------------------ #
+@app.route('/load-more-news')
+def load_more_news():
+    offset = int(request.args.get('offset', 0))
+    limit = 6
+    posts_res = supabase.table("news_feed") \
+        .select("id, title, description, image_url, post_type, published_at, author, created_by") \
+        .order("published_at", desc=True) \
+        .range(offset, offset + limit - 1) \
+        .execute()
+    posts = posts_res.data if posts_res.data else []
+    return jsonify(posts)
+
+# ------------------ News Feed ------------------ #
+
+@app.route('/news-feed')
+def news_feed():
+    import random
+
+    # Fetch latest 6 posts
+    posts_res = supabase.table("news_feed") \
+        .select("id, title, description, image_url, post_type, published_at, author, created_by") \
+        .order("published_at", desc=True) \
+        .limit(6) \
+        .execute()
+    posts = posts_res.data if posts_res.data else []
+
+    # Fill missing authors & fetch like count
+    for p in posts:
+        # Fill author
+        if "author" not in p or not p.get("author"):
+            p["author"] = f"User {p['created_by']}" if p.get("created_by") else "Admin"
+
+        # Fetch like count
+        like_res = supabase.table("news_likes").select("id", count="exact").eq("post_id", p["id"]).execute()
+        p["like_count"] = like_res.count
+
+    # Top + Bottom ads for news_feed page
+    top_ads = supabase.table("ads").select("*") \
+        .eq("target", "news_feed") \
+        .eq("slot", "top") \
+        .eq("active", True).execute().data or []
+
+    bottom_ads = supabase.table("ads").select("*") \
+        .eq("target", "news_feed") \
+        .eq("slot", "bottom") \
+        .eq("active", True).execute().data or []
+
+    # Randomly pick one ad if available
+    top_ad = random.choice(top_ads) if top_ads else None
+    bottom_ad = random.choice(bottom_ads) if bottom_ads else None
+
+    return render_template(
+        'news_feed.html',
+        posts=posts,
+        top_ad=top_ad,
+        bottom_ad=bottom_ad
+    )
+
+# ---------- Like a Post ----------
+@app.route("/news/<int:post_id>/like", methods=["POST"])
+def like_post(post_id):
+    supabase.table("news_likes").insert({"post_id": post_id}).execute()
+    # return updated like count
+    count = supabase.table("news_likes").select("id", count="exact").eq("post_id", post_id).execute().count
+    return jsonify({"likes": count})
+
+# ---------- Get Comments ----------
+@app.route("/news/<int:post_id>/comments")
+def get_comments(post_id):
+    res = supabase.table("news_comments").select("*").eq("post_id", post_id).order("created_at", desc=True).execute()
+    return jsonify(res.data or [])
+
+# ---------- Add Comment ----------
+@app.route("/news/<int:post_id>/comment", methods=["POST"])
+def add_comment(post_id):
+    name = request.form.get("name", "Guest")
+    comment = request.form.get("comment", "")
+    if not comment.strip():
+        return jsonify({"error": "Empty comment"}), 400
+    supabase.table("news_comments").insert({
+        "post_id": post_id,
+        "name": name,
+        "comment": comment
+    }).execute()
+    return jsonify({"success": True})
+
 @app.route('/health')
 def health():
     return "OK"
@@ -3398,6 +3676,10 @@ def cleanup_old_bookings():
     response = supabase.table("bookings").delete().lt("created_at", cutoff_date).execute()
 
     return f"{len(response.data)} old bookings deleted ✅"
+
+@app.route('/advertise')
+def advertise():
+    return render_template('advertise.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

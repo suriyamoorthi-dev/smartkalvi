@@ -1,21 +1,58 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Teacher Bookings Summary</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Booking Summary</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50 p-4">
-    <h1 class="text-2xl font-bold mb-4">📊 Teacher Booking Summary</h1>
+<body class="bg-gray-50 min-h-screen p-4 sm:p-6">
 
-    <div class="grid gap-4">
+    <!-- Header Section -->
+    <div class="max-w-4xl mx-auto mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <!-- Back Button -->
+            <a href="{{ url_for('superadmin_dashboard') }}"
+               class="flex items-center space-x-2 text-gray-700 hover:text-gray-900 font-medium transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Back to Dashboard</span>
+            </a>
+
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-800">📊 Teacher Booking Summary</h1>
+        </div>
+
+        <p class="text-gray-600 text-sm sm:text-base">
+            View total bookings for each teacher. Click on a teacher to see detailed student bookings.
+        </p>
+    </div>
+
+    <!-- Teacher Grid -->
+    <div class="max-w-4xl mx-auto grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {% for teacher in teachers %}
         <a href="{{ url_for('admin_teacher_bookings', teacher_id=teacher.id) }}"
-           class="block p-4 bg-white shadow rounded hover:bg-blue-50 transition">
-            <div class="text-lg font-semibold">{{ teacher.name }}</div>
-            <div class="text-sm text-gray-600">Subject: {{ teacher.subject }}</div>
-            <div class="text-sm text-green-700 mt-1">Bookings: {{ teacher.bookings }}</div>
+           class="group block p-5 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-blue-400 transition duration-200">
+            <div class="flex flex-col space-y-2">
+                <h2 class="text-lg font-semibold text-gray-800 group-hover:text-blue-600 transition">
+                    {{ teacher.name }}
+                </h2>
+                <p class="text-sm text-gray-600">
+                    <span class="font-medium">Subject:</span> {{ teacher.subject }}
+                </p>
+                <p class="text-sm text-green-700 font-medium mt-1">
+                    📅 Bookings: <span class="font-bold">{{ teacher.bookings }}</span>
+                </p>
+            </div>
         </a>
         {% endfor %}
     </div>
+
+    {% if not teachers %}
+    <p class="max-w-4xl mx-auto mt-6 text-center text-gray-500">
+        No teacher bookings available at the moment.
+    </p>
+    {% endif %}
+
 </body>
 </html>
