@@ -24,6 +24,7 @@
       <h1 class="text-3xl sm:text-5xl font-extrabold leading-snug text-gray-900 tracking-tight mb-3">
         {{ post.title }}
       </h1>
+
       <div class="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-gray-600 text-sm mt-4">
         <span class="font-medium">✍️ By {{ post.author }}</span>
         <span class="hidden sm:inline">•</span>
@@ -37,51 +38,51 @@
 
     <!-- Main Image -->
     {% if post.image_url %}
-    <figure class="w-full h-64 sm:h-[400px] overflow-hidden mt-6">
+    <figure class="w-full h-64 sm:h-[400px] overflow-hidden mt-6 rounded-lg shadow-md">
       <img src="{{ post.image_url }}" alt="Main News Image"
-           class="w-full h-full object-cover rounded transition-transform hover:scale-105">
+           class="w-full h-full object-cover rounded-lg transition-transform hover:scale-105">
     </figure>
     {% endif %}
 
-    <!-- Article with extra images -->
+    <!-- Article with middle image -->
     <article class="p-6 sm:p-10 prose max-w-none prose-lg mt-6 text-gray-800 leading-relaxed">
 
       <!-- First part -->
       <p class="whitespace-pre-line">{{ post.desc_part1 }}</p>
 
-      <!-- Middle image (first extra image) -->
-      {% if post.extra_images|length > 0 %}
-      <figure class="w-full h-64 sm:h-[400px] my-8 overflow-hidden">
+      <!-- Middle image -->
+      {% if post.extra_images and post.extra_images|length > 0 %}
+      <figure class="w-full h-64 sm:h-[400px] my-8 overflow-hidden rounded-lg shadow-md">
         <img src="{{ post.extra_images[0].url }}" alt="Middle Image"
-             class="w-full h-full object-cover rounded transition-transform hover:scale-105">
+             class="w-full h-full object-cover rounded-lg transition-transform hover:scale-105">
       </figure>
       {% endif %}
 
       <!-- Second part -->
       <p class="whitespace-pre-line">{{ post.desc_part2 }}</p>
 
-      <!-- Bottom image (second extra image) -->
-      {% if post.extra_images|length > 1 %}
-      <figure class="w-full h-64 sm:h-[400px] my-8 overflow-hidden">
+      <!-- Bottom inline image -->
+      {% if post.extra_images and post.extra_images|length > 1 %}
+      <figure class="w-full h-64 sm:h-[400px] my-8 overflow-hidden rounded-lg shadow-md">
         <img src="{{ post.extra_images[1].url }}" alt="Bottom Image"
-             class="w-full h-full object-cover rounded transition-transform hover:scale-105">
+             class="w-full h-full object-cover rounded-lg transition-transform hover:scale-105">
       </figure>
       {% endif %}
-
     </article>
 
-    <!-- Instagram & Website Links -->
-    <div class="flex justify-center gap-4 mt-6 mb-8 px-6">
+    <!-- Instagram & Website Small Icons -->
+    <div class="flex justify-center gap-6 mt-6 mb-8">
       {% if post.instagram_url %}
-      <a href="{{ post.instagram_url }}" target="_blank"
-         class="flex items-center gap-2 px-4 py-2 bg-pink-500 text-white font-semibold rounded-full hover:bg-pink-600 transition">
-        📸 Instagram
+      <a href="{{ post.instagram_url }}" target="_blank" title="Instagram"
+         class="w-10 h-10 flex items-center justify-center bg-pink-500 rounded-full text-white text-xl hover:bg-pink-600 shadow hover:shadow-lg transition">
+        <i class="fab fa-instagram"></i>📸
       </a>
       {% endif %}
+
       {% if post.website_url %}
-      <a href="{{ post.website_url }}" target="_blank"
-         class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-full hover:bg-blue-700 transition">
-        🌐 Website
+      <a href="{{ post.website_url }}" target="_blank" title="Website"
+         class="w-10 h-10 flex items-center justify-center bg-blue-600 rounded-full text-white text-xl hover:bg-blue-700 shadow hover:shadow-lg transition">
+        🌐
       </a>
       {% endif %}
     </div>
@@ -139,6 +140,9 @@
     </div>
 
   </div>
+
+  <!-- Font Awesome for Instagram Icon -->
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 
 </body>
 </html>

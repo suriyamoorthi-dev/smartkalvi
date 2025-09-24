@@ -3468,19 +3468,26 @@ def upload_image(image_file):
 @app.route('/admin/create-news', methods=['GET', 'POST'])
 def create_news():
     if request.method == 'POST':
+        # Main image
         image_file = request.files.get('image')
         image_url = upload_image(image_file) if image_file else None
+
+        # Extra images
+        extra_files = request.files.getlist('extra_images')
+        extra_urls = [upload_image(f) for f in extra_files if f]
 
         data = {
             "title": request.form['title'],
             "description": request.form['description'],
             "image_url": image_url,
+            "extra_images": extra_urls,
             "post_type": request.form['post_type'],
-            "is_pinned": 'is_pinned' in request.form
+            "is_pinned": 'is_pinned' in request.form,
+            "instagram_url": request.form.get('instagram_url'),  # NEW
+            "website_url": request.form.get('website_url')       # NEW
         }
 
         supabase.table('news_feed').insert(data).execute()
-
         return redirect('/admin/news-feed')
 
     return render_template('admin_create_news.html')
@@ -3500,13 +3507,21 @@ def edit_news(post_id):
     post = response.data
 
     if request.method == 'POST':
+        # Main image
         image_file = request.files.get('image')
         image_url = upload_image(image_file) if image_file else post['image_url']
+
+        # Extra images
+        extra_files = request.files.getlist('extra_images')
+        extra_urls = [upload_image(f) for f in extra_files if f]
+        # Merge old + new extra images
+        all_extra = (post.get('extra_images') or []) + extra_urls
 
         updated_data = {
             "title": request.form['title'],
             "description": request.form['description'],
             "image_url": image_url,
+            "extra_images": all_extra,
             "post_type": request.form['post_type'],
             "is_pinned": 'is_pinned' in request.form
         }
@@ -3527,20 +3542,32 @@ import random
 from flask import Flask, render_template, request, jsonify
      
 # ------------------ News Detail ------------------ #
-
 @app.route('/news/<int:post_id>')
 def news_detail(post_id):
-    # Fetch the main post
+    # Fetch the post
     response = supabase.table('news_feed').select('*').eq('id', post_id).single().execute()
     post = response.data
     if not post:
         return "Post not found", 404
 
-    # If no author column exists, fallback to created_by
-    if "author" not in post or not post.get("author"):
-        post["author"] = f"User {post['created_by']}" if post.get("created_by") else "Admin"
+    # Author fallback
+    post["author"] = post.get("author") or f"User {post.get('created_by', 'Admin')}"
 
-    # Related posts (same post_type, exclude current post)
+    # Extra images: wrap URLs as objects with "url"
+    extra_imgs = post.get('extra_images') or []
+    post['extra_images'] = [{"url": url} for url in extra_imgs]
+
+    # Instagram & Website fallback
+    post["instagram_url"] = post.get("instagram_url")
+    post["website_url"] = post.get("website_url")
+
+    # Split description for middle image
+    full_text = post.get("description", "")
+    half = len(full_text) // 2 if full_text else 0
+    post["desc_part1"] = full_text[:half]
+    post["desc_part2"] = full_text[half:]
+
+    # Related posts
     related_response = supabase.table('news_feed') \
         .select('id, title, post_type, published_at, author, created_by') \
         .eq('post_type', post['post_type']) \
@@ -3548,23 +3575,30 @@ def news_detail(post_id):
         .order('published_at', desc=True) \
         .limit(5) \
         .execute()
-    related_posts = related_response.data if related_response.data else []
+    related_posts = related_response.data or []
 
-    # Top + Bottom ads for news_post page
-    top_ads = supabase.table("ads").select("*") \
+    # Ads (top and bottom)
+    import random
+    top_ads = supabase.table("ads") \
+        .select("*") \
         .eq("target", "news_post") \
         .eq("slot", "top") \
-        .eq("active", True).execute().data or []
-
-    bottom_ads = supabase.table("ads").select("*") \
+        .eq("active", True) \
+        .execute().data or []
+    bottom_ads = supabase.table("ads") \
+        .select("*") \
         .eq("target", "news_post") \
         .eq("slot", "bottom") \
-        .eq("active", True).execute().data or []
+        .eq("active", True) \
+        .execute().data or []
 
-    # Random rotation
     top_ad = random.choice(top_ads) if top_ads else None
     bottom_ad = random.choice(bottom_ads) if bottom_ads else None
 
+    # Debug print
+    print("Extra Images:", post['extra_images'])
+
+    # Render template
     return render_template(
         'news_detail.html',
         post=post,
@@ -3572,6 +3606,7 @@ def news_detail(post_id):
         top_ad=top_ad,
         bottom_ad=bottom_ad
     )
+
 
 # ------------------ Load More News ------------------ #
 @app.route('/load-more-news')

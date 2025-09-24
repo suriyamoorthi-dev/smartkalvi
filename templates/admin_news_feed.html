@@ -31,8 +31,8 @@
                     <span>📌 {% if post.is_pinned %} Yes {% else %} No {% endif %}</span>
                 </div>
                 <div class="flex space-x-2">
-                    <a href="/admin/edit-news/{{ post.id }}" class="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500">Edit</a>
-                    <a href="/admin/delete-news/{{ post.id }}" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600" onclick="return confirm('Are you sure?')">Delete</a>
+                    <a href="/admin/news/edit/{{ post.id }}">Edit</a>
+<a href="/admin/delete-news/{{ post.id }}" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600" onclick="return confirm('Are you sure?')">Delete</a>
                 </div>
             </div>
             {% endfor %}

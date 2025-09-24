@@ -33,21 +33,29 @@
             <!-- Description -->
             <div>
                 <label for="description" class="block font-semibold mb-1">Description</label>
-                <textarea id="description" name="description" rows="5" required
-                    class="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                <textarea id="description" name="description" rows="6" required
+                    class="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Write your news content here..."></textarea>
             </div>
 
-            <!-- Image Upload -->
+            <!-- Main Image Upload -->
             <div>
-                <label for="image" class="block font-semibold mb-1">Image (optional)</label>
-                <input type="file" id="image" name="image" accept="image/*"
-                    class="w-full" onchange="previewImage(event)">
+                <label for="image" class="block font-semibold mb-1">Main Image (optional)</label>
+                <input type="file" id="image" name="image" accept="image/*" class="w-full" onchange="previewImage('image', 'imagePreview')">
             </div>
 
-            <!-- Image Preview -->
+            <!-- Main Image Preview -->
             <div id="imagePreview" class="mt-4 hidden">
-                <img src="" alt="Image Preview" class="w-full max-h-64 object-cover rounded shadow">
+                <img src="" alt="Main Image Preview" class="w-full max-h-64 object-cover rounded shadow">
             </div>
+
+            <!-- Extra Images Upload -->
+            <div>
+                <label class="block font-semibold mb-1">Extra Images (optional)</label>
+                <input type="file" name="extra_images" accept="image/*" multiple class="w-full" onchange="previewExtraImages(event)">
+            </div>
+
+            <!-- Extra Images Preview -->
+            <div id="extraImagesPreview" class="mt-4 flex flex-wrap gap-4"></div>
 
             <!-- Post Type -->
             <div>
@@ -60,6 +68,20 @@
                     <option value="holiday">Holiday</option>
                 </select>
             </div>
+            <div class="mb-4">
+  <label for="instagram_url" class="block text-sm font-medium text-gray-700">Instagram Link</label>
+  <input type="url" name="instagram_url" id="instagram_url"
+         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+         placeholder="https://instagram.com/username">
+</div>
+
+<div class="mb-4">
+  <label for="website_url" class="block text-sm font-medium text-gray-700">Website Link</label>
+  <input type="url" name="website_url" id="website_url"
+         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+         placeholder="https://example.com">
+</div>
+
 
             <!-- Pin Post -->
             <div class="flex items-center">
@@ -79,10 +101,12 @@
     </div>
 
     <script>
-        function previewImage(event) {
-            const preview = document.getElementById('imagePreview');
+        // Preview main image
+        function previewImage(inputId, previewId) {
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
             const img = preview.querySelector('img');
-            const file = event.target.files[0];
+            const file = input.files[0];
 
             if (file) {
                 img.src = URL.createObjectURL(file);
@@ -91,6 +115,24 @@
                 preview.classList.add('hidden');
                 img.src = '';
             }
+        }
+
+        // Preview multiple extra images
+        function previewExtraImages(event) {
+            const files = event.target.files;
+            const previewContainer = document.getElementById('extraImagesPreview');
+            previewContainer.innerHTML = ''; // Clear previous previews
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = "w-32 h-32 object-cover rounded shadow";
+                    previewContainer.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
         }
     </script>
 
