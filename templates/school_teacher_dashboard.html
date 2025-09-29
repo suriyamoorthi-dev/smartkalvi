@@ -2,8 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>SmartKalvi - Teacher Dashboard</title>
+  <title>SmartKalvi Teacher Dashboard | {{ teacher.name }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="SmartKalvi Teacher Dashboard for managing classes, students, question sets, and performance. Track votes and coin rewards easily.">
+  <meta name="keywords" content="SmartKalvi, Teacher Dashboard, Education, Classes, Students, Question Sets, Performance, Coin Rewards">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="{{ request.url }}">
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="SmartKalvi Teacher Dashboard | {{ teacher.name }}">
+  <meta property="og:description" content="Manage your classes, students, question sets, and track performance with SmartKalvi Teacher Dashboard.">
+  <meta property="og:image" content="{{ teacher.profile_pic or url_for('static', filename='default_teacher.png') }}">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:type" content="website">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -14,13 +26,12 @@
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
 
-  
   <!-- Header -->
   <header class="bg-white shadow-lg sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 py-4 sm:flex sm:items-center sm:justify-between">
       <div class="flex items-center gap-4 flex-grow">
         {% if teacher.profile_pic %}
-          <img src="{{ teacher.profile_pic }}" alt="Profile Picture" class="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover border-4 border-blue-500 shadow-md">
+          <img src="{{ teacher.profile_pic }}" alt="{{ teacher.name }} Profile Picture" class="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover border-4 border-blue-500 shadow-md">
         {% else %}
           <div class="w-20 h-20 md:w-24 md:h-24 bg-blue-100 rounded-full flex items-center justify-center text-4xl md:text-5xl text-blue-700 font-bold border-4 border-blue-500">
             {{ teacher.name[0] }}
@@ -49,64 +60,69 @@
   <main class="flex-grow max-w-7xl mx-auto px-4 py-8">
 
     <!-- ✅ Top Banner Ads -->
-      {% if top_ad %}
-      <div class="w-full flex justify-center">
-        <a href="{{ top_ad.link_url or '#' }}" target="_blank" class="block">
-          <img src="{{ top_ad.image_url }}" alt="Advertisement"
-               class="max-w-4xl w-full h-auto rounded-xl shadow-lg border border-gray-200">
+    {% if top_ads %}
+      <div class="w-full flex justify-center mb-6">
+        {% for ad in top_ads %}
+          <a href="{{ ad.link_url or '#' }}" target="_blank" class="top-ad block max-w-4xl w-full h-auto rounded-xl shadow-lg border border-gray-200 {% if not loop.first %}hidden{% endif %}">
+            <img src="{{ ad.image_url }}" alt="Top Advertisement" class="w-full h-auto rounded-xl">
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Feature Cards Section -->
+    <section aria-labelledby="dashboard-features">
+      <h2 id="dashboard-features" class="sr-only">Dashboard Features</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+        <!-- Question Sets -->
+        <a href="{{ url_for('my_question_sets') }}" class="feature-card bg-yellow-100 hover:bg-yellow-200 rounded-2xl shadow-md p-6 flex flex-col items-center justify-center text-center">
+          <div class="text-4xl mb-2">📄</div>
+          <div class="text-sm font-semibold text-gray-800">Question Sets</div>
+        </a>
+        <!-- Performance -->
+        <a href="{{ url_for('teacher_performance') }}" class="feature-card bg-green-100 hover:bg-green-200 rounded-2xl shadow-md p-6 flex flex-col items-center justify-center text-center">
+          <div class="text-4xl mb-2">📊</div>
+          <div class="text-sm font-semibold text-gray-800">Performance</div>
+        </a>
+        <!-- Create Set -->
+        <a href="{{ url_for('create_question_set') }}" class="feature-card bg-blue-100 hover:bg-blue-200 rounded-2xl shadow-md p-6 flex flex-col items-center justify-center text-center">
+          <div class="text-4xl mb-2">➕</div>
+          <div class="text-sm font-semibold text-gray-800">Create Set</div>
+        </a>
+        <!-- AI Helper -->
+        <a href="{{ url_for('chalkboard_notes') }}" class="feature-card bg-purple-100 hover:bg-purple-200 rounded-2xl shadow-md p-6 flex flex-col items-center justify-center text-center">
+          <div class="text-4xl mb-2">🤖</div>
+          <div class="text-sm font-semibold text-gray-800">AI Helper</div>
+        </a>
+        <!-- Leave Requests -->
+        <a href="{{ url_for('school_teacher_leave_requests') }}" class="feature-card bg-red-100 hover:bg-red-200 rounded-2xl shadow-md p-6 flex flex-col items-center justify-center text-center">
+          <div class="text-4xl mb-2">📝</div>
+          <div class="text-sm font-semibold text-gray-800">Leave Requests</div>
+        </a>
+        <!-- Students -->
+        <a href="{{ url_for('view_students_by_class_teacher') }}" class="feature-card bg-indigo-100 hover:bg-indigo-200 rounded-2xl shadow-md p-6 flex flex-col items-center justify-center text-center">
+          <div class="text-4xl mb-2">👨‍🎓</div>
+          <div class="text-sm font-semibold text-gray-800">Students</div>
+        </a>
+        <!-- Tutors -->
+        <a href="/teachers" class="feature-card bg-pink-100 hover:bg-pink-200 rounded-2xl shadow-md p-6 flex flex-col items-center justify-center text-center">
+          <div class="text-4xl mb-2 animate-bounce">👩‍🏫</div>
+          <div class="text-sm font-semibold text-gray-800">Tutors</div>
+        </a>
+        <!-- ArtifyMe -->
+        <a href="https://artifyme-mcbd.onrender.com" target="_blank" class="feature-card bg-gradient-to-br from-pink-500 via-purple-600 to-indigo-600 text-white rounded-2xl shadow-lg p-6 flex flex-col items-center justify-center text-center transform hover:scale-105">
+          <div class="text-4xl mb-2 animate-bounce">🎨</div>
+          <div class="text-sm font-bold">ArtifyMe</div>
         </a>
       </div>
-      {% endif %}
-
-    <!-- Feature Cards -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-      <a href="{{ url_for('my_question_sets') }}" class="feature-card bg-yellow-100 hover:bg-yellow-200 rounded-2xl shadow-md p-6 flex flex-col items-center justify-center text-center">
-        <div class="text-4xl mb-2">📄</div>
-        <div class="text-sm font-semibold text-gray-800">Question Sets</div>
-      </a>
-
-      <a href="{{ url_for('teacher_performance') }}" class="feature-card bg-green-100 hover:bg-green-200 rounded-2xl shadow-md p-6 flex flex-col items-center justify-center text-center">
-        <div class="text-4xl mb-2">📊</div>
-        <div class="text-sm font-semibold text-gray-800">Performance</div>
-      </a>
-
-      <a href="{{ url_for('create_question_set') }}" class="feature-card bg-blue-100 hover:bg-blue-200 rounded-2xl shadow-md p-6 flex flex-col items-center justify-center text-center">
-        <div class="text-4xl mb-2">➕</div>
-        <div class="text-sm font-semibold text-gray-800">Create Set</div>
-      </a>
-
-      <a href="{{ url_for('chalkboard_notes') }}" class="feature-card bg-purple-100 hover:bg-purple-200 rounded-2xl shadow-md p-6 flex flex-col items-center justify-center text-center">
-        <div class="text-4xl mb-2">🤖</div>
-        <div class="text-sm font-semibold text-gray-800">AI Helper</div>
-      </a>
-
-      <a href="{{ url_for('school_teacher_leave_requests') }}" class="feature-card bg-red-100 hover:bg-red-200 rounded-2xl shadow-md p-6 flex flex-col items-center justify-center text-center">
-        <div class="text-4xl mb-2">📝</div>
-        <div class="text-sm font-semibold text-gray-800">Leave Requests</div>
-      </a>
-
-      <a href="{{ url_for('view_students_by_class_teacher') }}" class="feature-card bg-indigo-100 hover:bg-indigo-200 rounded-2xl shadow-md p-6 flex flex-col items-center justify-center text-center">
-        <div class="text-4xl mb-2">👨‍🎓</div>
-        <div class="text-sm font-semibold text-gray-800">Students</div>
-      </a>
-
-      <a href="/teachers" class="feature-card bg-pink-100 hover:bg-pink-200 rounded-2xl shadow-md p-6 flex flex-col items-center justify-center text-center">
-        <div class="text-4xl mb-2 animate-bounce">👩‍🏫</div>
-        <div class="text-sm font-semibold text-gray-800">Tutors</div>
-      </a>
-
-      <a href="https://artifyme-mcbd.onrender.com" target="_blank" class="feature-card bg-gradient-to-br from-pink-500 via-purple-600 to-indigo-600 text-white rounded-2xl shadow-lg p-6 flex flex-col items-center justify-center text-center transform hover:scale-105">
-        <div class="text-4xl mb-2 animate-bounce">🎨</div>
-        <div class="text-sm font-bold">ArtifyMe</div>
-      </a>
-    </div>
+    </section>
 
     <!-- ✅ Middle Banner Ads -->
     <div class="w-full flex justify-center my-8">
       {% if middle_ads %}
         {% for ad in middle_ads %}
-          <a href="{{ ad.link_url or '#' }}" target="_blank" class="middle-ad block max-w-3xl w-full h-auto rounded-xl shadow-lg border border-gray-200" style="{% if not loop.first %}display:none{% endif %}">
-            <img src="{{ ad.image_url }}" alt="Advertisement" class="w-full h-auto rounded-xl">
+          <a href="{{ ad.link_url or '#' }}" target="_blank" class="middle-ad block max-w-3xl w-full h-auto rounded-xl shadow-lg border border-gray-200 {% if not loop.first %}hidden{% endif %}">
+            <img src="{{ ad.image_url }}" alt="Middle Advertisement" class="w-full h-auto rounded-xl">
           </a>
         {% endfor %}
       {% endif %}
@@ -116,8 +132,8 @@
     <div class="w-full flex justify-center mt-8">
       {% if bottom_ads %}
         {% for ad in bottom_ads %}
-          <a href="{{ ad.link_url or '#' }}" target="_blank" class="bottom-ad block max-w-4xl w-full h-auto rounded-xl shadow-lg border border-gray-200" style="{% if not loop.first %}display:none{% endif %}">
-            <img src="{{ ad.image_url }}" alt="Advertisement" class="w-full h-auto rounded-xl">
+          <a href="{{ ad.link_url or '#' }}" target="_blank" class="bottom-ad block max-w-4xl w-full h-auto rounded-xl shadow-lg border border-gray-200 {% if not loop.first %}hidden{% endif %}">
+            <img src="{{ ad.image_url }}" alt="Bottom Advertisement" class="w-full h-auto rounded-xl">
           </a>
         {% endfor %}
       {% endif %}
@@ -130,7 +146,7 @@
     &copy; 2025 SmartKalvi · All Rights Reserved
   </footer>
 
-  <!-- ✅ JS for Rotating Ads -->
+  <!-- JS for Rotating Ads -->
   <script>
     function rotateAds(className, interval=5000){
       const ads = document.querySelectorAll(`.${className}`);

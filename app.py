@@ -112,34 +112,19 @@ supabase_questions = create_client(QUESTIONS_URL, QUESTIONS_KEY)
 
 @app.route('/')
 def homepage():
-    # Step 1: Fetch pinned posts (up to 4)
-    pinned_response = supabase.table('news_feed')\
-        .select('*')\
-        .eq('is_pinned', True)\
-        .order('published_at', desc=True)\
-        .limit(4)\
+    # ✅ Fetch only pinned posts (max 4)
+    response = supabase.table('news_feed') \
+        .select('*') \
+        .eq('is_pinned', True) \
+        .order('published_at', desc=True) \
+        .limit(4) \
         .execute()
-    pinned_posts = pinned_response.data
-    pinned_count = len(pinned_posts)
 
-    # Step 2: Fetch normal posts (limit remaining to make total 4)
-    normal_limit = 4 - pinned_count
-    normal_posts = []
-    if normal_limit > 0:
-        normal_response = supabase.table('news_feed')\
-            .select('*')\
-            .eq('is_pinned', False)\
-            .order('published_at', desc=True)\
-            .limit(normal_limit)\
-            .execute()
-        normal_posts = normal_response.data
-
-    # Combine posts for display
-    combined_posts = pinned_posts + normal_posts
+    pinned_posts = response.data or []  # handle empty list safely
 
     return render_template(
         'landing.html',
-        posts=combined_posts
+        posts=pinned_posts
     )
 
 @app.route('/become-a-tutor')
@@ -195,30 +180,41 @@ def events():
 def pricing():
     return render_template('pricing.html')
 
-import random
-
-@app.route('/dashboard')
+from flask import session, redirect, url_for, render_template, request
+from datetime import datetime
+import json, random
+@app.route('/dashboard', methods=['GET'])
 def dashboard():
     if 'student_id' not in session:
         return redirect(url_for('student_login'))
 
     student_id = session['student_id']
 
-    # ✅ Student info
-    student_res = supabase.table("students").select("*, classes(*)").eq("id", student_id).single().execute()
-    student = student_res.data if student_res.data else {}
+    # ---------------- Student + Class + School ----------------
+    student_res = supabase.table("students").select(
+        "*, classes:class_id (class_name, class_level), schools:school_id (name)"
+    ).eq("id", student_id).single().execute()
 
-    # ✅ Coins
-    coin_response = supabase.table('student_coins').select("total_coins").eq("student_id", student_id).limit(1).execute()
-    coin_data = coin_response.data[0] if coin_response.data else None
-    total_coins = coin_data['total_coins'] if coin_data else 0
+    student = student_res.data or {}
 
-    # ✅ Syllabus
+    # Safely extract class and school info
+    class_data = student.get("classes") or {}
+    school_data = student.get("schools") or {}
+
+    student["class_name"] = class_data.get("class_name", "Class not set")
+    student["class_level"] = class_data.get("class_level", "")
+    student["school_name"] = school_data.get("name", "School not set")
+
+    student_name = student.get("name", "Student Name")
+
+    # ---------------- Coins ----------------
+    coin_res = supabase.table("student_coins").select("total_coins").eq("student_id", student_id).limit(1).execute()
+    total_coins = coin_res.data[0]["total_coins"] if coin_res.data else 0
+
+    # ---------------- Syllabus ----------------
     syllabus_res = supabase.table("syllabus").select("*").execute()
-    syllabus_data = syllabus_res.data if syllabus_res.data else []
-
     formatted_syllabus = []
-    for item in syllabus_data:
+    for item in syllabus_res.data or []:
         topics = item.get("topics")
         if isinstance(topics, str):
             try:
@@ -231,50 +227,36 @@ def dashboard():
             "topics": topics
         })
 
-    # ✅ Teachers
+    # ---------------- Teachers ----------------
     teachers_res = supabase.table("teachers").select("*").eq("verified", True).execute()
-    teachers_list = teachers_res.data if teachers_res.data else []
-    teacher_map = {str(t['id']): t for t in teachers_list}
+    teachers_list = teachers_res.data or []
+    teacher_map = {str(t["id"]): t for t in teachers_list}
 
-    # ✅ Bookings
+    # ---------------- Bookings ----------------
     booking_res = supabase.table("bookings").select("*").eq("student_id", student_id).limit(5).execute()
-    booked_rows = booking_res.data if booking_res.data else []
-
     booked_teachers = []
-    for booking in booked_rows:
-        teacher_id = str(booking.get("teacher_id"))
-        teacher = teacher_map.get(teacher_id)
-        if teacher:
-            booked_teachers.append({
-                "booking": booking,
-                "teacher": teacher
-            })
+    for b in booking_res.data or []:
+        t = teacher_map.get(str(b.get("teacher_id")))
+        if t:
+            booked_teachers.append({"booking": b, "teacher": t})
 
-    # ✅ Ads
-    top_ads = supabase.table("ads").select("*") \
-                .eq("target", "dashboard") \
-                .eq("slot", "top") \
-                .eq("active", True).execute().data
+    # ---------------- Ads ----------------
+    top_ads = supabase.table("ads").select("*").eq("target", "dashboard").eq("slot", "top").eq("active", True).execute().data
+    bottom_ads = supabase.table("ads").select("*").eq("target", "dashboard").eq("slot", "bottom").eq("active", True).execute().data
 
-    bottom_ads = supabase.table("ads").select("*") \
-                   .eq("target", "dashboard") \
-                   .eq("slot", "bottom") \
-                   .eq("active", True).execute().data
-
-    # Pick random 1 ad for each slot
-    top_ad = random.choice(top_ads) if top_ads else None
-    bottom_ad = random.choice(bottom_ads) if bottom_ads else None
-
+    # ---------------- Render Template ----------------
     return render_template(
-        'index.html',
+        "index.html",
         student=student,
+        student_name=student_name,
         total_coins=total_coins,
         syllabus=formatted_syllabus,
         teachers=teachers_list,
         booked_teachers=booked_teachers,
-        top_ad=top_ad,
-        bottom_ad=bottom_ad
+        top_ad=random.choice(top_ads) if top_ads else None,
+        bottom_ad=random.choice(bottom_ads) if bottom_ads else None
     )
+
 
 from datetime import date, datetime
 import random
@@ -1447,18 +1429,17 @@ def view_students_by_class_teacher():
 
     teacher_id = session['school_teacher_id']
 
-    # ✅ Get teacher data
+    # ---------------- Get teacher data ----------------
     teacher_result = supabase.table("school_teachers").select("*").eq("id", teacher_id).single().execute()
     teacher = teacher_result.data
-
     if not teacher:
         return "Teacher not found", 404
 
     school_id = teacher.get("school_id")
 
-    # ✅ Get assigned class_id from class_teacher_mappings table
+    # ---------------- Get assigned class mapping ----------------
     mapping_result = supabase.table("class_teacher_mappings") \
-        .select("class_id, class_level") \
+        .select("class_id") \
         .eq("teacher_id", teacher_id) \
         .eq("school_id", school_id) \
         .single() \
@@ -1468,31 +1449,40 @@ def view_students_by_class_teacher():
         return "No class mapping found for this teacher", 404
 
     class_id = mapping_result.data["class_id"]
-    class_level = mapping_result.data["class_level"]
 
-    # ✅ Fetch students using UUID class_id and school_id
+    # ---------------- Fetch class info ----------------
+    class_result = supabase.table("classes").select("class_name, class_level").eq("id", class_id).single().execute()
+    if not class_result.data:
+        class_name = "Class not set"
+        class_level = ""
+    else:
+        class_name = class_result.data.get("class_name", "Class not set")
+        class_level = class_result.data.get("class_level", "")
+
+    # ---------------- Fetch students ----------------
     students_result = supabase.table("students") \
         .select("*") \
         .eq("class_id", class_id) \
         .eq("school_id", school_id) \
         .execute()
-    students_data = students_result.data
+    students_data = students_result.data or []
 
-    # ✅ Fetch coin totals for all students
+    # ---------------- Fetch student coins ----------------
     coin_result = supabase.table("student_coins").select("*").execute()
-    coin_data = coin_result.data
+    coin_data = coin_result.data or []
     coin_map = {item['student_id']: item['total_coins'] for item in coin_data}
 
-    # ✅ Merge coin totals into student list
+    # Merge coins into students
     for s in students_data:
         s['total_coins'] = coin_map.get(s['id'], 0)
 
-    # ✅ Render the view with coin-enriched students
+    # ---------------- Render template ----------------
     return render_template(
         "school_teacher/view_students.html",
         students=students_data,
-        class_name=class_level  # instead of assigned_class
+        class_name=f"{class_name} {class_level}" if class_level else class_name
     )
+
 
 @app.route('/school_teacher/leave_requests')
 def school_teacher_leave_requests():
@@ -1958,34 +1948,62 @@ def student_submit_leave():
 
     student_id = session['student_id']
 
-    # Fetch student data
-    response = supabase.table("students").select("*").eq("id", student_id).single().execute()
-    student_data = response.data
+    # 1️⃣ Fetch student data
+    student_res = supabase.table("students") \
+        .select("*") \
+        .eq("id", student_id) \
+        .single() \
+        .execute()
+    student_data = student_res.data
 
-    # Safety checks
     if not student_data:
-        return "❌ Student record not found in database.", 404
-    if not student_data.get("class_id"):
-        return "❌ Your class is not assigned. Contact your school to update it.", 400
-    if not student_data.get("school_id"):
-        return "❌ Your school is not assigned. Contact your school to update it.", 400
+        return "❌ Student record not found", 404
 
-    class_id = student_data['class_id']
-    school_id = student_data['school_id']
+    # 2️⃣ Fetch class info safely
+    class_name = "N/A"
+    class_id = student_data.get("class_id")
+    if class_id:
+        class_res = supabase.table("classes") \
+            .select("*") \
+            .eq("id", class_id) \
+            .single() \
+            .execute()
+        class_data = class_res.data
+        if class_data:
+            # Adjust depending on your table columns
+            class_name = f"{class_data.get('class_name', '')} {class_data.get('class_level', '')}".strip() or "N/A"
 
+    # 3️⃣ Fetch school info safely
+    school_name = "N/A"
+    school_id = student_data.get("school_id")
+    if school_id:
+        school_res = supabase.table("schools") \
+            .select("*") \
+            .eq("id", school_id) \
+            .single() \
+            .execute()
+        school_data = school_res.data
+        if school_data:
+            school_name = school_data.get("name", "N/A")
+
+    # 4️⃣ Update student_data dict for template
+    student_data['class_level'] = class_name
+    student_data['school_name'] = school_name
+
+    # 5️⃣ Handle POST submission
     if request.method == 'POST':
         from_date = request.form.get('from_date')
         to_date = request.form.get('to_date')
         reason = request.form.get('reason')
 
-        # Basic validation
         if not from_date or not to_date or not reason:
             return "❌ All fields are required.", 400
 
+        # Use class_id and school_id if they exist, else None
         leave_data = {
             'student_id': student_id,
-            'class_id': class_id,
-            'school_id': school_id,
+            'class_id': class_id or None,
+            'school_id': school_id or None,
             'from_date': from_date,
             'to_date': to_date,
             'reason': reason,
@@ -1993,9 +2011,11 @@ def student_submit_leave():
         }
 
         supabase.table("leave_requests").insert(leave_data).execute()
+
         return redirect(url_for('dashboard'))
 
     return render_template('student/submit_leave.html', student=student_data)
+
 
 @app.route('/student/leave_status')
 def student_leave_status():
@@ -2004,10 +2024,10 @@ def student_leave_status():
 
     student_id = session['student_id']
 
-    leaves = supabase.table("leave_requests")\
-        .select("*")\
-        .eq("student_id", student_id)\
-        .order("submitted_at", desc=True)\
+    leaves = supabase.table("leave_requests") \
+        .select("*") \
+        .eq("student_id", student_id) \
+        .order("submitted_at", desc=True) \
         .execute()
 
     return render_template("student_leave_status.html", leaves=leaves.data)
@@ -2078,6 +2098,125 @@ def edit_student_profile():
         print("Error updating profile:", e)
 
     return redirect(url_for('dashboard'))
+
+# Initialize Supabase client
+
+SUPABASE_URL = "https://szfgjywjvfkeudhiobis.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6ZmdqeXdqdmZrZXVkaGlvYmlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5NDE3NzQsImV4cCI6MjA2NjUxNzc3NH0.OTO8bXjruB8kAfDlDS9CG7evruUbl6ljbswlJzbO8H0"
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+@app.route('/leaderboard')
+def leaderboard():
+    # Fetch all leaderboard entries
+    response = supabase.table('leaderboard').select('*').execute()
+    leaderboard_data = response.data
+
+    # Debug prints
+    print("Raw Leaderboard Data:", leaderboard_data)
+
+    if not leaderboard_data:
+        print("No data found in leaderboard table! Check RLS policies or data.")
+
+    # Sort and get top 3 per category safely
+    top_academics = sorted(
+        leaderboard_data,
+        key=lambda x: x.get('academics_points', 0),
+        reverse=True
+    )[:3]
+
+    top_skills = sorted(
+        leaderboard_data,
+        key=lambda x: x.get('skills_points', 0),
+        reverse=True
+    )[:3]
+
+    top_sports = sorted(
+        leaderboard_data,
+        key=lambda x: x.get('sports_points', 0),
+        reverse=True
+    )[:3]
+
+    print("Top Academics:", top_academics)
+    print("Top Skills:", top_skills)
+    print("Top Sports:", top_sports)
+
+    return render_template(
+        'leaderboard.html',
+        top_academics=top_academics,
+        top_skills=top_skills,
+        top_sports=top_sports
+    )
+
+@app.route('/vote_teacher', methods=['POST'])
+def vote_teacher():
+    if 'student_id' not in session:
+        return redirect(url_for('student_login'))
+
+    student_id = session['student_id']
+    teacher_id = request.form.get('teacher_id')
+    coins = int(request.form.get('coins', 1))  # default 1 coin
+
+    # Fetch student coins
+    coin_resp = supabase.table('student_coins').select('total_coins').eq('student_id', student_id).single().execute()
+    student_coins = coin_resp.data['total_coins'] if coin_resp.data else 0
+
+    if student_coins < coins:
+        return "Not enough coins!", 400
+
+    # Deduct coins from student
+    supabase.table('student_coins').update({'total_coins': student_coins - coins}).eq('student_id', student_id).execute()
+
+    # Add coins to teacher
+    teacher_resp = supabase.table('school_teachers').select('vote_coins').eq('id', teacher_id).single().execute()
+    current_votes = teacher_resp.data['vote_coins'] if teacher_resp.data else 0
+    supabase.table('school_teachers').update({'vote_coins': current_votes + coins}).eq('id', teacher_id).execute()
+
+    # Save vote history
+    supabase.table('teacher_votes').insert({
+        'student_id': student_id,
+        'teacher_id': teacher_id,
+        'coins': coins,
+        'created_at': datetime.now().isoformat()
+    }).execute()
+
+    return redirect(url_for('teacher_leaderboard'))
+
+@app.route('/teacher_leaderboard')
+def teacher_leaderboard():
+    if 'student_id' not in session:
+        return redirect(url_for('student_login'))
+
+    student_id = session['student_id']
+
+    # Get student coins
+    coin_resp = supabase.table('student_coins').select('total_coins').eq('student_id', student_id).single().execute()
+    student_coins = coin_resp.data['total_coins'] if coin_resp.data else 0
+
+    # Get verified teachers
+    teachers_res = supabase.table('school_teachers').select('*').execute()
+    teachers = teachers_res.data or []
+
+    # Sort by vote_coins descending
+    top_teachers = sorted(teachers, key=lambda x: x.get('vote_coins', 0), reverse=True)
+
+    return render_template('teacher_leaderboard.html', top_teachers=top_teachers, student_coins=student_coins)
+
+from datetime import datetime, timedelta
+
+@app.route('/teacher_weekly_leaderboard')
+def teacher_weekly_leaderboard():
+    if 'student_id' not in session:
+        return redirect(url_for('student_login'))
+
+    # Fetch all teachers
+    teachers_res = supabase.table('school_teachers').select('*').execute()
+    teachers = teachers_res.data or []
+
+    # Sort teachers by total vote_coins descending
+    top3 = sorted(teachers, key=lambda t: t.get('vote_coins', 0), reverse=True)[:3]
+
+    return render_template('teacher_weekly_leaderboard.html', top3=top3)
 
 # Your Together AI details
 DOUBT_SOLVER_API_KEY = "dbfb5267b3c4062b3f8b51a4999dfc27579a11f59bd3354378d14baa3a50e5aa"
@@ -3695,6 +3834,7 @@ def add_comment(post_id):
     }).execute()
     return jsonify({"success": True})
 
+
 @app.route('/health')
 def health():
     return "OK"
@@ -3715,6 +3855,9 @@ def cleanup_old_bookings():
 @app.route('/advertise')
 def advertise():
     return render_template('advertise.html')
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
