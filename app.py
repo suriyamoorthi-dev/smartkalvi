@@ -109,22 +109,33 @@ supabase_questions = create_client(QUESTIONS_URL, QUESTIONS_KEY)
 
 
 # === Routes ===
-
 @app.route('/')
 def homepage():
-    # ✅ Fetch only pinned posts (max 4)
-    response = supabase.table('news_feed') \
-        .select('*') \
-        .eq('is_pinned', True) \
-        .order('published_at', desc=True) \
-        .limit(4) \
+    # ✅ Fetch pinned news posts (max 4)
+    response = (
+        supabase.table('news_feed')
+        .select('*')
+        .eq('is_pinned', True)
+        .order('published_at', desc=True)
+        .limit(4)
         .execute()
+    )
+    pinned_posts = response.data or []
 
-    pinned_posts = response.data or []  # handle empty list safely
+    # ✅ Fetch active partner schools (ascending by name)
+    partners = (
+        supabase.table('schools')
+        .select('id, name, logo_url')
+        .eq('payment_status', 'active')
+        .order('name')  # no 'asc' param — default is ascending
+        .execute()
+    )
+    partner_schools = partners.data or []
 
     return render_template(
         'landing.html',
-        posts=pinned_posts
+        posts=pinned_posts,
+        partner_schools=partner_schools
     )
 
 @app.route('/become-a-tutor')
@@ -2193,11 +2204,22 @@ def teacher_leaderboard():
     coin_resp = supabase.table('student_coins').select('total_coins').eq('student_id', student_id).single().execute()
     student_coins = coin_resp.data['total_coins'] if coin_resp.data else 0
 
-    # Get verified teachers
-    teachers_res = supabase.table('school_teachers').select('*').execute()
+    # Fetch teachers + related school name
+    teachers_res = (
+        supabase.table('school_teachers')
+        .select('id, name, subject, profile_pic, vote_coins, school_id, schools(name)')
+        .execute()
+    )
+
     teachers = teachers_res.data or []
 
-    # Sort by vote_coins descending
+    # Attach readable school name
+    for t in teachers:
+        t['school_name'] = (
+            t.get('schools', {}).get('name', 'Unknown School') if t.get('schools') else 'Unknown School'
+        )
+
+    # Sort teachers by votes
     top_teachers = sorted(teachers, key=lambda x: x.get('vote_coins', 0), reverse=True)
 
     return render_template('teacher_leaderboard.html', top_teachers=top_teachers, student_coins=student_coins)
@@ -2206,14 +2228,20 @@ from datetime import datetime, timedelta
 
 @app.route('/teacher_weekly_leaderboard')
 def teacher_weekly_leaderboard():
-    if 'student_id' not in session:
-        return redirect(url_for('student_login'))
-
     # Fetch all teachers
     teachers_res = supabase.table('school_teachers').select('*').execute()
     teachers = teachers_res.data or []
 
-    # Sort teachers by total vote_coins descending
+    # ✅ Fetch all schools using the correct column name
+    schools_res = supabase.table('schools').select('id, name').execute()
+    schools = {s['id']: s['name'] for s in schools_res.data or []}
+
+    # Attach school name to each teacher using school_id
+    for teacher in teachers:
+        school_id = teacher.get('school_id')
+        teacher['school_name'] = schools.get(school_id, 'Unknown School')
+
+    # Sort by votes and pick top 3
     top3 = sorted(teachers, key=lambda t: t.get('vote_coins', 0), reverse=True)[:3]
 
     return render_template('teacher_weekly_leaderboard.html', top3=top3)
